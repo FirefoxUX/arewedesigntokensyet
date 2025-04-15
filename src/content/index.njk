@@ -1,0 +1,30 @@
+---
+layout: base.njk
+title: "Are we Design Tokens yet?"
+---
+
+<h1>{{ title }}</h1>
+
+<p>The goal of this site is to help us track the propagation of design tokens in our tree. It works by gathering CSS files based on provided paths and then looks for <a href="/properties/">CSS properties</a> that would typically be expected to be tied to a design-token.</p>
+
+<p>Values that aren't likely to be set to design tokens are explicitly ignored.</p>
+
+<h2>Current Limitations</h2>
+
+<ul>
+  <li>The paths this tool looks at <em>are</em> fully customizable and may need to be updated.</li>
+  <li>The list of design token <a href="/properties/">properties</a> needs validating</li>
+  <li>We could likely improve how values for shorthand properties are matched</li>
+  <li>This tool does not currently work back variables that are assigned to design tokens, though this could likely be added later.</li>
+</ul>
+
+<h2>Paths</h2>
+
+<p><strong>Average Propagation: <span class="{{ totals.totalAveragePropagation | rangeClass }}">{{ totals.totalAveragePropagation }}%</span></strong></p>
+
+<ul>
+{% for dir, details in groupedFilesByDir %}
+  {% set propagation = details.averagePropagation | round(2) %}
+  <li><a href="{{ dir }}/"><code>{{ dir }}</code></a> <span class="{{ propagation | rangeClass }} percentage">{{ propagation }}%</span></li>
+{% endfor %}
+</ul>

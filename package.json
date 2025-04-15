@@ -1,0 +1,30 @@
+{
+  "name": "arewedesigntokensyet",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "glob": "^11.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "postcss": "^8.5.3",
+    "prettier": "^3.5.3"
+  },
+  "scripts": {
+    "clean": "rimraf --glob './build/**/*'",
+    "build": "npm run clean && npm run build:data && npm run eleventy:build",
+    "build:data": "node bin/buildTokenData.js",
+    "eleventy:watch": "eleventy --serve --config=./eleventy.config.js",
+    "eleventy:build": "BUILD_ENV=production eleventy -- --config=./eleventy.config.js",
+    "prettier": "prettier --write '**'",
+    "prettier-ci": "prettier -c '**'",
+    "pre-commit-checks": "lint-staged",
+    "postinstall": "husky",
+    "start": "npm run eleventy:watch",
+    "test": "",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*": "prettier --write '**'"
+  }
+}

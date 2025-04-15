@@ -1,0 +1,9 @@
+node_modules
+
+# Ignore Mac Droppings
+.DS_Store
+
+# General ignores for script built files that shouldn't be committed.
+src/data/*
+build/*
+

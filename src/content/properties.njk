@@ -1,0 +1,17 @@
+---
+title: "Tokenizable CSS Properties List"
+permalink: "/properties/"
+layout: base.njk
+
+---
+
+<h1>{{ title }}</h1>
+<p>This is the list of design tokens that we look at and expect to be tokenized</p>
+
+{% include 'homeLink.njk' %}
+
+<ul>
+{% for prop in propList %}
+ <li>{{ prop }}</li>
+{% endfor %}
+</ul>
