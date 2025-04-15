@@ -21,7 +21,7 @@
     "build:data": "node bin/buildTokenData.js",
     "lint": "eslint",
     "eleventy:watch": "eleventy --serve --config=./eleventy.config.js",
-    "eleventy:build": "BUILD_ENV=production eleventy -- --config=./eleventy.config.js",
+    "eleventy:build": "BUILD_ENV=production eleventy --config=./eleventy.config.js --pathprefix=arewedesigntokensyet",
     "prettier": "prettier --write '**'",
     "prettier-ci": "prettier -c '**'",
     "pre-commit-checks": "lint-staged",

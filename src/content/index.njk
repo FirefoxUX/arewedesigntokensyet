@@ -25,6 +25,6 @@ title: "Are we Design Tokens yet?"
 <ul>
 {% for dir, details in groupedFilesByDir %}
   {% set propagation = details.averagePropagation | round(2) %}
-  <li><a href="{{ dir }}/"><code>{{ dir }}</code></a> <span class="{{ propagation | rangeClass }} percentage">{{ propagation }}%</span></li>
+  <li><a href="/{{ dir }}/"><code>{{ dir }}</code></a> <span class="{{ propagation | rangeClass }} percentage">{{ propagation }}%</span></li>
 {% endfor %}
 </ul>
