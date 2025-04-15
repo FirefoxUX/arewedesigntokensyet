@@ -1,3 +1,36 @@
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/AtkinsonHyperlegible/AtkinsonHyperlegible-Regular.woff2)
+    format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/AtkinsonHyperlegible/AtkinsonHyperlegible-Italic.woff2)
+    format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/AtkinsonHyperlegible/AtkinsonHyperlegible-Bold.woff2)
+    format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/AtkinsonHyperlegible/AtkinsonHyperlegible-BoldItalic.woff2)
+    format('woff2');
+}
+
 body {
   height: 100vh;
   display: flex;
