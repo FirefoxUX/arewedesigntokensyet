@@ -8,5 +8,6 @@
 !*.md
 !*.css
 
-# Ignore minified files
+# Ignores
 *.min.js
+LICENSE

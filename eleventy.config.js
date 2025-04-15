@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -21,7 +20,7 @@ export default async function (eleventyConfig) {
 
   // Filters
   eleventyConfig.addFilter('slug', (str) =>
-    str.toLowerCase().replace(/[\s\/]+/g, '-'),
+    str.toLowerCase().replace(/[\s/]+/g, '-'),
   );
   eleventyConfig.addFilter('rangeClass', function (number) {
     if (number >= 75 && number <= 100) {

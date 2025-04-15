@@ -4,7 +4,12 @@
   "type": "module",
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0",
+    "@eslint/compat": "^1.2.8",
+    "@eslint/js": "^9.24.0",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.2",
     "glob": "^11.0.1",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "postcss": "^8.5.3",
@@ -14,6 +19,7 @@
     "clean": "rimraf --glob './build/**/*'",
     "build": "npm run clean && npm run build:data && npm run eleventy:build",
     "build:data": "node bin/buildTokenData.js",
+    "lint": "eslint",
     "eleventy:watch": "eleventy --serve --config=./eleventy.config.js",
     "eleventy:build": "BUILD_ENV=production eleventy -- --config=./eleventy.config.js",
     "prettier": "prettier --write '**'",
@@ -25,6 +31,6 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*": "prettier --write '**'"
+    "*": ["prettier --write '**'", "eslint"]
   }
 }
