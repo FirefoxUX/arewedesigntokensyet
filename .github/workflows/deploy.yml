@@ -36,14 +36,12 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-          path: arewedesigntokensyet
 
     - name: Checkout mozilla/gecko-dev
       uses: actions/checkout@v4
       with:
         repository: mozilla/gecko-dev
-        path: mozilla-unfied
+        path: ./mozilla-unified
 
     - name: Setup Pages
       uses: actions/configure-pages@v5
@@ -61,7 +59,7 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         # Upload entire repository
-        path: 'arewedesigntokensyet/build'
+        path: './arewedesigntokensyet/build'
 
   # Deployment job
   deploy:
