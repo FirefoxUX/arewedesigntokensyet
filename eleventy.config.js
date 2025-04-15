@@ -2,7 +2,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { EleventyHtmlBasePlugin } from '@11ty/eleventy';
-import cacheBuster from '@mightyplow/eleventy-plugin-cache-buster';
 
 import loadAndAnnotateFile from './src/lib/loadAndAnnotateFile.js';
 
@@ -14,7 +13,6 @@ const outputDir = path.relative(__dirname, 'build');
 export default async function (eleventyConfig) {
   // Plugins.
   eleventyConfig.addPlugin(EleventyHtmlBasePlugin);
-  eleventyConfig.addPlugin(cacheBuster({ outputDirectory: outputDir }));
 
   // Files that are passed through.
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
