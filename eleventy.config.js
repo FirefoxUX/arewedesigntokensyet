@@ -16,7 +16,6 @@ export default async function (eleventyConfig) {
 
   // Files that are passed through.
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
-  eleventyConfig.addPassthroughCopy('./src/content/js/');
   eleventyConfig.addPassthroughCopy('./src/content/css/');
 
   // Filters
