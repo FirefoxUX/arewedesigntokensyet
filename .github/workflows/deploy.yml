@@ -20,11 +20,6 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
-defaults:
-  run:
-    shell: bash
-    working-directory: ./arewedesigntokensyet
-
 jobs:
   # Build Eleventy
   build:
@@ -36,6 +31,8 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        path: ./awdty
 
     - name: Checkout mozilla/gecko-dev
       uses: actions/checkout@v4
@@ -49,17 +46,17 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v4
 
-    - name: Install packages
-      run: npm install-ci
-
-    - name: Run Eleventy build
-      run: npm run build
+    - name: Install packages and build
+      working-directory: ./awdty
+      run: |
+        npm install-ci
+        npm run build
 
     - name: Upload build artifacts
       uses: actions/upload-pages-artifact@v3
       with:
         # Upload entire repository
-        path: './arewedesigntokensyet/build'
+        path: './awdty/build'
 
   # Deployment job
   deploy:
