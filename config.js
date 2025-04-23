@@ -82,6 +82,8 @@ export default {
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [
     'browser/components/**/*.css',
+    // Add New Tab directory path (note: located in browser/components/ dir)
+    'browser/extensions/newtab/css/**/*.css',
     'toolkit/content/widgets/**/*.css',
   ],
   // Paths in the repo matching these glob patterns will be ignored to avoid generating
