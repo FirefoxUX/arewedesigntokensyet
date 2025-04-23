@@ -1,14 +1,25 @@
 import path from 'node:path';
-
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
-const { storybookTables } = await import(
-  path.join(
-    repoPath,
-    '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
-  )
+let tokensPath = path.join(
+  repoPath,
+  '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
 );
+
+/*
+  tgiles: We need to prepend file:// on Windows
+  otherwise the default ESM loader will error out with
+  ERR_UNSUPPORTED_ESM_URL_SCHEME. The relevant text from
+  the error is the following: "On Windows, absolute paths
+  must be valid file:// URLs."
+*/
+
+if (process.platform === 'win32') {
+  tokensPath = 'file://' + tokensPath;
+}
+
+const { storybookTables } = await import(tokensPath);
 
 export default {
   repoPath,
