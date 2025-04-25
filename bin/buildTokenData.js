@@ -136,14 +136,18 @@ async function getCssFilesList(
   const fileObjects = [];
   for (const file of files) {
     const relativeFilePath = path.relative(repoPath, file);
+    const filePosix = path.posix.relative(repoPath, file);
     const directory = path.dirname(relativeFilePath);
+    const directoryPosix = path.posix.dirname(relativeFilePath);
     const fileName = path.basename(file);
     const propagationData = await getPropagationData(file);
     fileObjects.push({
       fileName,
       absolutePath: file,
       relativePath: relativeFilePath,
+      filePosix,
       directory,
+      directoryPosix,
       propagationData,
     });
   }
@@ -160,7 +164,7 @@ async function getCssFilesList(
 function groupFilesByDirectory(fileObjects) {
   const groupedByDir = fileObjects.reduce((groups, fileObj) => {
     // Use the directory property (an empty string indicates the repo root).
-    const dir = fileObj.directory || '.';
+    const dir = fileObj.directoryPosix || '.';
     if (!groups[dir]) {
       groups[dir] = {};
     }

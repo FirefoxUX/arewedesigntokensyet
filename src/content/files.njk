@@ -3,12 +3,12 @@ pagination:
   data: cssFilesList
   size: 1
   alias: file
-permalink: "/{{ file.relativePath }}/"
+permalink: "/{{ file.filePosix }}/"
 layout: base.njk
 
 ---
 
-<h1><a href="/{{ file.directory }}">{{ file.directory }}</a>/{{ file.fileName }}</h1>
+<h1><a href="/{{ file.directoryPosix }}">{{ file.directoryPosix }}</a>/{{ file.fileName }}</h1>
 {% set totalPropagation = file.propagationData.percentage %}
 <p><strong>Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}%</span></p>
 
