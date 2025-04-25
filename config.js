@@ -2,9 +2,11 @@ import path from 'node:path';
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
-let tokensPath = path.join(
-  repoPath,
-  '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
+let tokensPath = path.resolve(
+  path.join(
+    repoPath,
+    '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
+  ),
 );
 
 /*
