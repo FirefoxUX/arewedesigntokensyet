@@ -212,13 +212,6 @@ export function computeAverages(node) {
 
 if (process.argv[1] === import.meta.filename) {
   (async () => {
-    // console.log(await getPropagationData('../mozilla-unified/toolkit/content/widgets/moz-message-bar/moz-message-bar.css'));
-    /* console.log(
-      await getPropagationData(
-        '../mozilla-unified/browser/components/sidebar/sidebar.css',
-      ),
-    ); */
-
     const cssFilesList = await getCssFilesList(
       config.repoPath,
       config.includePatterns,
