@@ -6,4 +6,4 @@ node_modules
 # General ignores for script built files that shouldn't be committed.
 src/data/*
 build/*
-
+coverage/*

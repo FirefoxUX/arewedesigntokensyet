@@ -11,7 +11,7 @@ import config from '../config.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function isVariableDefinition(property) {
-  return property?.startsWith('--');
+  return !!property?.startsWith?.('--');
 }
 
 export function isDesignTokenValue(value) {
