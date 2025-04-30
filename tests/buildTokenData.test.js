@@ -110,14 +110,14 @@ describe('getPropagationData', () => {
 
     // Uses a random var so these will be false
     expect(result.foundPropValues[0].isDesignToken).toBe(false);
-    expect(result.foundPropValues[2].isExcludedValue).toBe(false);
-    expect(result.foundPropValues[2].isIndirectRef).toBe(false);
+    expect(result.foundPropValues[0].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[0].isIndirectRef).toBe(false);
 
     // Uses space token so should be true.
     expect(result.foundPropValues[1].isDesignToken).toBe(true);
     // These will be false.
-    expect(result.foundPropValues[2].isExcludedValue).toBe(false);
-    expect(result.foundPropValues[2].isIndirectRef).toBe(false);
+    expect(result.foundPropValues[1].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[1].isIndirectRef).toBe(false);
   });
 
   it('should handle ignored values', async () => {
@@ -140,5 +140,48 @@ describe('getPropagationData', () => {
     expect(result.foundPropValues[2].isDesignToken).toBe(false);
     expect(result.foundPropValues[2].isExcludedValue).toBe(true);
     expect(result.foundPropValues[2].isIndirectRef).toBe(false);
+
+    // 2 of 3 expected props are pointing at design tokens or
+    // excluded values so this should be 66.67%
+    expect(result.percentage).toEqual(66.67);
+  });
+
+  it('should handle collecting vars referencing design token in the same file', async () => {
+    // In this CSS the width property won't be matched.
+    const fakeCSS = `.test {
+      :root {
+        --whatever: var(--space-xsmall);
+      }
+      width: 100px;
+      background-color: var(--whatever);
+      gap: --space-xsmall;
+      color: transparent;
+    }`;
+    fs.readFile = jest.fn().mockResolvedValue(fakeCSS);
+
+    const result = await getPropagationData();
+
+    // Only one of the two props 'found' uses a design token.
+    expect(result.designTokenCount).toEqual(3);
+    expect(result.foundProps).toEqual(3);
+
+    // background-color points to a design token via the var --whatever.
+    expect(result.foundPropValues[0].isDesignToken).toBe(true);
+    expect(result.foundPropValues[0].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[0].isIndirectRef).toBe(true);
+
+    // The variable pointing at --space-xsmall is recorded.
+    expect(result.foundVariables['--whatever'].isDesignToken).toBe(true);
+
+    // 3 of 3 expected props all are pointing at design tokens or
+    // excluded values so this should be 100%
+    expect(result.percentage).toEqual(100);
+  });
+
+  it('should handle exceptions', async () => {
+    fs.readFile = jest.fn().mockRejectedValue(new Error('test-error'));
+    await expect(
+      async () => await getPropagationData('whatever'),
+    ).rejects.toThrow('test-error');
   });
 });
