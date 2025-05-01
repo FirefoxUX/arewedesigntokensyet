@@ -41,5 +41,8 @@ jobs:
         working-directory: ./awdty
         run: |
           npm ci
-          npm run build
-          npm run test
+          npm run build:data
+
+      - name: Run Tests
+        working-directory: ./awdty
+        run: npm run test
