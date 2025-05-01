@@ -49,7 +49,7 @@ jobs:
     - name: Install packages and build
       working-directory: ./awdty
       run: |
-        npm install-ci
+        npm ci
         npm run build
 
     - name: Upload build artifacts
