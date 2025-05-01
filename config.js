@@ -1,14 +1,19 @@
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
-const { storybookTables } = await import(
+// pathToFileURL ensures a x-platform path for the dynamic import
+// otherwise this will fail on windows with
+// ERR_UNSUPORTED_ESM_URL_SCHEME
+const tokensPath = pathToFileURL(
   path.join(
     repoPath,
     '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
-  )
+  ),
 );
+
+const { storybookTables } = await import(tokensPath);
 
 export default {
   repoPath,

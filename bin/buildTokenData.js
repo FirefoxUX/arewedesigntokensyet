@@ -32,6 +32,10 @@ export function isTokenizableProperty(prop) {
   return config.designTokenProperties.includes(prop);
 }
 
+export function convertPathToURI(path) {
+  return encodeURI(path.replace(/\\/g, '/'));
+}
+
 /*
  * Parse a CSS file looking for Design Tokens based on list provided from config.
  *
@@ -135,15 +139,16 @@ async function getCssFilesList(
 
   const fileObjects = [];
   for (const file of files) {
-    const relativeFilePath = path.relative(repoPath, file);
-    const directory = path.dirname(relativeFilePath);
+    const relativePath = path.relative(repoPath, file);
+    const fileURI = convertPathToURI(relativePath);
+    const dirURI = convertPathToURI(path.dirname(relativePath));
     const fileName = path.basename(file);
     const propagationData = await getPropagationData(file);
     fileObjects.push({
       fileName,
       absolutePath: file,
-      relativePath: relativeFilePath,
-      directory,
+      fileURI,
+      dirURI,
       propagationData,
     });
   }
@@ -160,7 +165,7 @@ async function getCssFilesList(
 function groupFilesByDirectory(fileObjects) {
   const groupedByDir = fileObjects.reduce((groups, fileObj) => {
     // Use the directory property (an empty string indicates the repo root).
-    const dir = fileObj.directory || '.';
+    const dir = fileObj.dirURI || '.';
     if (!groups[dir]) {
       groups[dir] = {};
     }
@@ -207,13 +212,6 @@ export function computeAverages(node) {
 
 if (process.argv[1] === import.meta.filename) {
   (async () => {
-    // console.log(await getPropagationData('../mozilla-unified/toolkit/content/widgets/moz-message-bar/moz-message-bar.css'));
-    /* console.log(
-      await getPropagationData(
-        '../mozilla-unified/browser/components/sidebar/sidebar.css',
-      ),
-    ); */
-
     const cssFilesList = await getCssFilesList(
       config.repoPath,
       config.includePatterns,
