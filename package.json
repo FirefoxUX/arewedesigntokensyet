@@ -32,7 +32,7 @@
     "postinstall": "husky",
     "start": "npm run eleventy:watch",
     "test-ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test-watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "prepare": "husky"
   },
   "lint-staged": {

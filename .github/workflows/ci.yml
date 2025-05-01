@@ -20,11 +20,26 @@ jobs:
         node-version: [22.x]
 
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: ./awdty
+
+      - name: Checkout mozilla-firefox/firefox
+        uses: actions/checkout@v4
+        with:
+          repository: mozilla-firefox/firefox
+          path: ./mozilla-unified
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install-ci
-      - run: npm run build
-      - run: npm run test-ci
+
+      - name: Install packages and build
+        working-directory: ./awdty
+        run: |
+          npm install-ci
+          npm run build
+          npm run test-ci
