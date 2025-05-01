@@ -51,6 +51,7 @@ jobs:
       run: |
         npm ci
         npm run build
+        npm run test-ci
 
     - name: Upload build artifacts
       uses: actions/upload-pages-artifact@v3
