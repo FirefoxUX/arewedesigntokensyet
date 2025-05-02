@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+
 import { jest } from '@jest/globals';
 
 import {
@@ -6,7 +7,9 @@ import {
   isDesignTokenValue,
   isExcludedValue,
   isTokenizableProperty,
+  convertPathToURI,
   getPropagationData,
+  getCssFilesList,
 } from '../bin/buildTokenData.js';
 
 describe('isVariableDefinition', () => {
@@ -78,6 +81,14 @@ describe('isTokenizableProperty', () => {
 
   it(`should not identify 'width' as a  tokenizable property`, () => {
     expect(isTokenizableProperty('width')).toBe(false);
+  });
+});
+
+describe('convertPathToURI', () => {
+  it('should convert a path to URI', () => {
+    expect(convertPathToURI('\\browser\\components')).toEqual(
+      '/browser/components',
+    );
   });
 });
 
@@ -183,5 +194,34 @@ describe('getPropagationData', () => {
     await expect(
       async () => await getPropagationData('whatever'),
     ).rejects.toThrow('test-error');
+  });
+});
+
+describe('getCssFilesList', () => {
+  beforeEach(() => {
+    jest.mock('node:fs/promises');
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should return correct css files data', async () => {
+    const fakeCSS = `.test {
+      width: 100px;
+      background-color: var(--whatever);
+      gap: --space-xsmall;
+      color: transparent;
+    }`;
+
+    fs.readFile = jest.fn().mockResolvedValue(fakeCSS);
+
+    const mockedFiles = ['foo/foo.css', 'bar/bar.css'];
+    const result = await getCssFilesList('../mozilla-unified', {
+      __glob: jest.fn(() => mockedFiles),
+    });
+    expect(result.length).toBe(2);
+    expect(result[0].fileURI).toMatch(/foo\/foo.css/);
+    expect(result[1].fileURI).toMatch(/bar\/bar.css/);
   });
 });
