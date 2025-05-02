@@ -41,5 +41,8 @@
       "prettier --write '**'",
       "eslint"
     ]
+  },
+  "overrides": {
+    "glob": "^11.0.1"
   }
 }
