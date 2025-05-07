@@ -11,7 +11,7 @@ import config from '../config.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function isVariableDefinition(property) {
-  return property?.startsWith('--');
+  return !!property?.startsWith?.('--');
 }
 
 export function isDesignTokenValue(value) {
@@ -125,13 +125,12 @@ export async function getPropagationData(filePath) {
  * @param {string[]} ignorePatterns - Glob patterns to ignore.
  * @returns {Promise<Object[]>} - A flat array of objects, each representing a CSS file.
  */
-async function getCssFilesList(
+export async function getCssFilesList(
   repoPath,
-  includePatterns = ['**/*.css'],
-  ignorePatterns = [],
+  { includePatterns = ['**/*.css'], ignorePatterns = [], __glob = glob } = {},
 ) {
   // Use glob to get matching files from each include pattern.
-  const files = await glob(includePatterns, {
+  const files = await __glob(includePatterns, {
     cwd: repoPath,
     absolute: true,
     ignore: ignorePatterns,
@@ -212,11 +211,10 @@ export function computeAverages(node) {
 
 if (process.argv[1] === import.meta.filename) {
   (async () => {
-    const cssFilesList = await getCssFilesList(
-      config.repoPath,
-      config.includePatterns,
-      config.ignorePatterns,
-    );
+    const cssFilesList = await getCssFilesList(config.repoPath, {
+      includePatterns: config.includePatterns,
+      ignorePatterns: config.ignorePatterns,
+    });
     const groupedByDir = groupFilesByDirectory(cssFilesList);
 
     if (groupedByDir) {

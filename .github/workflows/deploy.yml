@@ -49,8 +49,9 @@ jobs:
     - name: Install packages and build
       working-directory: ./awdty
       run: |
-        npm install-ci
+        npm ci
         npm run build
+        npm run test-ci
 
     - name: Upload build artifacts
       uses: actions/upload-pages-artifact@v3
