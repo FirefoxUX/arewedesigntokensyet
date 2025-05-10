@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'node:url';
 
 import { glob } from 'glob';
+import { minimatch } from 'minimatch';
 import postcss from 'postcss';
 
 import config from '../config.js';
@@ -36,6 +37,33 @@ export function convertPathToURI(path) {
   return encodeURI(path.replace(/\\/g, '/'));
 }
 
+async function parseCSS(filePath) {
+  const css = await fs.readFile(filePath);
+  return postcss.parse(css.toString());
+}
+
+export async function getVars(filePath) {
+  const root = await parseCSS(filePath);
+  const cssVars = {};
+
+  root.walk((node) => {
+    const isDesignToken = isDesignTokenValue(node.value);
+    const isExcluded = isExcludedValue(node.value);
+    if (isVariableDefinition(node.prop)) {
+      cssVars[node.prop] = {
+        value: node.value,
+        isDesignToken,
+        isExcludedValue: isExcluded,
+        isIndirectRef: true,
+        isExternal: true,
+        src: filePath,
+      };
+    }
+  });
+
+  return cssVars;
+}
+
 /*
  * Parse a CSS file looking for Design Tokens based on list provided from config.
  *
@@ -43,11 +71,33 @@ export function convertPathToURI(path) {
  */
 export async function getPropagationData(filePath) {
   const foundPropValues = [];
-  const foundVariables = {};
+  let foundVariables = {};
+
+  // If filePath matches a glob in externalFileMapping
+  // process the paths listed in the config and collect vars to be used
+  // to find other design token usage later.
+  for (const filePathPattern in config.externalVarMapping) {
+    if (minimatch(filePath, `**/${filePathPattern}`)) {
+      // console.debug(`matched ${filePath}`);
+      for (const externalFilePath of config.externalVarMapping[
+        filePathPattern
+      ]) {
+        const extFilePath = path.resolve(
+          path.join(config.repoPath, externalFilePath),
+        );
+        if (filePath === extFilePath) {
+          // console.debug(`Skipping ${extFilePath}`);
+          continue;
+        }
+        const extVars = await getVars(extFilePath);
+        foundVariables = { ...foundVariables, ...extVars };
+      }
+    }
+  }
+
   let designTokenCount = 0;
   try {
-    const css = await fs.readFile(filePath);
-    const root = postcss.parse(css.toString());
+    const root = await parseCSS(filePath);
 
     root.walk((node) => {
       const isDesignToken = isDesignTokenValue(node.value);
@@ -68,15 +118,14 @@ export async function getPropagationData(filePath) {
           designTokenCount++;
         }
       } else if (isVariableDefinition(node.prop)) {
-        if (isDesignToken || isExcluded) {
-          foundVariables[node.prop] = {
-            value: node.value,
-            isDesignToken,
-            isExcludedValue: isExcluded,
-            start: node.source.start,
-            end: node.source.end,
-          };
-        }
+        foundVariables[node.prop] = {
+          value: node.value,
+          isDesignToken,
+          isExcludedValue: isExcluded,
+          isIndirectRef: true,
+          start: node.source.start,
+          end: node.source.end,
+        };
       }
     });
 
@@ -89,8 +138,11 @@ export async function getPropagationData(filePath) {
           }
           decl.isDesignToken = foundVariables[variable].isDesignToken;
           decl.isExcludedValue = foundVariables[variable].isExcludedValue;
-          if (decl.isDesignToken === true || decl.isExcludedValue === true) {
-            decl.isIndirectRef = true;
+          decl.isExternalVar = foundVariables[variable].isExternal;
+          decl.isIndirectRef = foundVariables[variable].isIndirectRef;
+          decl.externalVarValue = foundVariables[variable].value;
+          if (decl.isExternalVar) {
+            decl.externalVarSrc = foundVariables[variable].src;
           }
           break;
         }
@@ -118,12 +170,14 @@ export async function getPropagationData(filePath) {
 }
 
 /**
- * Retrieves a flat list of CSS file objects.
+ * Retrieves a flat list of CSS file objects based on provided glob patterns.
  *
- * @param {string} repoPath - The root directory of your repository.
- * @param {string[]} includePatterns - Glob patterns to include (relative to repoPath).
- * @param {string[]} ignorePatterns - Glob patterns to ignore.
- * @returns {Promise<Object[]>} - A flat array of objects, each representing a CSS file.
+ * @param {string} repoPath - The root directory of the repository to search within.
+ * @param {Object} [options] - Optional settings for file matching.
+ * @param {string[]} [options.includePatterns=['**\/*.css']] - Glob patterns to include (relative to repoPath).
+ * @param {string[]} [options.ignorePatterns=[]] - Glob patterns to exclude from results.
+ * @param {Function} [options.__glob=glob] - Custom glob function, useful for testing or mocking.
+ * @returns {Promise<Object[]>} - A promise that resolves to a flat array of CSS file objects.
  */
 export async function getCssFilesList(
   repoPath,

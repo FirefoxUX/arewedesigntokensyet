@@ -81,21 +81,22 @@ code {
 }
 
 .high,
-.awdty-line-pass {
+.awdty-line-pass,
+.awdty-line-indirect-pass-current,
+.awdty-line-indirect-pass-external {
   background: rgb(60, 179, 113, 0.3);
-}
-
-.awdty-line-indirect-token-current {
-  background: rgb(102, 205, 255, 0.5);
 }
 
 .medium,
 .awdty-line-ignore,
-.awdty-line-indirect-ignore-current {
+.awdty-line-indirect-ignore-current,
+.awdty-line-indirect-ignore-external {
   background: rgba(255, 165, 0, 0.3);
 }
 
 .low,
-.awdty-line-fail {
+.awdty-line-fail,
+.awdty-line-indirect-fail-current,
+.awdty-line-indirect-fail-external {
   background: rgba(255, 0, 0, 0.3);
 }

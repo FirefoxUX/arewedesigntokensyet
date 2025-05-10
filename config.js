@@ -21,6 +21,12 @@ export default {
   designTokenProperties: [
     'background-color',
     'border',
+    'border-block-end',
+    'border-block-end-color',
+    'border-block-end-width',
+    'border-block-start',
+    'border-block-start-color',
+    'border-block-start-width',
     'border-top',
     'border-right',
     'border-bottom',
@@ -28,6 +34,10 @@ export default {
     'border-color',
     'border-width',
     'border-radius',
+    'border-top-left-radius',
+    'border-top-right-radius',
+    'border-bottom-left-radius',
+    'border-bottom-right-radius',
     'border-inline',
     'border-inline-color',
     'border-inline-end',
@@ -91,6 +101,23 @@ export default {
     'browser/extensions/newtab/css/**/*.css',
     'toolkit/content/widgets/**/*.css',
   ],
+  externalVarMapping: {
+    // For everything that matches the glob on the left hand side, get the vars from
+    // each file in the list on the right hand side. Files in the RHS list are ignored
+    // from the glob.
+    'browser/components/aboutlogins/content/components/*.css': [
+      'browser/components/aboutlogins/content/aboutLogins.css',
+    ],
+    'browser/components/firefoxview/*.css': [
+      'browser/components/firefoxview/firefoxview.css',
+    ],
+    'browser/components/sidebar/*.css': [
+      'browser/components/sidebar/sidebar.css',
+    ],
+    'toolkit/content/widgets/moz-box-*/*.css': [
+      'toolkit/content/widgets/moz-box-common.css',
+    ],
+  },
   // Paths in the repo matching these glob patterns will be ignored to avoid generating
   // coverage for storybook files, tests and node deps.
   ignorePatterns: ['**/test{,s}/**', '**/node_modules/**', '**/storybook/**'],
