@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'path';
 import config from '../config.js';
 import { minimatch } from 'minimatch';
@@ -18,6 +19,8 @@ import {
   classifyResolutionFromTrace,
   getResolvedVarOrigins,
 } from './resolutionUtils.js';
+
+import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
 
 /**
  * Main entry point: analyze a single CSS file for design token propagation.
@@ -113,7 +116,13 @@ function collectDeclarations(root, foundVariables, filePath) {
 /**
  * Applies resolution trace to each declaration and annotates with token usage info.
  */
-function resolveDeclarationReferences(declarations, foundVariables, filePath) {
+const tracker = new UnresolvedVarTracker();
+
+async function resolveDeclarationReferences(
+  declarations,
+  foundVariables,
+  filePath,
+) {
   for (const decl of declarations) {
     const trace = buildResolutionTrace(decl.value, foundVariables);
     const analysis = analyzeTrace(trace);
@@ -139,6 +148,9 @@ function resolveDeclarationReferences(declarations, foundVariables, filePath) {
       trace,
       foundVariables,
     );
+
+    tracker.addFromDeclaration(decl, filePath);
+
     decl.resolutionType = classifyResolutionFromTrace(
       trace,
       foundVariables,
@@ -146,6 +158,12 @@ function resolveDeclarationReferences(declarations, foundVariables, filePath) {
     );
     decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
   }
+
+  const unresolvedReport = tracker.toReport();
+  await fs.writeFile(
+    path.join('./src/data', 'unresolvedVars.json'),
+    JSON.stringify(unresolvedReport, null, 2),
+  );
 }
 
 /**
