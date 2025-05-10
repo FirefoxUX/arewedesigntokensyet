@@ -7,12 +7,22 @@ function isDesignToken(name) {
   return config.designTokenKeys.some((token) => name.includes(token));
 }
 
+function dedupeTrace(trace = []) {
+  const result = [];
+  for (let i = 0; i < trace.length; i++) {
+    if (i === 0 || trace[i] !== trace[i - 1]) {
+      result.push(trace[i]);
+    }
+  }
+  return result;
+}
+
 function buildHoverMessage(prop) {
   const messages = [];
 
   // Base classification
   if (prop.containsDesignToken) {
-    messages.push(`🏆 This value is using Design Tokens!`);
+    messages.push(`🏆 Nice use of Design Tokens!`);
   } else if (prop.containsExcludedValue) {
     messages.push(`🆗 This value is ignored.`);
   } else if (prop.resolutionType === 'direct') {
@@ -24,11 +34,11 @@ function buildHoverMessage(prop) {
   }
 
   // Trace
-  const cleanTrace = (prop.resolutionTrace || []).filter(
-    (v) => v !== 'MISSING',
-  );
+  const cleanTrace = dedupeTrace(prop.resolutionTrace || []);
   if (cleanTrace.length > 1) {
     messages.push(`🔁 Trace:\n  ${cleanTrace.join('\n  → ')}`);
+  } else if (cleanTrace.length === 1) {
+    messages.push(`🔹 Value: ${cleanTrace[0]}`);
   }
 
   // Design token display (explicit)
