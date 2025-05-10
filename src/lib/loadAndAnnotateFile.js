@@ -1,147 +1,111 @@
 import fs from 'node:fs/promises';
-import path from 'path';
 
 import config from '../../config.js';
-
 import { codeToHtml } from 'shiki';
 
-/*
- * Async function to return CSS content, annotated with HTML markup for display.
- *
- * @param {string} filePath. The path to a file to load that should be copied and annotated for display.
- * @param {Array} foundPropValues. The list of objects that contain CSS properties that should be found and annotated.
- * @returns {<Promise<string>} A string to be rendered.
- *
- */
-export default async function (filePath, foundPropValues) {
-  try {
-    const content = await fs.readFile(filePath, 'utf8');
-    const namespace = 'awdty';
+function isDesignToken(name) {
+  return config.designTokenKeys.some((token) => name.includes(token));
+}
 
-    const strings = {
-      ignore: {
-        modifier: 'ignore',
-        title: 'This value is ignored by our rules 👌',
-      },
-      'indirect-ignore': {
-        modifier: 'indirect-ignore-current',
-        title:
-          'This property value resolves to an ignored value 👌\n{{ value }}',
-      },
-      'indirect-ignore-external': {
-        modifier: 'indirect-ignore-external',
-        title:
-          'This property value resolves to an ignored value in an external file 👌\n{{ value }}\n{{ file }}',
-      },
-      pass: {
-        modifier: 'pass',
-        title: 'This value is using a design token ❤️',
-      },
-      'indirect-pass': {
-        modifier: 'indirect-pass-current',
-        title:
-          'This property value resolves to a design token in the current file ❤️\n {{ value }}',
-      },
-      'indirect-pass-external': {
-        modifier: 'indirect-pass-external',
-        title:
-          'This property value resolves to a design token in an external file ❤️\n{{ value }}\n{{ file }}',
-      },
-      fail: {
-        modifier: 'fail',
-        title: `This value doesn't directly use a design token 😔`,
-      },
-      'indirect-fail': {
-        modifier: 'indirect-fail-current',
-        title:
-          'This property value does not resolve to a design token 😔\n{{ value }}',
-      },
-      'indirect-fail-external': {
-        modifier: 'indirect-fail-external',
-        title:
-          'This property value does not resolve to a design token 😔\n{{ value }}\n{{ file }}',
-      },
-    };
+function buildHoverMessage(prop) {
+  const messages = [];
 
-    const decorations = [];
-    for (const entry of foundPropValues) {
-      const {
-        containsDesignToken,
-        isIndirectRef,
-        containsExcludedValue,
-        isExternalVar,
-      } = entry;
+  // Base classification
+  if (prop.containsDesignToken) {
+    messages.push(`🏆 This value is using Design Tokens!`);
+  } else if (prop.containsExcludedValue) {
+    messages.push(`🆗 This value is ignored.`);
+  } else if (prop.resolutionType === 'direct') {
+    messages.push(
+      `❌ Direct value should use a design token\nValue: ${prop.value}`,
+    );
+  } else {
+    messages.push(`❌ Indirect value not using a design token`);
+  }
 
-      let decorationData = strings.fail;
-      if (
-        !containsExcludedValue &&
-        isIndirectRef &&
-        !containsDesignToken &&
-        !isExternalVar
-      ) {
-        decorationData = strings['indirect-fail'];
-      } else if (
-        !containsExcludedValue &&
-        isIndirectRef &&
-        !containsDesignToken &&
-        isExternalVar
-      ) {
-        decorationData = strings['indirect-fail-external'];
-      } else if (
-        containsExcludedValue &&
-        isIndirectRef &&
-        !containsDesignToken &&
-        isExternalVar
-      ) {
-        decorationData = strings['indirect-ignore-external'];
-      } else if (
-        containsExcludedValue &&
-        isIndirectRef &&
-        !containsDesignToken
-      ) {
-        decorationData = strings['indirect-ignore'];
-      } else if (containsDesignToken && isIndirectRef && isExternalVar) {
-        decorationData = strings['indirect-pass-external'];
-      } else if (containsDesignToken && isIndirectRef) {
-        decorationData = strings['indirect-pass'];
-      } else if (containsDesignToken) {
-        decorationData = strings.pass;
-      } else if (!containsDesignToken && containsExcludedValue) {
-        decorationData = strings.ignore;
+  // Trace
+  const cleanTrace = (prop.resolutionTrace || []).filter(
+    (v) => v !== 'MISSING',
+  );
+  if (cleanTrace.length > 1) {
+    messages.push(`🔁 Trace:\n  ${cleanTrace.join('\n  → ')}`);
+  }
+
+  // Design token display (explicit)
+  if (prop.containsDesignToken) {
+    const tokenVars = new Set();
+    for (const step of prop.resolutionTrace || []) {
+      const matches = step.match(/--[\w-]+/g) || [];
+      for (const m of matches) {
+        if (isDesignToken(m)) tokenVars.add(m);
       }
-
-      decorations.push({
-        start: {
-          line: entry.start.line - 1,
-          character: entry.start.column - 1,
-        },
-        end: { line: entry.end.line - 1, character: entry.end.column - 1 },
-        properties: {
-          class: `${namespace}-line-${decorationData.modifier}`,
-          title: decorationData.title
-            .replace(
-              '{{ value }}',
-              entry.resolvedVarValue ? `value: ${entry.resolvedVarValue}` : '',
-            )
-            .replace(
-              '{{ file }}',
-              entry.externalVarSrc
-                ? `src: ${path.relative(config.repoPath, entry.externalVarSrc)}`
-                : '',
-            ),
-        },
-      });
     }
 
-    const html = await codeToHtml(content, {
-      theme: 'slack-ochin',
-      lang: 'css',
-      decorations,
-    });
-
-    return html;
-  } catch (e) {
-    console.log(e);
-    return 'Could not load file.';
+    if (tokenVars.size) {
+      messages.push(`🎨 Tokens Used:\n  ${[...tokenVars].join('\n  ')}`);
+    }
   }
+
+  // External sources
+  if (prop.resolutionSources?.length && prop.resolutionType !== 'direct') {
+    messages.push(`📁 From:\n  ${prop.resolutionSources.join('\n  ')}`);
+  }
+
+  // Only non-token unresolved vars
+  const unresolved = (prop.unresolvedVariables || []).filter(
+    (v) => !isDesignToken(v),
+  );
+  if (unresolved.length) {
+    messages.push(`⚠️ Unresolved:\n  ${unresolved.join('\n  ')}`);
+  }
+
+  return messages.join('\n\n');
+}
+
+/**
+ * Loads and annotates a CSS file with inline highlights for token usage.
+ *
+ * @param {string} filePath - Absolute path to the CSS file.
+ * @param {Array} foundPropValues - List of analyzed declarations.
+ * @returns {Promise<string>} - Annotated syntax-highlighted HTML.
+ */
+export default async function loadAndAnnotateFile(filePath, foundPropValues) {
+  const content = await fs.readFile(filePath, 'utf8');
+
+  const decorations = [];
+
+  for (const prop of foundPropValues) {
+    const { start, end, resolutionType } = prop;
+    if (!start || !end) continue;
+
+    const status = prop.containsDesignToken
+      ? 'good'
+      : prop.containsExcludedValue
+        ? 'warn'
+        : 'bad';
+
+    decorations.push({
+      start: {
+        line: start.line - 1,
+        character: start.column - 1,
+      },
+      end: {
+        line: end.line - 1,
+        character: end.column - 1,
+      },
+      properties: {
+        class: `awdty--${resolutionType}`,
+        title: buildHoverMessage(prop),
+        'data-status': status,
+      },
+    });
+  }
+
+  const html = await codeToHtml(content, {
+    lang: 'css',
+    theme: 'slack-ochin',
+    decorations,
+  });
+
+  return html;
 }
