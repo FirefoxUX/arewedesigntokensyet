@@ -4,8 +4,8 @@ import { jest } from '@jest/globals';
 
 import {
   isVariableDefinition,
-  isDesignTokenValue,
-  isExcludedValue,
+  containsDesignTokenValue,
+  containsExcludedValue,
   isTokenizableProperty,
   convertPathToURI,
   getPropagationData,
@@ -34,43 +34,43 @@ describe('isVariableDefinition', () => {
   });
 });
 
-describe('isDesignTokenValue', () => {
+describe('containsDesignTokenValue', () => {
   it(`should be true for '--space-xsmall'`, () => {
-    expect(isDesignTokenValue('var(--space-xsmall)')).toBe(true);
+    expect(containsDesignTokenValue('var(--space-xsmall)')).toBe(true);
   });
 
   it(`should be true for a mixed value`, () => {
-    expect(isDesignTokenValue('4px var(--space-xsmall)')).toBe(true);
+    expect(containsDesignTokenValue('4px var(--space-xsmall)')).toBe(true);
   });
 
   it(`should not be true for a value that has no tokens present`, () => {
-    expect(isDesignTokenValue('4px 4px')).toBe(false);
+    expect(containsDesignTokenValue('4px 4px')).toBe(false);
   });
 
   it(`should not be true for an ignored value`, () => {
-    expect(isDesignTokenValue('unset')).toBe(false);
+    expect(containsDesignTokenValue('unset')).toBe(false);
   });
 });
 
-describe('isExcludedValue', () => {
+describe('containsExcludedValue', () => {
   it('should ignore unset', () => {
-    expect(isExcludedValue('unset')).toBe(true);
+    expect(containsExcludedValue('unset')).toBe(true);
   });
 
   it('should ignore 0', () => {
-    expect(isExcludedValue('0')).toBe(true);
+    expect(containsExcludedValue('0')).toBe(true);
   });
 
   it('should ignore an a pattern match for calc()', () => {
-    expect(isExcludedValue('calc(100vh - 100px)')).toBe(true);
+    expect(containsExcludedValue('calc(100vh - 100px)')).toBe(true);
   });
 
   it('should ignore a pattern match for max()', () => {
-    expect(isExcludedValue('max(20vw, 400px)')).toBe(true);
+    expect(containsExcludedValue('max(20vw, 400px)')).toBe(true);
   });
 
   it('should not ignore a hard-coded value', () => {
-    expect(isExcludedValue('400px')).toBe(false);
+    expect(containsExcludedValue('400px')).toBe(false);
   });
 });
 
@@ -120,14 +120,14 @@ describe('getPropagationData', () => {
     expect(result.foundProps).toEqual(2);
 
     // Uses a random var so these will be false
-    expect(result.foundPropValues[0].isDesignToken).toBe(false);
-    expect(result.foundPropValues[0].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[0].containsDesignToken).toBe(false);
+    expect(result.foundPropValues[0].containsExcludedValue).toBe(false);
     expect(result.foundPropValues[0].isIndirectRef).toBe(false);
 
     // Uses space token so should be true.
-    expect(result.foundPropValues[1].isDesignToken).toBe(true);
+    expect(result.foundPropValues[1].containsDesignToken).toBe(true);
     // These will be false.
-    expect(result.foundPropValues[1].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[1].containsExcludedValue).toBe(false);
     expect(result.foundPropValues[1].isIndirectRef).toBe(false);
   });
 
@@ -148,8 +148,8 @@ describe('getPropagationData', () => {
     expect(result.foundProps).toEqual(3);
 
     // Uses an ignored value.
-    expect(result.foundPropValues[2].isDesignToken).toBe(false);
-    expect(result.foundPropValues[2].isExcludedValue).toBe(true);
+    expect(result.foundPropValues[2].containsDesignToken).toBe(false);
+    expect(result.foundPropValues[2].containsExcludedValue).toBe(true);
     expect(result.foundPropValues[2].isIndirectRef).toBe(false);
 
     // 2 of 3 expected props are pointing at design tokens or
@@ -177,12 +177,12 @@ describe('getPropagationData', () => {
     expect(result.foundProps).toEqual(3);
 
     // background-color points to a design token via the var --whatever.
-    expect(result.foundPropValues[0].isDesignToken).toBe(true);
-    expect(result.foundPropValues[0].isExcludedValue).toBe(false);
+    expect(result.foundPropValues[0].containsDesignToken).toBe(true);
+    expect(result.foundPropValues[0].containsExcludedValue).toBe(false);
     expect(result.foundPropValues[0].isIndirectRef).toBe(true);
 
     // The variable pointing at --space-xsmall is recorded.
-    expect(result.foundVariables['--whatever'].isDesignToken).toBe(true);
+    expect(result.foundVariables['--whatever'].containsDesignToken).toBe(true);
 
     // 3 of 3 expected props all are pointing at design tokens or
     // excluded values so this should be 100%

@@ -65,39 +65,48 @@ export default async function (filePath, foundPropValues) {
 
     const decorations = [];
     for (const entry of foundPropValues) {
-      const { isDesignToken, isIndirectRef, isExcludedValue, isExternalVar } =
-        entry;
+      const {
+        containsDesignToken,
+        isIndirectRef,
+        containsExcludedValue,
+        isExternalVar,
+      } = entry;
+
       let decorationData = strings.fail;
       if (
-        !isExcludedValue &&
+        !containsExcludedValue &&
         isIndirectRef &&
-        !isDesignToken &&
+        !containsDesignToken &&
         !isExternalVar
       ) {
         decorationData = strings['indirect-fail'];
       } else if (
-        !isExcludedValue &&
+        !containsExcludedValue &&
         isIndirectRef &&
-        !isDesignToken &&
+        !containsDesignToken &&
         isExternalVar
       ) {
         decorationData = strings['indirect-fail-external'];
       } else if (
-        isExcludedValue &&
+        containsExcludedValue &&
         isIndirectRef &&
-        !isDesignToken &&
+        !containsDesignToken &&
         isExternalVar
       ) {
         decorationData = strings['indirect-ignore-external'];
-      } else if (isExcludedValue && isIndirectRef && !isDesignToken) {
+      } else if (
+        containsExcludedValue &&
+        isIndirectRef &&
+        !containsDesignToken
+      ) {
         decorationData = strings['indirect-ignore'];
-      } else if (isDesignToken && isIndirectRef && isExternalVar) {
+      } else if (containsDesignToken && isIndirectRef && isExternalVar) {
         decorationData = strings['indirect-pass-external'];
-      } else if (isDesignToken && isIndirectRef) {
+      } else if (containsDesignToken && isIndirectRef) {
         decorationData = strings['indirect-pass'];
-      } else if (isDesignToken) {
+      } else if (containsDesignToken) {
         decorationData = strings.pass;
-      } else if (!isDesignToken && isExcludedValue) {
+      } else if (!containsDesignToken && containsExcludedValue) {
         decorationData = strings.ignore;
       }
 
@@ -112,7 +121,7 @@ export default async function (filePath, foundPropValues) {
           title: decorationData.title
             .replace(
               '{{ value }}',
-              entry.externalVarValue ? `value: ${entry.externalVarValue}` : '',
+              entry.resolvedVarValue ? `value: ${entry.resolvedVarValue}` : '',
             )
             .replace(
               '{{ file }}',

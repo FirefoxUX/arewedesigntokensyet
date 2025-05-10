@@ -64,6 +64,7 @@ export default {
     'inset-inline-end',
     'inset-inline-start',
     'gap',
+    'grid-gap', // Deprecated in favour of gap but still used.
     'margin',
     'margin-block',
     'margin-block-end',
@@ -116,6 +117,9 @@ export default {
     ],
     'toolkit/content/widgets/moz-box-*/*.css': [
       'toolkit/content/widgets/moz-box-common.css',
+    ],
+    'toolkit/content/widgets/moz-page-nav/*.css': [
+      'toolkit/content/widgets/moz-page-nav/moz-page-nav.css',
     ],
   },
   // Paths in the repo matching these glob patterns will be ignored to avoid generating

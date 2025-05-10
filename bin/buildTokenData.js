@@ -15,11 +15,11 @@ export function isVariableDefinition(property) {
   return !!property?.startsWith?.('--');
 }
 
-export function isDesignTokenValue(value) {
+export function containsDesignTokenValue(value) {
   return config.designTokenKeys.some((item) => value?.includes(item));
 }
 
-export function isExcludedValue(value) {
+export function containsExcludedValue(value) {
   return config.excludedCSSValues.some((item) => {
     if (item instanceof RegExp) {
       return item.test(value);
@@ -42,26 +42,117 @@ async function parseCSS(filePath) {
   return postcss.parse(css.toString());
 }
 
-export async function getVars(filePath) {
+function getVarData(node, { isExternal = false, filePath = null } = {}) {
+  const containsDesignToken = containsDesignTokenValue(node.value);
+  const containsExcluded = containsExcludedValue(node.value);
+  const data = {
+    value: node.value,
+    containsDesignToken,
+    containsExcludedValue: containsExcluded,
+    isIndirectRef: true,
+    isExternal,
+    start: node.source.start,
+    end: node.source.end,
+  };
+  if (isExternal && filePath) {
+    data.src = filePath;
+  }
+  return data;
+}
+
+export async function getExternalVars(filePath) {
   const root = await parseCSS(filePath);
   const cssVars = {};
 
   root.walk((node) => {
-    const isDesignToken = isDesignTokenValue(node.value);
-    const isExcluded = isExcludedValue(node.value);
-    if (isVariableDefinition(node.prop)) {
-      cssVars[node.prop] = {
-        value: node.value,
-        isDesignToken,
-        isExcludedValue: isExcluded,
-        isIndirectRef: true,
-        isExternal: true,
-        src: filePath,
-      };
+    if (isVariableDefinition(node.prop) && isWithinValidParentSelector(node)) {
+      cssVars[node.prop] = getVarData(node, { isExternal: true, filePath });
     }
   });
 
   return cssVars;
+}
+
+function isWithinValidParentSelector(node) {
+  const selectorRegExp = /(?:^:root$|^:host$)/i;
+  const parent = node.parent;
+  return (
+    parent.type === 'rule' &&
+    parent.selector.split(',').some((item) => selectorRegExp.test(item))
+  );
+}
+
+/**
+ * From: https://searchfox.org/mozilla-central/rev/9305025f453b8eedbd0bd38c87c54be73e3cd064/devtools/client/inspector/rules/utils/utils.js#314-336
+ * Returns an array of CSS variables used in a CSS property value.
+ * If no CSS variables are used, returns an empty array.
+ *
+ * @param {String} propertyValue
+ *        CSS property value (e.g. "1px solid var(--color, blue)")
+ * @return {Array}
+ *         List of variable names (e.g. ["--color"])
+ *
+ */
+function getCSSVariables(propertyValue = '') {
+  const variables = [];
+  const parts = propertyValue.split(/var\(\s*--/);
+
+  if (parts.length) {
+    // Skip first part. It is the substring before the first occurence of "var(--"
+    for (let i = 1; i < parts.length; i++) {
+      // Split the part by any of the following characters expected after a variable name:
+      // comma, closing parenthesis or whitespace.
+      // Take just the first match. Anything else is either:
+      // - the fallback value, ex: ", blue" from "var(--color, blue)"
+      // - the closing parenthesis, ex: ")" from "var(--color)"
+      const variable = parts[i].split(/[,)\s+]/).shift();
+      if (variable) {
+        // Add back the double-dash. The initial string was split by "var(--"
+        variables.push(`--${variable}`);
+      }
+    }
+  }
+
+  return variables;
+}
+
+function resolveKnownVars(foundVariables) {
+  for (const variable in foundVariables) {
+    const varData = foundVariables[variable];
+    if (!varData.resolvedValues) {
+      varData.resolvedValues = [];
+    }
+
+    function resolver(val, varData) {
+      const parsedVars = getCSSVariables(val);
+
+      for (const parsedVar of parsedVars) {
+        /*
+        if (containsDesignTokenValue(parsedVar)) {
+          // Write this back to the top level.
+          foundVariables[variable].containsDesignToken = true;
+          continue;
+        }
+        if (containsExcludedValue(parsedVar)) {
+          // Write this back to the top level.
+          foundVariables[variable].containsExcludedValue = true;
+        }*/
+        const foundRef = foundVariables[parsedVar];
+        if (foundRef) {
+          varData.resolvedValues.push([parsedVar, foundRef]);
+          if (foundRef.value.includes('--')) {
+            resolver(foundRef.value, varData);
+          }
+        } else {
+          varData.resolvedValues.push([parsedVar, 'MISSING']);
+        }
+      }
+    }
+
+    resolver(varData.value, varData);
+  }
+  // console.log(JSON.stringify(foundVariables, null, 4));
+  return foundVariables;
 }
 
 /*
@@ -78,18 +169,20 @@ export async function getPropagationData(filePath) {
   // to find other design token usage later.
   for (const filePathPattern in config.externalVarMapping) {
     if (minimatch(filePath, `**/${filePathPattern}`)) {
-      // console.debug(`matched ${filePath}`);
       for (const externalFilePath of config.externalVarMapping[
         filePathPattern
       ]) {
         const extFilePath = path.resolve(
           path.join(config.repoPath, externalFilePath),
         );
+        // Don't extract vars if we're looking at the same file.
         if (filePath === extFilePath) {
-          // console.debug(`Skipping ${extFilePath}`);
+          console.log(`Skipping var extraction from ${externalFilePath}`);
           continue;
         }
-        const extVars = await getVars(extFilePath);
+        const extVars = await getExternalVars(extFilePath);
+        // TODO: note that this will override keys so the last found wins.
+        // We are logging this for local vars.
         foundVariables = { ...foundVariables, ...extVars };
       }
     }
@@ -100,60 +193,80 @@ export async function getPropagationData(filePath) {
     const root = await parseCSS(filePath);
 
     root.walk((node) => {
-      const isDesignToken = isDesignTokenValue(node.value);
-      const isExcluded = isExcludedValue(node.value);
+      const containsDesignToken = containsDesignTokenValue(node.value);
+      const containsExcluded = containsExcludedValue(node.value);
 
       if (isTokenizableProperty(node.prop)) {
         foundPropValues.push({
           property: node.prop,
           value: node.value,
-          isDesignToken,
-          isExcludedValue: isExcluded,
+          containsDesignToken,
+          containsExcludedValue: containsExcluded,
           isIndirectRef: false,
           start: node.source.start,
           end: node.source.end,
         });
-
-        if (isDesignToken || isExcluded) {
-          designTokenCount++;
+      } else if (
+        isVariableDefinition(node.prop) &&
+        isWithinValidParentSelector(node)
+      ) {
+        // Existing keys here will not be overidden!
+        if (foundVariables[node.prop]) {
+          console.log(
+            `${path.relative(config.repoPath, filePath)}:${node.source.start.line} "${node.prop}" already exists, skipping...`,
+          );
         }
-      } else if (isVariableDefinition(node.prop)) {
-        foundVariables[node.prop] = {
-          value: node.value,
-          isDesignToken,
-          isExcludedValue: isExcluded,
-          isIndirectRef: true,
-          start: node.source.start,
-          end: node.source.end,
-        };
+        // Vars in the current file will be collected but not marked as external.
+        if (!foundVariables[node.prop]) {
+          foundVariables[node.prop] = getVarData(node, { isExternal: false });
+        }
       }
     });
+
+    // Now that we have collected all vars we should look to recursively resolve them we we can.
+    // TODO: Consider collecting what can't be resolved.
+    foundVariables = resolveKnownVars(foundVariables);
 
     for (const decl of foundPropValues) {
       for (const variable in foundVariables) {
         if (decl.value.includes(`var(${variable})`)) {
-          // Only count it now if it wasn't previously counted.
-          if (decl.isDesignToken === false && decl.isExcludedValue === false) {
-            designTokenCount++;
-          }
-          decl.isDesignToken = foundVariables[variable].isDesignToken;
-          decl.isExcludedValue = foundVariables[variable].isExcludedValue;
-          decl.isExternalVar = foundVariables[variable].isExternal;
-          decl.isIndirectRef = foundVariables[variable].isIndirectRef;
-          decl.externalVarValue = foundVariables[variable].value;
+          const foundVar = foundVariables[variable];
+          decl.containsDesignToken = foundVar.containsDesignToken;
+          decl.containsExcludedValue = foundVar.containsExcludedValue;
+          decl.isExternalVar = foundVar.isExternal;
+          decl.isIndirectRef = foundVar.isIndirectRef;
+          decl.resolvedVarValue = foundVar.value;
+          decl.resolvedValues = foundVar.resolvedValues;
+
           if (decl.isExternalVar) {
-            decl.externalVarSrc = foundVariables[variable].src;
+            decl.externalVarSrc = foundVar.src;
           }
+
+          // Count resolved vars if we haven't already seen something
+          // showing up as a design token/excluded value.
+          for (const resolved of foundVar.resolvedValues) {
+            const resolvedVar = resolved[1];
+
+            if (resolvedVar?.containsDesignToken) {
+              decl.containsDesignToken = true;
+            }
+            if (resolvedVar?.containsExcludedValue) {
+              decl.containsExcludedValue = true;
+            }
+          }
+
           break;
         }
+      }
+
+      if (decl.containsDesignToken || decl.containsExcludedValue) {
+        designTokenCount++;
       }
     }
   } catch (e) {
     console.error(`Unable to read or parse ${filePath}`);
     throw new Error(e);
   }
-
-  // console.log(foundPropValues.length, designTokenCount);
 
   const percComplete =
     foundPropValues.length > 0
