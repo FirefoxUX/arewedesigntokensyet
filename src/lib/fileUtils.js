@@ -1,7 +1,16 @@
 import path from 'path';
 import { glob } from 'glob';
-import { convertPathToURI } from './pathUtils.js'; // we'll extract this helper too
 import { getPropagationData } from './propagationUtils.js';
+
+/**
+ * Converts a file path to a URI-safe path (e.g., for links or JSON keys).
+ *
+ * @param {string} pathStr
+ * @returns {string}
+ */
+export function convertPathToURI(pathStr) {
+  return encodeURI(pathStr.replace(/\\/g, '/'));
+}
 
 /**
  * Retrieves a flat list of CSS file objects with propagation analysis data.

@@ -34,7 +34,7 @@
     "start": "npm run eleventy:watch",
     "test-ci": "npm run lint && npm run prettier-ci && npm run test",
     "test": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --watch",
+    "test:watch": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --watch --no-coverage",
     "prepare": "husky"
   },
   "lint-staged": {

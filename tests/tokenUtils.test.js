@@ -5,7 +5,7 @@ import {
   isTokenizableProperty,
   getCSSVariables,
   isWithinValidParentSelector,
-} from '../bin/tokenUtils.js';
+} from '../src/lib/tokenUtils.js';
 
 describe('isVariableDefinition', () => {
   it('should return true for a CSS var', () => {

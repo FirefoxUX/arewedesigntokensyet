@@ -8,6 +8,6 @@ import postcss from 'postcss';
  * @returns {Promise<import('postcss').Root>}
  */
 export async function parseCSS(filePath) {
-  const cssBuffer = await fs.readFile(filePath);
-  return postcss.parse(cssBuffer.toString());
+  const css = await fs.readFile(filePath, 'utf8');
+  return postcss.parse(css);
 }

@@ -1,5 +1,5 @@
 import path from 'path';
-import config from '../config.js';
+import config from '../../config.js';
 
 /**
  * Tracks unresolved variables by file, excluding known design tokens.

@@ -11,7 +11,9 @@ export default defineConfig([
     files: ['**/*.test.js'],
     plugins: { jest: pluginJest },
     languageOptions: {
-      globals: pluginJest.environments.globals.globals,
+      globals: {
+        ...pluginJest.environments.globals.globals,
+      },
     },
     rules: {
       ...pluginJest.configs['flat/recommended'].rules,
@@ -28,6 +30,7 @@ export default defineConfig([
       globals: {
         console: 'readonly',
         process: 'readonly',
+        global: 'readonly',
       },
     },
   },

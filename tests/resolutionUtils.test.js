@@ -7,7 +7,7 @@ import {
   getResolvedVarOrigins,
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
-} from '../bin/resolutionUtils.js';
+} from '../src/lib/resolutionUtils.js';
 
 describe('buildResolutionTrace', () => {
   const foundVars = {

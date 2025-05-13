@@ -1,4 +1,4 @@
-import config from '../config.js';
+import config from '../../config.js';
 
 /**
  * Returns true if the property is a custom property (CSS variable).

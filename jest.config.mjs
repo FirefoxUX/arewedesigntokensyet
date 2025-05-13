@@ -5,6 +5,8 @@
 
 /** @type {import('jest').Config} */
 const config = {
+  roots: ['<rootDir>'],
+  modulePaths: ['<rootDir>'],
   // Automatically clear mock calls, instances, contexts and results before every test
   clearMocks: false,
 
@@ -30,6 +32,11 @@ const config = {
 
   // A map from regular expressions to paths to transformers
   transform: {},
+
+  // Specify a setup file.
+  setupFilesAfterEnv: ['./jest.setup.js'],
+
+  injectGlobals: true,
 };
 
 export default config;

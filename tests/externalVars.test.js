@@ -1,16 +1,20 @@
 import fs from 'fs/promises';
 
-import { jest } from '@jest/globals';
-
-import { getVarData } from '../bin/externalVars.js';
-import { getExternalVars } from '../bin/externalVars.js';
+import { getVarData } from '../src/lib/externalVars.js';
+import { getExternalVars } from '../src/lib/externalVars.js';
 import config from '../config.js';
+
+const originalConfig = { ...config };
 
 describe('getVarData', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-primary'];
     config.excludedCSSValues = ['inherit'];
     config.repoPath = '/project';
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
   });
 
   test('marks design tokens and flags metadata correctly', () => {
@@ -46,9 +50,15 @@ describe('getVarData', () => {
 
 describe('getExternalVars', () => {
   beforeAll(() => {
-    config.designTokenKeys = ['--color-primary'];
-    config.excludedCSSValues = ['inherit'];
-    config.repoPath = '/project';
+    Object.assign(config, {
+      designTokenKeys: ['--color-primary'],
+      excludedCSSValues: ['inherit'],
+      repoPath: '/project',
+    });
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
   });
 
   beforeEach(() => {
@@ -71,8 +81,7 @@ describe('getExternalVars', () => {
       }
     `;
 
-    /* eslint-disable-next-line */
-    fs.readFile = jest.fn().mockResolvedValue(Buffer.from(css));
+    fs.readFile = jest.fn().mockResolvedValue(css);
 
     const result = await getExternalVars('/fake/path/tokens.css');
 
