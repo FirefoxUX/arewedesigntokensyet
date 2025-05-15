@@ -9,6 +9,14 @@ title: "Are we Design Tokens yet?"
 
 <p>Values that aren't likely to be set to design tokens are explicitly ignored.</p>
 
+<h2>Progress to Date</h2>
+<canvas id="propagationChart" width="800" height="400"></canvas>
+
+<script type="module">
+  import { renderPropagationChart } from '/graph/propagation-graph.js';
+  renderPropagationChart('propagationChart');
+</script>
+
 <h2>Paths</h2>
 
 <p><strong>Average Propagation: <span class="{{ totals.totalAveragePropagation | rangeClass }}">{{ totals.totalAveragePropagation }}%</span></strong></p>

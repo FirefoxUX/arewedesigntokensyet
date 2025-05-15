@@ -26,6 +26,9 @@ export default async function (eleventyConfig) {
   // Files that are passed through.
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
   eleventyConfig.addPassthroughCopy('./src/content/css/');
+  eleventyConfig.addPassthroughCopy({
+    './src/data/propagationHistory.json': 'data/propagationHistory.json',
+  });
 
   // Filters.
   eleventyConfig.addFilter('slug', (str) =>

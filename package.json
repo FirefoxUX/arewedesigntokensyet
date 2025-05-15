@@ -11,6 +11,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
+    "chart.js": "^4.4.9",
     "concurrently": "^9.1.2",
     "eleventy-auto-cache-buster": "^0.8.1",
     "esbuild": "^0.25.4",

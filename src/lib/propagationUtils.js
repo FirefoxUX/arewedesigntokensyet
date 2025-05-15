@@ -49,7 +49,7 @@ export async function getPropagationData(filePath) {
       foundVariables,
     };
   } catch (err) {
-    console.error(`Unable to read or parse ${filePath}`);
+    console.error(`Unable to read or parse ${filePath} ${err.message}`);
     throw new Error(err);
   }
 }
@@ -66,12 +66,21 @@ async function collectExternalVars(filePath) {
         const externalAbsPath = path.resolve(
           path.join(config.repoPath, externalRelPath),
         );
+
         if (externalAbsPath === filePath) {
           console.log(`Skipping var extraction from ${externalRelPath}`);
           continue;
         }
 
-        const extVars = await getExternalVars(externalAbsPath);
+        let extVars = {};
+        try {
+          await fs.access(externalAbsPath, fs.constants.R_OK);
+          extVars = await getExternalVars(externalAbsPath);
+        } catch (e) {
+          console.log(
+            `${externalRelPath} doesn't exist, skipping... ${e.message}`,
+          );
+        }
         foundVariables = { ...foundVariables, ...extVars };
       }
     }

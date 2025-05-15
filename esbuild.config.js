@@ -3,10 +3,10 @@ import { context } from 'esbuild';
 const watchMode = process.argv.includes('--watch');
 
 const ctx = await context({
-  entryPoints: ['./src/components/main.js'],
+  entryPoints: ['./src/components/main.js', './src/graph/propagation-graph.js'],
   bundle: true,
   format: 'esm',
-  outfile: './build/components/awdty.bundle.js',
+  outdir: './build/',
   sourcemap: true,
   minify: true,
   target: 'es2020',
