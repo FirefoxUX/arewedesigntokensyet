@@ -27,6 +27,7 @@ export async function renderPropagationChart(canvasId) {
           pointRadius: 4,
         },
       ],
+      originalData: data,
     },
     options: {
       scales: {
@@ -42,6 +43,22 @@ export async function renderPropagationChart(canvasId) {
       responsive: true,
       plugins: {
         legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              const percentage = ctx.parsed.y.toFixed(2);
+              const entry = ctx.chart.data.originalData?.[ctx.dataIndex];
+              const delta = entry?.delta;
+
+              let deltaStr = '';
+              if (typeof delta === 'number') {
+                const sign = delta > 0 ? '+' : '';
+                deltaStr = ` (${sign}${delta.toFixed(2)}%)`;
+              }
+              return `${percentage}%${deltaStr}`;
+            },
+          },
+        },
       },
     },
   });
