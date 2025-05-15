@@ -35,7 +35,7 @@ const config = {
   transform: {},
 
   // Specify a setup file.
-  setupFilesAfterEnv: ['./jest.setup.js'],
+  setupFilesAfterEnv: ['./jest.setup.js', '@testing-library/jest-dom'],
 
   injectGlobals: true,
 };

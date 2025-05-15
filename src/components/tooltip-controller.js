@@ -1,6 +1,6 @@
 /* globals window, document, requestAnimationFrame */
 
-function safeParseJSON(value, fallback = []) {
+export function safeParseJSON(value, fallback = []) {
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : fallback;
@@ -9,70 +9,111 @@ function safeParseJSON(value, fallback = []) {
   }
 }
 
-const tooltip = document.createElement('token-tooltip');
-tooltip.hidden = true;
-document.body.appendChild(tooltip);
+export class TooltipController {
+  constructor(tooltip = null) {
+    this.tooltip = tooltip || document.createElement('token-tooltip');
+    this.tooltip.hidden = true;
+    document.body.appendChild(this.tooltip);
 
-function showTooltip(triggerEl) {
-  const rect = triggerEl.getBoundingClientRect();
-  const scrollY = window.scrollY || document.documentElement.scrollTop;
-  const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    this._bound = false;
+  }
 
-  tooltip.status = triggerEl.dataset.status || '';
-  tooltip.trace = safeParseJSON(triggerEl.dataset.trace);
-  tooltip.source = safeParseJSON(triggerEl.dataset.source);
-  tooltip.unresolved = safeParseJSON(triggerEl.dataset.unresolved);
-  tooltip.tokens = safeParseJSON(triggerEl.dataset.tokens);
-  tooltip.style.top = `${rect.bottom + scrollY + 6}px`;
-  tooltip.style.left = `${rect.left + scrollX}px`;
-  tooltip.hidden = false;
-  tooltip.pinned = false;
+  show(triggerEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
 
-  requestAnimationFrame(() => {
-    const tipRect = tooltip.getBoundingClientRect();
-    const overflowRight = tipRect.right > window.innerWidth;
-    tooltip.classList.toggle('wrap', overflowRight);
-  });
-}
+    this.tooltip.status = triggerEl.dataset.status || 'bad';
+    this.tooltip.trace = safeParseJSON(triggerEl.dataset.trace);
+    this.tooltip.tokens = safeParseJSON(triggerEl.dataset.tokens);
+    this.tooltip.source = safeParseJSON(triggerEl.dataset.source);
+    this.tooltip.unresolved = safeParseJSON(triggerEl.dataset.unresolved);
 
-function hideTooltip() {
-  if (!tooltip.pinned) {
-    tooltip.hidden = true;
+    this.tooltip.style.top = `${rect.bottom + scrollY + 6}px`;
+    this.tooltip.style.left = `${rect.left + scrollX}px`;
+
+    this.tooltip.hidden = false;
+    this.tooltip.pinned = false;
+
+    requestAnimationFrame(() => {
+      const tipRect = this.tooltip.getBoundingClientRect();
+      const overflowRight = tipRect.right > window.innerWidth;
+      this.tooltip.classList.toggle('wrap', overflowRight);
+    });
+  }
+
+  hide() {
+    if (!this.tooltip.pinned) {
+      this.tooltip.hidden = true;
+    }
+  }
+
+  togglePinned() {
+    this.tooltip.pinned = !this.tooltip.pinned;
+    this.tooltip.hidden = !this.tooltip.pinned;
+  }
+
+  get element() {
+    return this.tooltip;
+  }
+
+  initGlobalEvents() {
+    if (this._bound) {
+      return;
+    }
+    this._bound = true;
+
+    this._onMouseOver = (e) => {
+      const el = e.target.closest('[data-status]');
+      el ? this.show(el) : this.hide();
+    };
+
+    this._onFocusIn = (e) => {
+      const el = e.target.closest('[data-status]');
+      if (el) {
+        this.show(el);
+      }
+    };
+
+    this._onFocusOut = () => this.hide();
+    this._onScroll = () => this.hide();
+
+    this._onClick = (e) => {
+      const isTrigger = e.target.closest('[data-status]');
+      if (isTrigger) {
+        e.preventDefault();
+        this.togglePinned();
+      } else {
+        this.tooltip.pinned = false;
+        this.tooltip.hidden = true;
+      }
+    };
+
+    this._onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        this.tooltip.pinned = false;
+        this.tooltip.hidden = true;
+      }
+    };
+
+    document.addEventListener('mouseover', this._onMouseOver);
+    document.addEventListener('focusin', this._onFocusIn);
+    document.addEventListener('focusout', this._onFocusOut);
+    document.addEventListener('scroll', this._onScroll, true);
+    document.addEventListener('click', this._onClick);
+    document.addEventListener('keydown', this._onKeyDown);
+  }
+
+  destroy() {
+    if (this._bound) {
+      document.removeEventListener('mouseover', this._onMouseOver);
+      document.removeEventListener('focusin', this._onFocusIn);
+      document.removeEventListener('focusout', this._onFocusOut);
+      document.removeEventListener('scroll', this._onScroll, true);
+      document.removeEventListener('click', this._onClick);
+      document.removeEventListener('keydown', this._onKeyDown);
+      this._bound = false;
+    }
+    this.tooltip.remove();
   }
 }
-
-document.addEventListener('mouseover', (e) => {
-  const el = e.target.closest('[data-status]');
-  if (el) {
-    showTooltip(el);
-  } else {
-    hideTooltip();
-  }
-});
-
-document.addEventListener('focusin', (e) => {
-  const el = e.target.closest('[data-status]');
-  if (el) {
-    showTooltip(el);
-  }
-});
-
-document.addEventListener('focusout', hideTooltip);
-document.addEventListener('scroll', hideTooltip, true);
-
-document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-status]')) {
-    e.preventDefault();
-    tooltip.pinned = !tooltip.pinned;
-  } else {
-    tooltip.pinned = false;
-    tooltip.hidden = true;
-  }
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    tooltip.pinned = false;
-    tooltip.hidden = true;
-  }
-});
