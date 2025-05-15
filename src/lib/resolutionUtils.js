@@ -21,13 +21,17 @@ export function buildResolutionTrace(initialValue, foundVariables) {
     const current = trace[trace.length - 1];
     const variables = getCSSVariables(current);
 
-    if (variables.length === 0) break;
+    if (variables.length === 0) {
+      break;
+    }
 
     let nextValue = current;
     let changed = false;
 
     for (const variable of variables) {
-      if (visited.has(variable)) continue;
+      if (visited.has(variable)) {
+        continue;
+      }
       visited.add(variable);
 
       const ref = foundVariables[variable];
@@ -39,7 +43,9 @@ export function buildResolutionTrace(initialValue, foundVariables) {
       }
     }
 
-    if (!changed || nextValue === current) break;
+    if (!changed || nextValue === current) {
+      break;
+    }
     trace.push(nextValue);
   }
 
@@ -93,7 +99,9 @@ export function getUnresolvedVariablesFromTrace(trace, foundVariables) {
   for (const val of trace) {
     const vars = getCSSVariables(val);
     for (const name of vars) {
-      if (seen.has(name)) continue;
+      if (seen.has(name)) {
+        continue;
+      }
       seen.add(name);
     }
   }
@@ -128,21 +136,29 @@ export function classifyResolutionFromTrace(
   }
 
   // No variables used at all → direct literal
-  if (allVars.size === 0) return 'direct';
+  if (allVars.size === 0) {
+    return 'direct';
+  }
 
   const sources = new Set();
 
   for (const varName of allVars) {
     const varData = foundVariables[varName];
 
-    if (!varData) continue;
+    if (!varData) {
+      continue;
+    }
 
     const isExternal = varData.src && varData.src !== currentFile;
     sources.add(isExternal ? 'external' : 'local');
   }
 
-  if (sources.has('local') && sources.has('external')) return 'mixed';
-  if (sources.has('external')) return 'external';
+  if (sources.has('local') && sources.has('external')) {
+    return 'mixed';
+  }
+  if (sources.has('external')) {
+    return 'external';
+  }
   return 'local';
 }
 
@@ -162,7 +178,9 @@ export function getResolvedVarOrigins(trace, foundVariables) {
 
     for (const name of vars) {
       const varData = foundVariables[name];
-      if (!varData?.src) continue;
+      if (!varData?.src) {
+        continue;
+      }
 
       // Skip if value isn't the one used in this trace step
       if (value.includes(`var(${name})`)) {

@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import config from '../config.js';
-import { getCssFilesList } from './fileUtils.js';
-import { groupFilesByDirectory } from './groupingUtils.js';
+import { getCssFilesList } from '../src/lib/fileUtils.js';
+import { groupFilesByDirectory } from '../src/lib/groupingUtils.js';
 
 // Support __dirname in ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

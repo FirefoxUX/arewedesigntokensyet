@@ -87,7 +87,9 @@ function collectDeclarations(root, foundVariables, filePath) {
   const declarations = [];
 
   root.walk((node) => {
-    if (!node.prop || !node.value) return;
+    if (!node.prop || !node.value) {
+      return;
+    }
 
     if (isTokenizableProperty(node.prop)) {
       declarations.push({

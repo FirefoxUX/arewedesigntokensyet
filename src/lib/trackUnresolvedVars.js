@@ -10,10 +10,14 @@ export class UnresolvedVarTracker {
   }
 
   addFromDeclaration(decl, filePath) {
-    if (!decl.unresolvedVariables?.length) return;
+    if (!decl.unresolvedVariables?.length) {
+      return;
+    }
 
     for (const varName of decl.unresolvedVariables) {
-      if (this._isDesignToken(varName)) continue;
+      if (this._isDesignToken(varName)) {
+        continue;
+      }
 
       if (!this._vars[varName]) {
         this._vars[varName] = new Set();

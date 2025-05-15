@@ -5,8 +5,13 @@ import pluginJest from 'eslint-plugin-jest';
 
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
+const globalRules = {
+  curly: 'error',
+  'arrow-body-style': 'off',
+};
+
 export default defineConfig([
-  globalIgnores(['**/*.min.js']),
+  globalIgnores(['**/*.min.js', 'build/**/*']),
   {
     files: ['**/*.test.js'],
     plugins: { jest: pluginJest },
@@ -17,6 +22,7 @@ export default defineConfig([
     },
     rules: {
       ...pluginJest.configs['flat/recommended'].rules,
+      ...globalRules,
     },
   },
   {
@@ -24,7 +30,7 @@ export default defineConfig([
     plugins: { js },
     extends: ['js/recommended', eslintConfigPrettier],
     rules: {
-      'arrow-body-style': 'off',
+      ...globalRules,
     },
     languageOptions: {
       globals: {

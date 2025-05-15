@@ -61,8 +61,7 @@ describe('loadAndAnnotateFile', () => {
 
     expect(html).toMatch(/var\(--color-primary\)/);
     expect(html).toMatch(/class="awdty--external"/);
-    expect(html).toMatch(/🏆 Nice use of Design Tokens/);
-    expect(html).toMatch(/Trace:/);
+    expect(html).toMatch(/data-trace/);
     expect(html).toMatch(/tokens\/colors\.css/);
   });
 
@@ -78,6 +77,5 @@ describe('loadAndAnnotateFile', () => {
     expect(html).toMatch(/padding/);
     expect(html).toMatch(/16/);
     expect(html).not.toMatch(/awdty--/);
-    expect(html).not.toMatch(/🏆 Nice use of Design Tokens/);
   });
 });

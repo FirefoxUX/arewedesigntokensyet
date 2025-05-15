@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises';
-
 import config from '../../config.js';
 import { codeToHtml } from 'shiki';
 
@@ -17,82 +16,49 @@ function dedupeTrace(trace = []) {
   return result;
 }
 
-function buildHoverMessage(prop) {
-  const messages = [];
+function getStatus(prop) {
+  return prop.containsDesignToken
+    ? 'good'
+    : prop.containsExcludedValue
+      ? 'warn'
+      : 'bad';
+}
 
-  // Base classification
-  if (prop.containsDesignToken) {
-    messages.push(`🏆 Nice use of Design Tokens!`);
-  } else if (prop.containsExcludedValue) {
-    messages.push(`🆗 This value is ignored.`);
-  } else if (prop.resolutionType === 'direct') {
-    messages.push(
-      `❌ Direct value should use a design token\nValue: ${prop.value}`,
-    );
-  } else {
-    messages.push(`❌ Indirect value not using a design token`);
-  }
+function extractTooltipData(prop) {
+  const status = getStatus(prop);
+  const trace = dedupeTrace(prop.resolutionTrace || []);
 
-  // Trace
-  const cleanTrace = dedupeTrace(prop.resolutionTrace || []);
-  if (cleanTrace.length > 1) {
-    messages.push(`🔁 Trace:\n  ${cleanTrace.join('\n  → ')}`);
-  } else if (cleanTrace.length === 1) {
-    messages.push(`🔹 Value: ${cleanTrace[0]}`);
-  }
-
-  // Design token display (explicit)
-  if (prop.containsDesignToken) {
-    const tokenVars = new Set();
-    for (const step of prop.resolutionTrace || []) {
-      const matches = step.match(/--[\w-]+/g) || [];
-      for (const m of matches) {
-        if (isDesignToken(m)) tokenVars.add(m);
-      }
-    }
-
-    if (tokenVars.size) {
-      messages.push(`🎨 Tokens Used:\n  ${[...tokenVars].join('\n  ')}`);
-    }
-  }
-
-  // External sources
-  if (prop.resolutionSources?.length && prop.resolutionType !== 'direct') {
-    messages.push(`📁 From:\n  ${prop.resolutionSources.join('\n  ')}`);
-  }
-
-  // Only non-token unresolved vars
   const unresolved = (prop.unresolvedVariables || []).filter(
     (v) => !isDesignToken(v),
   );
-  if (unresolved.length) {
-    messages.push(`⚠️ Unresolved:\n  ${unresolved.join('\n  ')}`);
+
+  const tokensUsed = new Set();
+  for (const step of trace) {
+    const matches = step.match(/--[\w-]+/g) || [];
+    for (const token of matches) {
+      if (isDesignToken(token)) {
+        tokensUsed.add(token);
+      }
+    }
   }
 
-  return messages.join('\n\n');
+  return {
+    status,
+    trace,
+    tokens: [...tokensUsed],
+    source: !prop.containsExcludedValue ? prop.resolutionSources || [] : [],
+    unresolved,
+  };
 }
 
-/**
- * Loads and annotates a CSS file with inline highlights for token usage.
- *
- * @param {string} filePath - Absolute path to the CSS file.
- * @param {Array} foundPropValues - List of analyzed declarations.
- * @returns {Promise<string>} - Annotated syntax-highlighted HTML.
- */
 export default async function loadAndAnnotateFile(filePath, foundPropValues) {
   const content = await fs.readFile(filePath, 'utf8');
-
   const decorations = [];
 
   for (const prop of foundPropValues) {
     const { start, end, resolutionType } = prop;
-    if (!start || !end) continue;
 
-    const status = prop.containsDesignToken
-      ? 'good'
-      : prop.containsExcludedValue
-        ? 'warn'
-        : 'bad';
+    const tooltipData = extractTooltipData(prop);
 
     decorations.push({
       start: {
@@ -105,8 +71,14 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
       },
       properties: {
         class: `awdty--${resolutionType}`,
-        title: buildHoverMessage(prop),
-        'data-status': status,
+        'data-status': tooltipData.status,
+        'data-trace': JSON.stringify(tooltipData.trace),
+        'data-tokens': JSON.stringify(tooltipData.tokens),
+        'data-source': JSON.stringify(tooltipData.source),
+        'data-unresolved': JSON.stringify(tooltipData.unresolved),
+        tabindex: '0',
+        role: 'button',
+        'aria-describedby': 'token-tooltip',
       },
     });
   }
