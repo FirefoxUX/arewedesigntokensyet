@@ -1,11 +1,22 @@
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 
-build({
-  entryPoints: ['src/components/token-tooltip.js'],
+const watchMode = process.argv.includes('--watch');
+
+const ctx = await context({
+  entryPoints: ['./src/components/main.js'],
   bundle: true,
   format: 'esm',
-  outfile: 'build/components/token-tooltip.bundle.js',
+  outfile: './build/components/awdty.bundle.js',
   sourcemap: true,
   minify: true,
   target: 'es2020',
-}).catch(() => process.exit(1));
+});
+
+if (watchMode) {
+  console.log('Esbuild: 👀 Watching...');
+  await ctx.watch();
+} else {
+  await ctx.rebuild();
+  console.log('Esbuild: ✅ Build complete');
+  ctx.dispose();
+}

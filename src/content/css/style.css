@@ -63,26 +63,32 @@ code {
   font-size: 1.1em;
 }
 
-/* Add line-numbers and adjust font-size
-code {
-  font-size: 1.1em;
-  counter-reset: step;
-  counter-increment: step 0;
+.line {
+  display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-  & .line::before {
-    content: counter(step);
-    counter-increment: step;
-    width: 1rem;
-    margin-right: 1.5rem;
-    display: inline-block;
-    text-align: right;
-    color: rgba(115, 138, 148, 0.6);
-  }
+.line-number-trigger {
+  display: inline-block;
+  width: 2em;
+  margin-right: 0.5em;
+  color: #888;
+  font-size: 0.75em;
+  text-align: right;
+  user-select: none;
+  cursor: pointer;
+}
 
-  & .line:last-child::before {
-    content: none;
-  }
-}*/
+.line-number-trigger:hover {
+  color: #007aff;
+  text-decoration: underline;
+}
+
+.highlighted-line {
+  user-select: none;
+  background: rgba(255, 255, 0, 0.2);
+}
 
 .high {
   background: rgb(60, 179, 113, 0.3);

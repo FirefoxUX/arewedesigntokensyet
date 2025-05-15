@@ -86,7 +86,26 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
   const html = await codeToHtml(content, {
     lang: 'css',
     theme: 'slack-ochin',
+    // Turn off the tabindex added to the shiki generated <pre>.
+    tabindex: false,
     decorations,
+    transformers: [
+      {
+        line(node, line) {
+          // Add a unique ID and a data attribute
+          const existing = node.properties.class;
+          const existingClassList = Array.isArray(existing)
+            ? existing
+            : typeof existing === 'string'
+              ? existing.split(' ')
+              : [];
+
+          node.properties.id = `L${line}`;
+          node.properties['data-line'] = String(line);
+          node.properties.class = [...existingClassList, 'line-numbered'];
+        },
+      },
+    ],
   });
 
   return html;

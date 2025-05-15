@@ -12,6 +12,11 @@ const inputDir = path.relative(__dirname, 'src/content');
 const outputDir = path.relative(__dirname, 'build');
 
 export default async function (eleventyConfig) {
+  // Tell 11ty to reload if the bundle put there by esbuild changes.
+  eleventyConfig.setServerOptions({
+    watch: ['build/**/*.bundle.js'],
+  });
+
   // Plugins.
   eleventyConfig.addPlugin(EleventyHtmlBasePlugin);
   eleventyConfig.addPlugin(eleventyAutoCacheBuster, {
@@ -22,7 +27,7 @@ export default async function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
   eleventyConfig.addPassthroughCopy('./src/content/css/');
 
-  // Filters
+  // Filters.
   eleventyConfig.addFilter('slug', (str) =>
     str.toLowerCase().replace(/[\s/]+/g, '-'),
   );
@@ -38,7 +43,7 @@ export default async function (eleventyConfig) {
     }
   });
 
-  // Shortcodes
+  // Shortcodes.
   eleventyConfig.addAsyncShortcode('loadAndAnnotateFile', loadAndAnnotateFile);
 
   return {
