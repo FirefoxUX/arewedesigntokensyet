@@ -1,6 +1,6 @@
 /* globals document */
 
-import '../../src/components/token-tooltip.js';
+import '../../src/components/TokenTooltip.js';
 
 export function createMockTrigger({
   status = 'good',

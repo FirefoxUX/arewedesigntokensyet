@@ -5,7 +5,7 @@
 /* globals document */
 
 // eslint-disable-next-line no-unused-vars
-import { TokenTooltip } from './token-tooltip.js';
+import { TokenTooltip } from './TokenTooltip.js';
 import {
   createMockTrigger,
   createTooltipInstance,

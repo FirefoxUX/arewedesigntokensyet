@@ -1,11 +1,15 @@
 /* global window */
 
-import './token-tooltip.js';
-import './code-line-highlighting.js';
-import { TooltipController } from './tooltip-controller.js';
+import './TokenTooltip.js';
+import { LineHighlighter } from './LineHighlighter.js';
+import { TooltipController } from './TooltipController.js';
 
-if (!window._tooltipInit) {
-  window._tooltipInit = true;
+if (!window._awdtyInit) {
+  window._awdtyInit = true;
+
   const controller = new TooltipController();
   controller.initGlobalEvents();
+
+  const highlighter = new LineHighlighter();
+  highlighter.init();
 }
