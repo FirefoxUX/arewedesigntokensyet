@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'path';
-import { getCssFilesList, convertPathToURI } from '../src/lib/fileUtils.js';
+import { getCssFilesList, convertPathToURI } from './fileUtils.js';
 
 describe('convertPathToURI', () => {
   test('converts windows-style paths to URI-safe format', () => {

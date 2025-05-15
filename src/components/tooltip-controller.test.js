@@ -4,11 +4,8 @@
 
 /* globals document */
 
-import {
-  TooltipController,
-  safeParseJSON,
-} from '../src/components/tooltip-controller.js';
-import '../src/components/token-tooltip.js';
+import { TooltipController, safeParseJSON } from './tooltip-controller.js';
+import './token-tooltip.js';
 
 describe('TooltipController', () => {
   let controller;

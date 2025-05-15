@@ -1,4 +1,4 @@
-import config from '../config.js';
+import config from '../../config.js';
 
 import {
   buildResolutionTrace,
@@ -7,7 +7,7 @@ import {
   getResolvedVarOrigins,
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
-} from '../src/lib/resolutionUtils.js';
+} from './resolutionUtils.js';
 
 describe('buildResolutionTrace', () => {
   const foundVars = {

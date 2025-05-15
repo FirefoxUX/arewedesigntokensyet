@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import loadAndAnnotateFile from '../src/lib/loadAndAnnotateFile.js';
+import loadAndAnnotateFile from './loadAndAnnotateFile.js';
 
 function getOffsetRange(lineText, snippet) {
   const startIndex = lineText.indexOf(snippet);

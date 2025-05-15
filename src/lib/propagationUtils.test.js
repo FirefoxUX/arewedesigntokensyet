@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
-import { getPropagationData } from '../src/lib/propagationUtils.js';
-import config from '../config.js';
+import { getPropagationData } from './propagationUtils.js';
+import config from '../../config.js';
 
 const originalConfig = { ...config };
 

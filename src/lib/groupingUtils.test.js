@@ -1,7 +1,4 @@
-import {
-  groupFilesByDirectory,
-  computeAverages,
-} from '../src/lib/groupingUtils.js';
+import { groupFilesByDirectory, computeAverages } from './groupingUtils.js';
 
 describe('groupFilesByDirectory', () => {
   test('groups files by directory and computes average', () => {

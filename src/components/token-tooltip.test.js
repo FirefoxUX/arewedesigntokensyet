@@ -5,12 +5,12 @@
 /* globals document */
 
 // eslint-disable-next-line no-unused-vars
-import { TokenTooltip } from '../src/components/token-tooltip.js';
+import { TokenTooltip } from './token-tooltip.js';
 import {
   createMockTrigger,
   createTooltipInstance,
   showTooltip,
-} from './helpers/tooltipControllerTestUtils';
+} from '../../tests/helpers/tooltipControllerTestUtils';
 
 function setupTooltip({
   status = 'good',

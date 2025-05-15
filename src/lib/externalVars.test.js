@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 
-import { getVarData } from '../src/lib/externalVars.js';
-import { getExternalVars } from '../src/lib/externalVars.js';
-import config from '../config.js';
+import { getVarData } from './externalVars.js';
+import { getExternalVars } from './externalVars.js';
+import config from '../../config.js';
 
 const originalConfig = { ...config };
 
