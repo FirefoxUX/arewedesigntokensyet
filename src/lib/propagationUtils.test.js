@@ -21,6 +21,7 @@ describe('getPropagationData', () => {
 
   beforeEach(() => {
     jest.mock('node:fs/promises');
+    fs.writeFile = jest.fn();
   });
 
   afterEach(() => {
@@ -42,7 +43,6 @@ describe('getPropagationData', () => {
     `;
 
     fs.readFile = jest.fn().mockResolvedValueOnce(css);
-
     const result = await getPropagationData(
       '/project/src/components/button.css',
     );
@@ -51,6 +51,7 @@ describe('getPropagationData', () => {
     expect(result).toHaveProperty('foundVariables');
     expect(result).toHaveProperty('percentage');
     expect(result.designTokenCount).toBeGreaterThan(0);
+    expect(fs.writeFile).toHaveBeenCalled();
 
     const props = result.foundPropValues;
 

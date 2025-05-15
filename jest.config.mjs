@@ -38,6 +38,8 @@ const config = {
   setupFilesAfterEnv: ['./jest.setup.js', '@testing-library/jest-dom'],
 
   injectGlobals: true,
+
+  watchPathIgnorePatterns: ['<rootDir>/build/'],
 };
 
 export default config;

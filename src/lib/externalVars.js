@@ -1,3 +1,4 @@
+import { memoize } from './memoize.js';
 import { parseCSS } from './cssParser.js';
 import {
   isVariableDefinition,
@@ -14,7 +15,8 @@ import {
  * @param {string} filePath - The absolute path to the external CSS file.
  * @returns {Promise<Object>} - Map of variable name to metadata.
  */
-export async function getExternalVars(filePath) {
+
+async function __getExternalVars(filePath) {
   const root = await parseCSS(filePath);
   const cssVars = {};
 
@@ -29,6 +31,8 @@ export async function getExternalVars(filePath) {
 
   return cssVars;
 }
+
+export const getExternalVars = memoize(__getExternalVars);
 
 /**
  * Constructs metadata for a CSS variable node.

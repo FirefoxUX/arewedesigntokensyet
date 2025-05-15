@@ -23,6 +23,7 @@ describe('getCssFilesList', () => {
 
   beforeEach(() => {
     jest.mock('node:fs/promises');
+    fs.writeFile = jest.fn();
   });
 
   test('returns css file objects as expected', async () => {
