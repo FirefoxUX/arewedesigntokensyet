@@ -91,7 +91,7 @@ export class TokenTooltip extends LitElement {
           : ''}
         ${this.trace.length > 1
           ? html`
-              <div class="label">🔁 Trace:</div>
+              <div class="label">🔬 Trace:</div>
               ${this.renderTraceTree(this.trace)}
             `
           : ''}

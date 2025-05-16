@@ -59,6 +59,11 @@ h1 a {
   text-align: right;
 }
 
+.chart-container {
+  position: relative;
+  max-height: 60vh;
+}
+
 code {
   font-size: 1.1em;
 }
