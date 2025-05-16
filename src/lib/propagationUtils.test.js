@@ -80,6 +80,6 @@ describe('getPropagationData', () => {
 
     const result = await getPropagationData('/project/empty.css');
     expect(result.foundPropValues).toEqual([]);
-    expect(result.percentage).toBe(100); // no props = 100%
+    expect(result.percentage).toBe(-1); // no props = -1
   });
 });

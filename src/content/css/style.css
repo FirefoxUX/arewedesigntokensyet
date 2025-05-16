@@ -31,6 +31,14 @@
     format('woff2');
 }
 
+:root {
+  --border-radius: 2px;
+  --color-low: rgba(255, 0, 0, 0.3);
+  --color-medium: rgba(255, 165, 0, 0.3);
+  --color-high: rgb(60, 179, 113, 0.3);
+  --padding-labelling: 0 0.25em;
+}
+
 body {
   height: 100vh;
   display: flex;
@@ -95,16 +103,34 @@ code {
   background: rgba(255, 255, 0, 0.2);
 }
 
+.high,
+.medium,
+.low,
+.ignored {
+  padding: var(--padding-labelling);
+  border-radius: var(--border-radius);
+}
+
 .high {
-  background: rgb(60, 179, 113, 0.3);
+  background: var(--color-high);
 }
 
 .medium {
-  background: rgba(255, 165, 0, 0.3);
+  background: var(--color-medium);
 }
 
 .low {
-  background: rgba(255, 0, 0, 0.3);
+  background: var(--color-low);
+}
+
+.ignored {
+  background: rgba(0, 0, 0, 0.05);
+  cursor: help;
+
+  &::before {
+    content: '⚠️ ';
+    margin-start: 0.2em;
+  }
 }
 
 .awdty__line {

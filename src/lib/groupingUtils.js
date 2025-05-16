@@ -36,15 +36,25 @@ export function groupFilesByDirectory(fileObjects) {
 export function computeAverages(node) {
   let total = 0;
   let count = 0;
+  let processedCount = 0;
+  let ignoreCount = 0;
 
   for (const file of node.files) {
     const pct = file?.propagationData?.percentage;
-    if (typeof pct === 'number') {
+    // -1 represents a percentage to ignore.
+    if (typeof pct === 'number' && pct !== -1) {
       total += pct;
       count++;
+    } else {
+      ignoreCount++;
     }
+    processedCount++;
   }
 
-  node.averagePropagation = count ? total / count : 0;
-  return { total, count };
+  if (processedCount === ignoreCount && ignoreCount > 0) {
+    node.averagePropagation = -1;
+  } else {
+    node.averagePropagation = count ? total / count : 0;
+  }
+  return { total, count, processedCount, ignoreCount };
 }

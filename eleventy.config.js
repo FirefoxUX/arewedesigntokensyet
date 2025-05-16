@@ -5,6 +5,7 @@ import { EleventyHtmlBasePlugin } from '@11ty/eleventy';
 import eleventyAutoCacheBuster from 'eleventy-auto-cache-buster';
 
 import loadAndAnnotateFile from './src/lib/loadAndAnnotateFile.js';
+import NunjucksLib from 'nunjucks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +35,15 @@ export default async function (eleventyConfig) {
   eleventyConfig.addFilter('slug', (str) =>
     str.toLowerCase().replace(/[\s/]+/g, '-'),
   );
+  eleventyConfig.addNunjucksFilter('ignoreFilter', (num) => {
+    return num === -1
+      ? new NunjucksLib.runtime.SafeString(
+          '<span class="ignored" title="No CSS properties of interest were located within this file, so it isn\'t counted">No Props Found</span>',
+        )
+      : `${+num.toFixed(2)}%`;
+  });
   eleventyConfig.addFilter('rangeClass', function (number) {
+    number = parseInt(number.toString().replace('%', ''), 10);
     if (number >= 75 && number <= 100) {
       return 'high';
     } else if (number >= 50 && number < 75) {

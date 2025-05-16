@@ -9,8 +9,8 @@ layout: filesLayout.njk
 ---
 
 <h1><a href="/{{ file.dirURI }}">{{ file.dirURI }}</a>/{{ file.fileName }}</h1>
-{% set totalPropagation = file.propagationData.percentage %}
-<p><strong>Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}%</span></p>
+{% set totalPropagation = file.propagationData.percentage | ignoreFilter %}
+<p><strong>Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}</span></p>
 
 {% include 'homeLink.njk' %}
 

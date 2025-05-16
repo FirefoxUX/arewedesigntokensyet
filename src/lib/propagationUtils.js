@@ -36,10 +36,15 @@ export async function getPropagationData(filePath) {
     const foundPropValues = collectDeclarations(root, foundVariables, filePath);
     resolveDeclarationReferences(foundPropValues, foundVariables, filePath);
 
-    const designTokenCount = computeDesignTokenSummary(foundPropValues);
-    const percentage = foundPropValues.length
-      ? +((100 * designTokenCount) / foundPropValues.length).toFixed(2)
-      : 100;
+    const { designTokenCount, ignoredValueCount } =
+      computeDesignTokenSummary(foundPropValues);
+
+    // A negative number means this percentage should be ignored. If there are no found props then we can't provide a score.
+    const foundLessIgnored = foundPropValues.length - ignoredValueCount;
+    const percentage =
+      foundPropValues.length && foundLessIgnored !== 0
+        ? +((100 / foundLessIgnored) * designTokenCount).toFixed(2)
+        : -1;
 
     return {
       designTokenCount,
@@ -181,7 +186,10 @@ async function resolveDeclarationReferences(
  * Computes how many declarations use design tokens or excluded values.
  */
 function computeDesignTokenSummary(declarations) {
-  return declarations.filter(
-    (d) => d.containsDesignToken || d.containsExcludedValue,
-  ).length;
+  return {
+    designTokenCount: declarations.filter((d) => d.containsDesignToken).length,
+    ignoredValueCount: declarations.filter(
+      (d) => d.containsExcludedValue && !d.containsDesignToken,
+    ).length,
+  };
 }

@@ -36,16 +36,22 @@ describe('computeAverages', () => {
       files: [
         { propagationData: { percentage: 20 } },
         { propagationData: { percentage: 80 } },
+        { propagationData: { percentage: -1 } },
       ],
     };
 
     const result = computeAverages(node);
 
-    expect(result).toEqual({ total: 100, count: 2 });
+    expect(result).toEqual({
+      total: 100,
+      count: 2,
+      ignoreCount: 1,
+      processedCount: 3,
+    });
     expect(node.averagePropagation).toBe(50);
   });
 
-  test('returns 0 average if no valid percentages', () => {
+  test('returns -1 average if no valid percentages', () => {
     const node = {
       files: [
         { propagationData: { percentage: null } },
@@ -55,7 +61,12 @@ describe('computeAverages', () => {
 
     const result = computeAverages(node);
 
-    expect(result).toEqual({ total: 0, count: 0 });
-    expect(node.averagePropagation).toBe(0);
+    expect(result).toEqual({
+      total: 0,
+      count: 0,
+      ignoreCount: 2,
+      processedCount: 2,
+    });
+    expect(node.averagePropagation).toBe(-1);
   });
 });
