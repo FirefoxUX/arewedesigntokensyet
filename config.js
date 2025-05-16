@@ -39,7 +39,6 @@ try {
     with: { type: 'json' },
   });
   designTokenKeys = designTokenKeysImport.default;
-  console.log(designTokenKeys);
 }
 
 export default {
