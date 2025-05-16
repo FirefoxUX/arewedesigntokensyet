@@ -1,7 +1,67 @@
 [
   {
-    "date": "2024-04-08",
-    "percentage": 42.35
+    "date": "2023-04-24",
+    "percentage": 33.99
+  },
+  {
+    "date": "2023-05-01",
+    "percentage": 33.97,
+    "delta": -0.02
+  },
+  {
+    "date": "2023-06-02",
+    "percentage": 35.31,
+    "delta": 1.34
+  },
+  {
+    "date": "2023-07-01",
+    "percentage": 38.31,
+    "delta": 3
+  },
+  {
+    "date": "2023-08-01",
+    "percentage": 37.22,
+    "delta": -1.09
+  },
+  {
+    "date": "2023-09-07",
+    "percentage": 41.9,
+    "delta": 4.68
+  },
+  {
+    "date": "2023-10-01",
+    "percentage": 38.23,
+    "delta": -3.67
+  },
+  {
+    "date": "2023-11-01",
+    "percentage": 38.99,
+    "delta": 0.76
+  },
+  {
+    "date": "2023-12-01",
+    "percentage": 39.73,
+    "delta": 0.74
+  },
+  {
+    "date": "2024-01-03",
+    "percentage": 37.55,
+    "delta": -2.18
+  },
+  {
+    "date": "2024-02-01",
+    "percentage": 38.74,
+    "delta": 1.19
+  },
+  {
+    "date": "2024-03-01",
+    "percentage": 41.53,
+    "delta": 2.79
+  },
+  {
+    "date": "2024-04-01",
+    "percentage": 42.35,
+    "delta": 0.82
   },
   {
     "date": "2024-05-01",

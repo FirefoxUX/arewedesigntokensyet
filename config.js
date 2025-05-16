@@ -1,5 +1,7 @@
-import { pathToFileURL } from 'node:url';
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
@@ -13,7 +15,32 @@ const tokensPath = pathToFileURL(
   ),
 );
 
-const { storybookTables } = await import(tokensPath);
+let designTokenKeys;
+
+// If we're backfilling old data from the Firefox tree go far enough back and the
+// Storybook tables won't exist. Hence this mechanism allows us to using a backup
+// json file of design token keys.
+try {
+  await fs.access(tokensPath, fs.constants.R_OK);
+  const { storybookTables } = await import(tokensPath);
+  designTokenKeys = Object.values(storybookTables).flatMap((list) =>
+    list.map((item) => item.name),
+  );
+  console.log(
+    `Using '/toolkit/themes/shared/design-system/tokens-storybook.mjs' as token source`,
+  );
+  // eslint-disable-next-line no-unused-vars
+} catch (error) {
+  console.log(
+    `Can't find "tokens-storybook.mjs" (Maybe old revision?). Falling back to use the backup in src/data/tokensBackup.`,
+  );
+  const backupPath = pathToFileURL(path.join('./src/data/tokensBackup.json'));
+  const designTokenKeysImport = await import(backupPath, {
+    with: { type: 'json' },
+  });
+  designTokenKeys = designTokenKeysImport.default;
+  console.log(designTokenKeys);
+}
 
 export default {
   repoPath,
@@ -92,9 +119,7 @@ export default {
     'padding-left',
     'row-gap',
   ],
-  designTokenKeys: Object.values(storybookTables).flatMap((list) =>
-    list.map((item) => item.name),
-  ),
+  designTokenKeys,
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [
     'browser/components/**/*.css',
