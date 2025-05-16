@@ -21,7 +21,7 @@ export async function renderPropagationChart(canvasId) {
           label: 'Propagation %',
           data: data.map((d) => d.percentage),
           borderColor: 'blue',
-          backgroundColor: 'rgba(0, 0, 255, 0.1)',
+          backgroundColor: 'rgba(0, 0, 255, 0.2)',
           tension: 0.3,
           fill: true,
           pointRadius: 4,
