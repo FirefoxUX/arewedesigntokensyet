@@ -1,5 +1,6 @@
 /* global fetch, document */
 import Chart from 'chart.js/auto';
+import 'chartjs-adapter-luxon';
 
 async function fetchPropagationData() {
   const res = await fetch('/data/propagationHistory.json');
@@ -34,9 +35,12 @@ export async function renderPropagationChart(canvasId) {
         y: {
           beginAtZero: true,
           max: 100,
+          min: 0,
           title: { display: true, text: '%' },
         },
         x: {
+          type: 'time',
+          tooltipFormat: 'DD T',
           title: { display: true, text: 'Date' },
         },
       },
