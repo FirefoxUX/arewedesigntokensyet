@@ -1,12 +1,12 @@
 [
   {
     "date": "2022-11-01",
-    "percentage": -0.04
+    "percentage": 0
   },
   {
     "date": "2022-11-03",
     "percentage": 0.73,
-    "delta": 0.77
+    "delta": 0.73
   },
   {
     "date": "2022-12-01",

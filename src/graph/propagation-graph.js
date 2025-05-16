@@ -40,7 +40,11 @@ export async function renderPropagationChart(canvasId) {
         },
         x: {
           type: 'time',
-          tooltipFormat: 'DD T',
+          time: {
+            unit: 'month',
+            tooltipFormat: 'MMM d, yyyy',
+          },
+          tooltipFormat: 'DD',
           title: { display: true, text: 'Date' },
         },
       },
