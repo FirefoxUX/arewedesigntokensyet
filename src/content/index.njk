@@ -5,11 +5,12 @@ title: "Are we Design Tokens yet?"
 
 <h1>{{ title }}</h1>
 
-<p>The goal of this site is to help us track the propagation of design tokens in our tree. It works by gathering CSS files based on provided paths and then looks for <a href="/properties/">CSS properties</a> that would typically be expected to be tied to a design-token.</p>
+<p>This site’s goal is to track how design tokens are making their way into our stylesheets. It grabs CSS files from a set of predetermined paths, then scans for <a href="/properties/">CSS properties</a> that should (ideally) be backed by a token.</p>
 
-<p>Values that aren't likely to be set to design tokens are explicitly ignored.</p>
+<p>Some values—like <code>unset</code>, <code>inherit</code>, and friends get a free pass and don’t count toward the stats. Same goes for files that don’t have any relevant properties: they’re left out of the calculation.</p>
 
-<h2>Progress to Date</h2>
+
+<h2>Design Token Propagation</h2>
 
 <div class="chart-container">
   <canvas id="propagationChart" width="800" height="400"></canvas>

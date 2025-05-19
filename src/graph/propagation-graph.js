@@ -46,6 +46,7 @@ export async function renderPropagationChart(canvasId) {
           },
           tooltipFormat: 'DD',
           title: { display: true, text: 'Date' },
+          min: '2023-04-08',
         },
       },
       responsive: true,
