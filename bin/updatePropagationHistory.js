@@ -1,10 +1,27 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import config from '../config.js';
 
 import total from '../src/data/totals.js';
 
 const HISTORY_PATH = path.join('./src/data', 'propagationHistory.json');
+
+const execFileAsync = promisify(execFile);
+
+async function getGitRevision(repoPath) {
+  try {
+    const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
+      cwd: config.repoPath,
+    });
+    return stdout.trim();
+  } catch (error) {
+    console.error(`Failed to get git revision from ${repoPath}`, error);
+    return null;
+  }
+}
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -54,8 +71,14 @@ export async function updatePropagationHistory({ date, force }) {
 
   const newPercentage = total().totalAveragePropagation;
   const delta = calculateDelta(history, date, newPercentage);
+  const gitRevision = await getGitRevision();
 
   const newEntry = { date, percentage: newPercentage };
+
+  if (gitRevision !== null) {
+    newEntry.gitRevision = gitRevision;
+  }
+
   if (delta !== null) {
     newEntry.delta = delta;
   }
