@@ -30,27 +30,22 @@ file a bug. See also the known limitations and the bugs filed against them.
 ### Expected use-cases
 
 - Identifying areas of code that don't currently make use of design tokens.
-- Visibility of gaps in terms of the usage of design tokens.
 - Highlighting areas that might benefit from the creation of new design tokens.
 
 ## Known Limitations
 
-- The code only infers vars within a single file currently. As the tool has no
-  understanding of vars that exist out side of the current file, to better be
-  able to resolve vars from other dependent files will require additional work.
-- Var resolution is currently a bit limited, so it only goes one level deep, so
-  a var that points to a var that points to a design token var won't be
-  correctly identified.
-- The list of design token properties needs review and may as a result be
-  expanded or reduced as needed.
+- This tool doesn't have any knowledge of the DOM related to the CSS it's
+  processing.
+- Var resolution is limited to the current file by default, but can be extended
+  to look at other files based on configuration. Only vars in :root or :host are
+  considered.
+- The list of design token properties may be subject to change and affect the
+  calculation propagation percentages as a result.
 - Values that take multiple arguments are currently glossed over, the presence
-  of at least one Design Token var would be considered a pass.
-
-## Future plans
-
-- After the initial limitations are reduced to a reasonable level we expect to
-  use this provide a graph to demonstrate the evolution and increased usage of
-  design tokens over time.
+  of at least one Design Token var would be considered a pass. The rationale is
+  that if one of the values resolves to a design token then the author is
+  considering token use.
+- Files that have no relevant properties are excluded from calculations.
 
 ## Development
 
