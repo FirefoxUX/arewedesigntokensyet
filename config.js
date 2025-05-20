@@ -31,8 +31,8 @@ try {
   );
   // eslint-disable-next-line no-unused-vars
 } catch (error) {
-  console.log(
-    `Can't find "tokens-storybook.mjs" (Maybe old revision?). Falling back to use the backup in src/data/tokensBackup.`,
+  console.warn(
+    `Can't find "tokens-storybook.mjs" This is either and old revision or we're running tests. Falling back to use the backup in src/data/tokensBackup.`,
   );
   const backupPath = pathToFileURL(path.join('./src/data/tokensBackup.json'));
   const designTokenKeysImport = await import(backupPath, {

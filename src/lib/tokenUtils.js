@@ -34,12 +34,12 @@ export function isTokenizableProperty(prop) {
  * Extracts all CSS custom property references in a value.
  * e.g. var(--a) or var(--a, var(--b)) returns ['--a', '--b']
  */
+const varRegex = /var\(\s*(--[\w-]+)/g;
 export function getCSSVariables(value = '') {
-  const regex = /var\(\s*(--[\w-]+)/g;
   const variables = [];
   let match;
 
-  while ((match = regex.exec(value)) !== null) {
+  while ((match = varRegex.exec(value)) !== null) {
     variables.push(match[1]);
   }
 
@@ -49,12 +49,12 @@ export function getCSSVariables(value = '') {
 /**
  * Checks if the rule node is defined within a valid selector like :root or :host.
  */
+const selectorRegex = /^(?::root$|:host$)/i;
 export function isWithinValidParentSelector(node) {
   const parent = node.parent;
-  const selectorRegExp = /^(?::root$|:host$)/i;
 
   return (
     parent?.type === 'rule' &&
-    parent.selector.split(',').some((sel) => selectorRegExp.test(sel.trim()))
+    parent.selector.split(',').some((sel) => selectorRegex.test(sel.trim()))
   );
 }

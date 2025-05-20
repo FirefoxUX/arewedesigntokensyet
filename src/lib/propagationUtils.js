@@ -23,7 +23,7 @@ import {
 import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
 
 /**
- * Main entry point: analyze a single CSS file for design token propagation.
+ * Analyze a single CSS file for design token propagation.
  *
  * @param {string} filePath - Absolute path to the CSS file.
  * @returns {Promise<Object>} - Object containing analysis results.
@@ -146,7 +146,6 @@ async function resolveDeclarationReferences(
     decl.resolutionTrace = trace;
     decl.containsDesignToken = analysis.containsDesignToken;
     decl.containsExcludedValue = analysis.containsExcludedValue;
-    decl.isIndirectRef = trace.length > 1;
 
     // Heuristically infer if any resolved value is from an external var
     decl.isExternalVar = trace.some((val) =>

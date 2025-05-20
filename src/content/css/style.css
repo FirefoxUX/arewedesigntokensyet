@@ -127,11 +127,6 @@ code {
 .ignored {
   background: rgba(0, 0, 0, 0.05);
   cursor: help;
-
-  &::before {
-    content: '⚠️ ';
-    margin-start: 0.2em;
-  }
 }
 
 .awdty__line {

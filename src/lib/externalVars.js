@@ -50,7 +50,6 @@ export function getVarData(node, { isExternal = false, filePath = null } = {}) {
     value,
     containsDesignToken,
     containsExcludedValue: containsExcluded,
-    isIndirectRef: true,
     isExternal,
     start: node.source.start,
     end: node.source.end,
