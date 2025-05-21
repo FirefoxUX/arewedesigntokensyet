@@ -12,6 +12,10 @@ const __dirname = path.dirname(__filename);
 const inputDir = path.relative(__dirname, 'src/content');
 const outputDir = path.relative(__dirname, 'build');
 
+/**
+ *
+ * @param eleventyConfig
+ */
 export default async function (eleventyConfig) {
   // Tell 11ty to reload if the bundle put there by esbuild changes.
   eleventyConfig.setServerOptions({

@@ -23,10 +23,22 @@ import {
 import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
 
 /**
- * Analyze a single CSS file for design token propagation.
+ * Analyzes a CSS file to determine the percentage of properties using design tokens.
+ *
+ * This includes:
+ * - Extracting and resolving CSS custom properties
+ * - Identifying token usage
+ * - Tracking unresolved variables
+ * - Calculating a token usage percentage
  *
  * @param {string} filePath - Absolute path to the CSS file.
- * @returns {Promise<Object>} - Object containing analysis results.
+ * @returns {Promise<{
+ *   designTokenCount: number,
+ *   foundProps: number,
+ *   percentage: number,
+ *   foundPropValues: object[],
+ *   foundVariables: object
+ * }>} - Summary object including token count, percentage, and annotated data.
  */
 export async function getPropagationData(filePath) {
   try {
@@ -34,12 +46,15 @@ export async function getPropagationData(filePath) {
     const root = await parseCSS(filePath);
 
     const foundPropValues = collectDeclarations(root, foundVariables, filePath);
-    resolveDeclarationReferences(foundPropValues, foundVariables, filePath);
+    await resolveDeclarationReferences(
+      foundPropValues,
+      foundVariables,
+      filePath,
+    );
 
     const { designTokenCount, ignoredValueCount } =
       computeDesignTokenSummary(foundPropValues);
 
-    // A negative number means this percentage should be ignored. If there are no found props then we can't provide a score.
     const foundLessIgnored = foundPropValues.length - ignoredValueCount;
     const percentage =
       foundPropValues.length && foundLessIgnored !== 0
@@ -60,7 +75,12 @@ export async function getPropagationData(filePath) {
 }
 
 /**
- * Collects external variables based on file path mapping in config.
+ * Collects external variables for a given file based on pattern matching from config.
+ *
+ * Skips external files that are the same as the input file.
+ *
+ * @param {string} filePath - The file path to match against config.externalVarMapping.
+ * @returns {Promise<object>} - Map of variable names to external variable metadata.
  */
 async function collectExternalVars(filePath) {
   let foundVariables = {};
@@ -86,6 +106,7 @@ async function collectExternalVars(filePath) {
             `${externalRelPath} doesn't exist, skipping... ${e.message}`,
           );
         }
+
         foundVariables = { ...foundVariables, ...extVars };
       }
     }
@@ -95,7 +116,16 @@ async function collectExternalVars(filePath) {
 }
 
 /**
- * Walks CSS AST to extract tokenizable properties and local variable definitions.
+ * Walks the CSS AST and collects:
+ * - Tokenizable properties (e.g. `color`, `font-size`)
+ * - Variable definitions (`--*`) that are not external
+ *
+ * Adds new local variables to `foundVariables`.
+ *
+ * @param {import('postcss').Root} root - Parsed CSS AST.
+ * @param {object} foundVariables - Accumulator object for collected variables.
+ * @param {string} filePath - Path to the file being analyzed.
+ * @returns {object[]} - Array of property declaration objects.
  */
 function collectDeclarations(root, foundVariables, filePath) {
   const declarations = [];
@@ -129,11 +159,19 @@ function collectDeclarations(root, foundVariables, filePath) {
   return declarations;
 }
 
-/**
- * Applies resolution trace to each declaration and annotates with token usage info.
- */
 const tracker = new UnresolvedVarTracker();
 
+/**
+ * Resolves variable references for each declaration, attaches trace data,
+ * and annotates with token usage, source origins, and unresolved variable info.
+ *
+ * Writes an unresolved variable report to `src/data/unresolvedVars.json`.
+ *
+ * @param {object[]} declarations - Declarations to resolve and annotate.
+ * @param {object} foundVariables - Known variables available for resolution.
+ * @param {string} filePath - Path of the file being analyzed.
+ * @returns {Promise<void>}
+ */
 async function resolveDeclarationReferences(
   declarations,
   foundVariables,
@@ -147,7 +185,6 @@ async function resolveDeclarationReferences(
     decl.containsDesignToken = analysis.containsDesignToken;
     decl.containsExcludedValue = analysis.containsExcludedValue;
 
-    // Heuristically infer if any resolved value is from an external var
     decl.isExternalVar = trace.some((val) =>
       Object.values(foundVariables).some(
         (ref) => ref.isExternal && ref.value === val,
@@ -159,6 +196,7 @@ async function resolveDeclarationReferences(
       foundVariables,
       filePath,
     );
+
     decl.unresolvedVariables = getUnresolvedVariablesFromTrace(
       trace,
       foundVariables,
@@ -171,6 +209,7 @@ async function resolveDeclarationReferences(
       foundVariables,
       filePath,
     );
+
     decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
   }
 
@@ -182,7 +221,12 @@ async function resolveDeclarationReferences(
 }
 
 /**
- * Computes how many declarations use design tokens or excluded values.
+ * Computes summary statistics from the resolved declarations:
+ * - Number of declarations using design tokens
+ * - Number of ignored values (excluded tokens without design tokens)
+ *
+ * @param {object[]} declarations - List of annotated declarations.
+ * @returns {{ designTokenCount: number, ignoredValueCount: number }}
  */
 function computeDesignTokenSummary(declarations) {
   return {

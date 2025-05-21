@@ -11,7 +11,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Retrieves and groups CSS files by directory from the configured repo path.
- *
  * @returns {Promise<{ cssFilesList: string[], groupedByDir: Record<string, string[]> }>}
  */
 async function getGroupedCssFiles() {
@@ -26,9 +25,8 @@ async function getGroupedCssFiles() {
 
 /**
  * Writes grouped CSS file data to disk under /src/data.
- *
  * @param {string[]} cssFilesList - List of all matched CSS file paths.
- * @param {Object} groupedByDir - Files grouped by their containing directory.
+ * @param {object} groupedByDir - Files grouped by their containing directory.
  * @returns {Promise<void>}
  */
 async function writeGroupedDataToDisk(cssFilesList, groupedByDir) {
@@ -52,7 +50,6 @@ async function writeGroupedDataToDisk(cssFilesList, groupedByDir) {
  * to disk: one for the raw file list and one for the grouped structure.
  *
  * Logs status and errors to the console.
- *
  * @returns {Promise<void>}
  */
 async function main() {

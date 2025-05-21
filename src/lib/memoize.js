@@ -1,7 +1,6 @@
 /**
  * Simple memoization utility.
  * Caches results by stringified arguments (single or multiple).
- *
  * @param {Function} fn - The function to memoize.
  * @returns {Function} Memoized version of the input function.
  */

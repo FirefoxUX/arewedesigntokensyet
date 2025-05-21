@@ -3,19 +3,22 @@ import { parseCSS } from './cssParser.js';
 import {
   isVariableDefinition,
   isWithinValidParentSelector,
-} from './tokenUtils.js';
-import {
   containsDesignTokenValue,
   containsExcludedValue,
 } from './tokenUtils.js';
 
 /**
- * Extracts CSS variable definitions from a file and marks them as external.
+ * Parses a CSS file and extracts variable definitions, marking each with metadata.
+ *
+ * This function walks the parsed PostCSS AST, filters for valid `--*` variables
+ * within acceptable parent selectors, and returns a map of variable names to
+ * metadata objects. Used to track externally defined variables.
  *
  * @param {string} filePath - The absolute path to the external CSS file.
- * @returns {Promise<Object>} - Map of variable name to metadata.
+ * @returns {Promise<Record<string, object>>} - A promise resolving to a map of variable names to metadata.
+ *
+ * @private
  */
-
 async function __getExternalVars(filePath) {
   const root = await parseCSS(filePath);
   const cssVars = {};
@@ -32,14 +35,39 @@ async function __getExternalVars(filePath) {
   return cssVars;
 }
 
+/**
+ * Memoized version of `__getExternalVars`, used to cache variable extraction
+ * results per file path.
+ *
+ * @type {(filePath: string) => Promise<Record<string, object>>}
+ */
 export const getExternalVars = memoize(__getExternalVars);
 
 /**
- * Constructs metadata for a CSS variable node.
+ * Constructs metadata for a given PostCSS CSS variable node.
+ *
+ * This includes:
+ * - The raw value
+ * - Flags indicating token/excluded token usage
+ * - Source location info (start/end)
+ * - Whether it's external and where it came from
  *
  * @param {import('postcss').Declaration} node - The PostCSS declaration node.
- * @param {{ isExternal: boolean, filePath?: string }} options
- * @returns {Object} - Metadata about the variable's value.
+ * @param {object} options - Options for the variable context.
+ * @param {boolean} [options.isExternal] - Whether the variable is from an external file.
+ * @param {string} [options.filePath] - Source path, used when `isExternal` is true.
+ * @returns {object} - Structured metadata about the variable.
+ *
+ * @example
+ * {
+ *   value: 'var(--color-primary)',
+ *   containsDesignToken: true,
+ *   containsExcludedValue: false,
+ *   isExternal: true,
+ *   start: { line: 5, column: 3 },
+ *   end: { line: 5, column: 42 },
+ *   src: '/path/to/external.css'
+ * }
  */
 export function getVarData(node, { isExternal = false, filePath = null } = {}) {
   const value = node.value;

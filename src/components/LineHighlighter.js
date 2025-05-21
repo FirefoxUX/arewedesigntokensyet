@@ -45,7 +45,6 @@ export class LineHighlighter {
   /**
    * Parses the URL hash to extract a line or range of lines.
    * Supports `#L3` and `#L3-7` formats.
-   *
    * @returns {number[]} An array of line numbers to highlight.
    */
   parseLineHash() {
@@ -65,7 +64,6 @@ export class LineHighlighter {
 
   /**
    * Removes all line highlights and applies highlights to the given set of line numbers.
-   *
    * @param {number[]} lines - Line numbers to highlight.
    */
   highlightLines(lines) {
@@ -102,7 +100,6 @@ export class LineHighlighter {
   /**
    * Handles clicks on `.line-number-trigger` elements.
    * Updates the hash to reflect selected lines.
-   *
    * @param {MouseEvent} e - The click event.
    * @private
    */

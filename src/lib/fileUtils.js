@@ -4,7 +4,6 @@ import { getPropagationData } from './propagationUtils.js';
 
 /**
  * Converts a file path to a URI-safe path (e.g., for links or JSON keys).
- *
  * @param {string} pathStr
  * @returns {string}
  */
@@ -14,13 +13,12 @@ export function convertPathToURI(pathStr) {
 
 /**
  * Retrieves a flat list of CSS file objects with propagation analysis data.
- *
  * @param {string} repoPath - Root of the project repo.
- * @param {Object} [options]
- * @param {string[]} [options.includePatterns=['**\/*.css']] - Glob include patterns.
- * @param {string[]} [options.ignorePatterns=[]] - Glob ignore patterns.
- * @param {Function} [options.__glob=glob] - Glob implementation (mockable for testing).
- * @returns {Promise<Object[]>} - List of file metadata + propagation info.
+ * @param {object} [options]
+ * @param {string[]} [options.includePatterns] - Glob include patterns.
+ * @param {string[]} [options.ignorePatterns] - Glob ignore patterns.
+ * @param {Function} [options.__glob] - Glob implementation (mockable for testing).
+ * @returns {Promise<object[]>} - List of file metadata + propagation info.
  */
 export async function getCssFilesList(
   repoPath,

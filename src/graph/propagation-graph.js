@@ -3,6 +3,16 @@ import Chart from 'chart.js/auto';
 import 'chartjs-adapter-luxon';
 import latestHistory from '../data/propagationHistoryLatest.json' with { type: 'json' };
 
+/**
+ * Fetches the historical design token propagation data from the server.
+ *
+ * This function retrieves the `propagationHistory.json` file from the `/data` directory.
+ * If the response is not successful, it throws an error.
+ *
+ * @returns {Promise<Array<{ date: string, percentage: number, delta?: number }>>}
+ *   A promise that resolves to an array of propagation data points.
+ * @throws {Error} If the fetch request fails or returns a non-OK response.
+ */
 async function fetchPropagationData() {
   const res = await fetch('/data/propagationHistory.json');
   if (!res.ok) {
@@ -11,6 +21,20 @@ async function fetchPropagationData() {
   return res.json();
 }
 
+/**
+ * Renders a line chart visualizing the propagation percentage over time.
+ *
+ * The chart is drawn using Chart.js and includes historical data merged with
+ * the latest locally available snapshot. Tooltips display the percentage along
+ * with any delta compared to the previous entry.
+ *
+ * @param {string} canvasId - The ID of the <canvas> element where the chart should be rendered.
+ * @returns {Promise<void>} Resolves when the chart has been created.
+ *
+ * @example
+ * // Assuming a <canvas id="propagationChart"></canvas> exists in the DOM:
+ * await renderPropagationChart('propagationChart');
+ */
 export async function renderPropagationChart(canvasId) {
   const historyData = await fetchPropagationData();
 

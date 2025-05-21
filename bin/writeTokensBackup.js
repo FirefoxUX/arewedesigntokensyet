@@ -8,7 +8,6 @@ const dataDir = path.join(__dirname, '../src/data');
 
 /**
  * Writes a backup of design token keys from the config file to disk.
- *
  * @returns {Promise<void>}
  */
 async function writeTokenBackup() {

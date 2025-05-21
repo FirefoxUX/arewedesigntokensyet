@@ -1,8 +1,7 @@
 /**
  * Groups a flat list of file objects by their directory (dirURI).
- *
- * @param {Object[]} fileObjects - List of analyzed CSS file objects.
- * @returns {Object} - Directory groupings with average propagation attached.
+ * @param {object[]} fileObjects - List of analyzed CSS file objects.
+ * @returns {object} - Directory groupings with average propagation attached.
  */
 export function groupFilesByDirectory(fileObjects) {
   const grouped = {};
@@ -29,8 +28,7 @@ export function groupFilesByDirectory(fileObjects) {
 
 /**
  * Computes the average token propagation percentage for all files in the group.
- *
- * @param {Object} node - A group of files under a single directory.
+ * @param {object} node - A group of files under a single directory.
  * @returns {{ total: number, count: number }}
  */
 export function computeAverages(node) {

@@ -2,10 +2,6 @@
  * @jest-environment jsdom
  */
 
-/* globals */
-
-// eslint-disable-next-line no-unused-vars
-import { TokenTooltip } from './TokenTooltip.js';
 import {
   createMockTrigger,
   createTooltipInstance,
@@ -14,8 +10,7 @@ import {
 
 /**
  * Creates a <token-tooltip> with props and adds it to the DOM.
- *
- * @param {Object} options - Tooltip attributes.
+ * @param {object} options - Tooltip attributes.
  * @returns {TokenTooltip}
  */
 function setupTooltip(options = {}) {
@@ -29,6 +24,10 @@ function setupTooltip(options = {}) {
   });
 }
 
+/**
+ *
+ * @param tooltip
+ */
 function teardownTooltip(tooltip) {
   tooltip?.remove();
 }

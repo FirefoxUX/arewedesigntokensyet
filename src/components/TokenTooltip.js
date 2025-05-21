@@ -87,7 +87,6 @@ export class TokenTooltip extends LitElement {
 
   /**
    * Renders the tooltip content dynamically based on the component's properties.
-   *
    * @returns {import('lit').TemplateResult} The rendered HTML content.
    */
   render() {
@@ -144,7 +143,6 @@ export class TokenTooltip extends LitElement {
 
   /**
    * Recursively renders a nested unordered list representing a variable resolution trace.
-   *
    * @param {string[]} steps - The resolution steps (e.g., ['var(--a)', 'var(--b)', '12px']).
    * @returns {import('lit').TemplateResult|null}
    */

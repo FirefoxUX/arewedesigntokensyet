@@ -5,9 +5,8 @@
  *
  * If the string is not valid JSON, or the parsed result is not an array,
  * the fallback value is returned instead.
- *
  * @param {string} value - The JSON string to parse.
- * @param {Array} [fallback=[]] - A fallback value to return if parsing fails or the result is not an array.
+ * @param {Array} [fallback] - A fallback value to return if parsing fails or the result is not an array.
  * @returns {Array} - The parsed array or the fallback.
  */
 export function safeParseJSON(value, fallback = []) {
@@ -28,7 +27,7 @@ export function safeParseJSON(value, fallback = []) {
  */
 export class TooltipController {
   /**
-   * @param {HTMLElement|null} [tooltip=null] - An existing tooltip element to reuse. If not provided, one is created.
+   * @param {HTMLElement|null} [tooltip] - An existing tooltip element to reuse. If not provided, one is created.
    */
   constructor(tooltip = null) {
     this.tooltip = tooltip || document.createElement('token-tooltip');
@@ -40,7 +39,6 @@ export class TooltipController {
   /**
    * Shows the tooltip relative to the given trigger element.
    * Populates the tooltip with data attributes from the trigger.
-   *
    * @param {HTMLElement} triggerEl - The element with `data-status` and related attributes.
    */
   show(triggerEl) {

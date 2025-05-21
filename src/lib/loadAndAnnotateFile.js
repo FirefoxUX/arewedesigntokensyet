@@ -2,10 +2,22 @@ import fs from 'node:fs/promises';
 import config from '../../config.js';
 import { codeToHtml } from 'shiki';
 
+/**
+ * Determines whether a CSS variable name matches any known design token prefix.
+ *
+ * @param {string} name - The name of the variable (e.g. "--color-text").
+ * @returns {boolean} - True if the name contains a design token key.
+ */
 function isDesignToken(name) {
   return config.designTokenKeys.some((token) => name.includes(token));
 }
 
+/**
+ * Removes consecutive duplicate values from a resolution trace.
+ *
+ * @param {string[]} trace - The resolution trace to deduplicate.
+ * @returns {string[]} - A new array with consecutive duplicates removed.
+ */
 function dedupeTrace(trace = []) {
   const result = [];
   for (let i = 0; i < trace.length; i++) {
@@ -16,6 +28,14 @@ function dedupeTrace(trace = []) {
   return result;
 }
 
+/**
+ * Returns a string representing the design token resolution status.
+ *
+ * @param {object} prop - A resolved property with token metadata.
+ * @param {boolean} prop.containsDesignToken - Whether the value includes a known token.
+ * @param {boolean} prop.containsExcludedValue - Whether the value includes an excluded pattern.
+ * @returns {'good' | 'warn' | 'bad'} - The resolution status.
+ */
 function getStatus(prop) {
   return prop.containsDesignToken
     ? 'good'
@@ -24,6 +44,20 @@ function getStatus(prop) {
       : 'bad';
 }
 
+/**
+ * Constructs tooltip metadata for a given resolved property.
+ *
+ * Extracts trace, tokens used, resolution sources, and unresolved variables.
+ *
+ * @param {object} prop - A resolved property with metadata from analysis.
+ * @returns {{
+ *   status: string,
+ *   trace: string[],
+ *   tokens: string[],
+ *   source: string[],
+ *   unresolved: string[]
+ * }}
+ */
 function extractTooltipData(prop) {
   const status = getStatus(prop);
   const trace = dedupeTrace(prop.resolutionTrace || []);
@@ -51,6 +85,16 @@ function extractTooltipData(prop) {
   };
 }
 
+/**
+ * Reads a CSS file, decorates it with Shiki, and embeds design token metadata as tooltip data.
+ *
+ * Adds data attributes to Shiki decorations for tooltip display, including resolution trace,
+ * token usage, unresolved variables, and resolution status.
+ *
+ * @param {string} filePath - Absolute path to the CSS file.
+ * @param {Array<object>} foundPropValues - An array of resolved CSS properties to annotate.
+ * @returns {Promise<string>} - HTML string with Shiki syntax highlighting and tooltip metadata.
+ */
 export default async function loadAndAnnotateFile(filePath, foundPropValues) {
   const content = await fs.readFile(filePath, 'utf8');
   const decorations = [];
@@ -86,13 +130,17 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
   const html = await codeToHtml(content, {
     lang: 'css',
     theme: 'slack-ochin',
-    // Turn off the tabindex added to the shiki generated <pre>.
     tabindex: false,
     decorations,
     transformers: [
       {
+        /**
+         * Adds a `data-line` attribute and unique `id` to each line for line highlighting.
+         *
+         * @param {import('hast').Element} node - The HAST line node.
+         * @param {number} line - The line number.
+         */
         line(node, line) {
-          // Add a unique ID and a data attribute
           const existing = node.properties.class;
           const existingClassList = Array.isArray(existing)
             ? existing

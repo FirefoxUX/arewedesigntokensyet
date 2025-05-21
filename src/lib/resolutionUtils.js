@@ -8,9 +8,8 @@ import {
 
 /**
  * Builds a trace showing each step of resolving CSS variable references.
- *
  * @param {string} initialValue - The starting CSS value (e.g. "var(--bg-color)").
- * @param {Object} foundVariables - Map of CSS variable names to their data.
+ * @param {object} foundVariables - Map of CSS variable names to their data.
  * @returns {string[]} - A trace of resolution steps, including any missing values.
  */
 export function buildResolutionTrace(initialValue, foundVariables) {
@@ -54,7 +53,6 @@ export function buildResolutionTrace(initialValue, foundVariables) {
 
 /**
  * Analyzes a trace to determine if it includes design tokens or excluded values.
- *
  * @param {string[]} trace - A resolution trace of CSS values.
  * @returns {{ containsDesignToken: boolean, containsExcludedValue: boolean }}
  */
@@ -67,9 +65,8 @@ export function analyzeTrace(trace) {
 
 /**
  * Returns a list of unique external files used to resolve the value.
- *
  * @param {string[]} trace - The resolution trace for a CSS value.
- * @param {Object} foundVariables - Map of var names to varData.
+ * @param {object} foundVariables - Map of var names to varData.
  * @param {string} currentFile - The file currently being analyzed.
  * @returns {string[]} - List of relative paths to external files used in resolution.
  */
@@ -88,9 +85,8 @@ export function getResolutionSources(trace, foundVariables, currentFile) {
 
 /**
  * Returns unresolved variable names from across the full resolution trace.
- *
  * @param {string[]} trace - Resolution trace (e.g. ['var(--a)', 'var(--b)', 'MISSING'])
- * @param {Object} foundVariables - Known var definitions
+ * @param {object} foundVariables - Known var definitions
  * @returns {string[]} - Unresolved var names (excluding known tokens)
  */
 export function getUnresolvedVariablesFromTrace(trace, foundVariables) {
@@ -117,9 +113,8 @@ export function getUnresolvedVariablesFromTrace(trace, foundVariables) {
 
 /**
  * Classifies how a CSS property was resolved based on the entire trace.
- *
  * @param {string[]} trace - The full resolution trace.
- * @param {Object} foundVariables - All known vars.
+ * @param {object} foundVariables - All known vars.
  * @param {string} currentFile - The file being analyzed.
  * @returns {'direct' | 'local' | 'external' | 'mixed'}
  */
@@ -164,11 +159,9 @@ export function classifyResolutionFromTrace(
 
 /**
  * Builds a map of each variable name in the trace to the file it came from.
- *
  * @param {string[]} trace - Resolution trace for a declaration.
- * @param {Object} foundVariables - Known variable metadata.
- * @param {string} currentFile - File being analyzed (for relative path mapping).
- * @returns {Object} - Map: varName → relative source path
+ * @param {object} foundVariables - Known variable metadata.
+ * @returns {object} - Map: varName → relative source path
  */
 export function getResolvedVarOrigins(trace, foundVariables) {
   const result = {};

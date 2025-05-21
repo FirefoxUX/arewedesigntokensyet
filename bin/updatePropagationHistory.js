@@ -21,11 +21,9 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Retrieves the current Git commit SHA (revision) from the given repository path.
- *
  * @param {string} repoPath - The path to the local Git repository.
  * @returns {Promise<string|null>} - A promise that resolves to the Git commit SHA (as a string),
  *   or `null` if the command fails.
- *
  * @example
  * const sha = await getGitRevision('/path/to/repo');
  * console.log(sha); // e.g., 'a1b2c3d4...'
@@ -47,8 +45,6 @@ async function getGitRevision(repoPath) {
  *
  * Each key represents a long-form CLI flag (e.g., '--force').
  * The associated value describes how to parse and display that option.
- *
- * @type {Object<string, {type: 'boolean' | 'string', description: string, default: any, requiresValue?: boolean}>}
  */
 const optionDefinitions = {
   '--date': {
@@ -86,10 +82,8 @@ const optionDefinitions = {
  * Recognized options are defined in `optionDefinitions`.
  * The returned object uses camelCased keys (without the `--` prefix).
  * If `--help` is passed, the help text is printed and the process exits.
- *
  * @param {string[]} argv - The full `process.argv` array from the Node.js runtime.
  * @returns {Object<string, any>} - Parsed CLI options with defaults applied.
- *
  * @example
  * // node script.js --date 2024-01-01 --force
  * const options = parseArgs(process.argv);
@@ -145,14 +139,12 @@ function printHelp() {
  * The function looks through the `history` array, finds the latest entry before `date`,
  * and returns the difference between `newPercentage` and that entry's `percentage`,
  * rounded to two decimal places.
- *
  * @param {{ date: string, percentage: number }[]} history - Array of historical entries,
  *   each with a `date` (ISO 8601 format) and `percentage`.
  * @param {string} date - The cutoff date (ISO string) to compare against.
  * @param {number} newPercentage - The new percentage value to compare to the historical one.
  * @returns {number|null} - The difference in percentage (rounded to 2 decimal places),
  *   or `null` if no prior entry exists.
- *
  * @example
  * calculateDelta([
  *   { date: '2024-01-01', percentage: 10 },
@@ -243,7 +235,7 @@ function buildNewEntry(date, percentage, delta, gitRevision) {
  * Logs the outcome and respects the --force flag.
  *
  * @param {Array} history - Existing array of entries.
- * @param {Object} newEntry - The new history entry to insert.
+ * @param {object} newEntry - The new history entry to insert.
  * @param {string} date - Date associated with the entry.
  * @param {boolean} force - Whether to allow overwriting existing entries.
  * @returns {Array|null} - The updated history array, or null if no update was performed.
@@ -281,7 +273,7 @@ function updateHistory(history, newEntry, date, force) {
  * that limits writes to a configured day of the month. Includes Git revision
  * and delta changes where available.
  *
- * @param {Object} params - Configuration options.
+ * @param {object} params - Configuration options.
  * @param {string} params.date - ISO date string (YYYY-MM-DD).
  * @param {boolean} params.force - Whether to overwrite an existing entry.
  * @param {boolean} params.latestOnly - Whether to write to the latest-only file.
@@ -320,7 +312,6 @@ export async function updatePropagationHistory({
   }
 }
 
-// Run if executed directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const options = parseArgs(process.argv);
   await updatePropagationHistory(options);
