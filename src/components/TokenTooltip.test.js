@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-/* globals document */
+/* globals */
 
 // eslint-disable-next-line no-unused-vars
 import { TokenTooltip } from './TokenTooltip.js';
@@ -12,22 +12,21 @@ import {
   showTooltip,
 } from '../../testing/testUtils';
 
-function setupTooltip({
-  status = 'good',
-  trace = [],
-  tokens = [],
-  source = [],
-  unresolved = [],
-} = {}) {
-  const tooltip = document.createElement('token-tooltip');
-  tooltip.status = status;
-  tooltip.trace = trace;
-  tooltip.tokens = tokens;
-  tooltip.source = source;
-  tooltip.unresolved = unresolved;
-
-  document.body.appendChild(tooltip);
-  return tooltip;
+/**
+ * Creates a <token-tooltip> with props and adds it to the DOM.
+ *
+ * @param {Object} options - Tooltip attributes.
+ * @returns {TokenTooltip}
+ */
+function setupTooltip(options = {}) {
+  return createTooltipInstance({
+    status: 'good',
+    trace: [],
+    tokens: [],
+    source: [],
+    unresolved: [],
+    ...options,
+  });
 }
 
 function teardownTooltip(tooltip) {

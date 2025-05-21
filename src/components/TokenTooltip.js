@@ -2,12 +2,31 @@
 
 import { LitElement, html, css } from 'lit';
 
+/**
+ * `<token-tooltip>` is a custom element for displaying contextual information
+ * about CSS design token usage.
+ *
+ * It renders:
+ * - A status message ("good", "warn", or "bad")
+ * - A list of design tokens used
+ * - A trace of variable resolution
+ * - The source file(s) involved
+ * - Any unresolved variables
+ *
+ * Intended for use as a floating tooltip element, e.g. in a code viewer.
+ */
 export class TokenTooltip extends LitElement {
   static properties = {
+    // Token usage status: "good", "warn", or "bad".
+    // Controls the icon/message shown at the top of the tooltip.
     status: { type: String },
+    // Trace of CSS variable resolution steps, e.g., ['var(--a)', 'var(--b)', '12px'].
     trace: { type: Array },
+    // List of source file paths where the tokens were defined.
     source: { type: Array },
+    // List of unresolved CSS variables (e.g., ['--missing']).
     unresolved: { type: Array },
+    // List of design tokens identified in the value.
     tokens: { type: Array },
   };
 
@@ -66,6 +85,11 @@ export class TokenTooltip extends LitElement {
     }
   `;
 
+  /**
+   * Renders the tooltip content dynamically based on the component's properties.
+   *
+   * @returns {import('lit').TemplateResult} The rendered HTML content.
+   */
   render() {
     const statusMsg = {
       good: '🏆 Nice use of Design Tokens!',
@@ -118,10 +142,17 @@ export class TokenTooltip extends LitElement {
     `;
   }
 
+  /**
+   * Recursively renders a nested unordered list representing a variable resolution trace.
+   *
+   * @param {string[]} steps - The resolution steps (e.g., ['var(--a)', 'var(--b)', '12px']).
+   * @returns {import('lit').TemplateResult|null}
+   */
   renderTraceTree(steps = []) {
     if (steps.length === 0) {
       return null;
     }
+
     const [head, ...rest] = steps;
     return html`
       <ul>

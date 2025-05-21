@@ -33,9 +33,15 @@ export function createMockTrigger({
   return el;
 }
 
-export function createTooltipInstance() {
+/**
+ * Creates and appends a <token-tooltip> element with optional initial props.
+ *
+ * @param {Partial<TokenTooltip>} [props] - Optional properties to assign after creation.
+ * @returns {TokenTooltip} The tooltip element.
+ */
+export function createTooltipInstance(props = { hidden: true }) {
   const tooltip = document.createElement('token-tooltip');
-  tooltip.hidden = true;
+  Object.assign(tooltip, props);
   document.body.appendChild(tooltip);
   return tooltip;
 }
