@@ -54,5 +54,4 @@ By default the site assumes a checkout of mozilla-central is in
 setting the `MOZILLA_CENTRAL_REPO_PATH` env var as needed.
 
 - `npm install`
-- `npm run build:data`
 - `npm start`
