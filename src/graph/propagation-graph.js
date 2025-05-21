@@ -1,6 +1,7 @@
 /* global fetch, document */
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-luxon';
+import latestHistory from '../data/propagationHistoryLatest.json' with { type: 'json' };
 
 async function fetchPropagationData() {
   const res = await fetch('/data/propagationHistory.json');
@@ -11,7 +12,10 @@ async function fetchPropagationData() {
 }
 
 export async function renderPropagationChart(canvasId) {
-  const data = await fetchPropagationData();
+  const historyData = await fetchPropagationData();
+
+  // Merge in the latest data.
+  const data = [...historyData, ...latestHistory];
 
   new Chart(document.getElementById(canvasId), {
     type: 'line',
