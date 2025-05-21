@@ -10,7 +10,7 @@ import {
   createMockTrigger,
   createTooltipInstance,
   showTooltip,
-} from '../../tests/helpers/tooltipControllerTestUtils';
+} from '../../testing/testUtils';
 
 function setupTooltip({
   status = 'good',

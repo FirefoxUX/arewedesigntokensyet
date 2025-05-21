@@ -7,28 +7,11 @@
 import { TooltipController, safeParseJSON } from './TooltipController.js';
 import './TokenTooltip.js';
 
+import { createMockTrigger } from '../../testing/testUtils.js';
+
 describe('TooltipController', () => {
   let controller;
   let triggerEl;
-
-  function createMockTrigger(overrides = {}) {
-    const el = document.createElement('span');
-    el.dataset.status = overrides.status || 'good';
-    el.dataset.trace = JSON.stringify(overrides.trace || ['var(--a)', '#fff']);
-    el.dataset.tokens = JSON.stringify(overrides.tokens || ['--a']);
-    el.dataset.source = JSON.stringify(overrides.source || ['tokens.css']);
-    el.dataset.unresolved = JSON.stringify(overrides.unresolved || []);
-    el.getBoundingClientRect = () => ({
-      top: 100,
-      left: 100,
-      bottom: 120,
-      right: 200,
-      width: 100,
-      height: 20,
-    });
-    document.body.appendChild(el);
-    return el;
-  }
 
   afterEach(() => {
     controller?.destroy();

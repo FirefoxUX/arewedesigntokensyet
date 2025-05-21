@@ -1,12 +1,12 @@
 /* globals document */
 
-import '../../src/components/TokenTooltip.js';
+import '../src/components/TokenTooltip.js';
 
 export function createMockTrigger({
   status = 'good',
-  trace = [],
-  tokens = [],
-  source = [],
+  trace = ['var(--a)', '#fff'],
+  tokens = ['--a'],
+  source = ['tokens.css'],
   unresolved = [],
   top = 100,
   left = 100,
