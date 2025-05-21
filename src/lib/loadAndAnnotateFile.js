@@ -142,11 +142,13 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
          */
         line(node, line) {
           const existing = node.properties.class;
-          const existingClassList = Array.isArray(existing)
-            ? existing
-            : typeof existing === 'string'
-              ? existing.split(' ')
-              : [];
+          let existingClassList = [];
+
+          if (Array.isArray(existing)) {
+            existingClassList = existing;
+          } else if (typeof existing === 'string') {
+            existingClassList = existing.split(' ');
+          }
 
           node.properties.id = `L${line}`;
           node.properties['data-line'] = String(line);

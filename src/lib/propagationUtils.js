@@ -56,10 +56,12 @@ export async function getPropagationData(filePath) {
       computeDesignTokenSummary(foundPropValues);
 
     const foundLessIgnored = foundPropValues.length - ignoredValueCount;
-    const percentage =
-      foundPropValues.length && foundLessIgnored !== 0
-        ? +((100 / foundLessIgnored) * designTokenCount).toFixed(2)
-        : -1;
+
+    let percentage = -1;
+    if (foundPropValues.length && foundLessIgnored !== 0) {
+      const ratio = designTokenCount / foundLessIgnored;
+      percentage = +(ratio * 100).toFixed(2);
+    }
 
     return {
       designTokenCount,

@@ -24,6 +24,7 @@ describe('getCssFilesList', () => {
   beforeEach(() => {
     jest.mock('node:fs/promises');
     fs.writeFile = jest.fn();
+    fs.readFile = jest.fn();
   });
 
   test('returns css file objects as expected', async () => {
@@ -34,7 +35,7 @@ describe('getCssFilesList', () => {
       color: transparent;
     }`;
 
-    fs.readFile = jest.fn().mockResolvedValue(fakeCSS);
+    fs.readFile.mockResolvedValue(fakeCSS);
 
     const mockFiles = [
       path.join(fakeRepo, 'styles/reset.css'),

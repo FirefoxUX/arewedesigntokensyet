@@ -8,7 +8,7 @@ const originalConfig = { ...config };
 
 describe('getVarData', () => {
   beforeAll(() => {
-    config.designTokenKeys = ['--color-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
     config.excludedCSSValues = ['inherit'];
     config.repoPath = '/project';
   });
@@ -19,7 +19,7 @@ describe('getVarData', () => {
 
   test('marks design tokens and flags metadata correctly', () => {
     const node = {
-      value: 'var(--color-primary)',
+      value: 'var(--color-accent-primary)',
       source: { start: { line: 1 }, end: { line: 1 } },
     };
 
@@ -28,7 +28,7 @@ describe('getVarData', () => {
       filePath: '/project/tokens/colors.css',
     });
 
-    expect(result.value).toBe('var(--color-primary)');
+    expect(result.value).toBe('var(--color-accent-primary)');
     expect(result.containsDesignToken).toBe(true);
     expect(result.containsExcludedValue).toBe(false);
     expect(result.isExternal).toBe(true);
@@ -51,7 +51,7 @@ describe('getVarData', () => {
 describe('getExternalVars', () => {
   beforeAll(() => {
     Object.assign(config, {
-      designTokenKeys: ['--color-primary'],
+      designTokenKeys: ['--color-accent-primary'],
       excludedCSSValues: ['inherit'],
       repoPath: '/project',
     });
@@ -63,6 +63,7 @@ describe('getExternalVars', () => {
 
   beforeEach(() => {
     jest.mock('node:fs/promises');
+    fs.readFile = jest.fn();
   });
 
   afterEach(() => {
@@ -72,8 +73,8 @@ describe('getExternalVars', () => {
   test('extracts external vars defined in :root', async () => {
     const css = `
       :root {
-        --color-primary: #f00;
-        --space-sm: 4px;
+        --color-accent-primary: #f00;
+        --space-small: 4px;
       }
 
       .button {
@@ -81,15 +82,15 @@ describe('getExternalVars', () => {
       }
     `;
 
-    fs.readFile = jest.fn().mockResolvedValue(css);
+    fs.readFile.mockResolvedValue(css);
 
     const result = await getExternalVars('/fake/path/tokens.css');
 
-    expect(result).toHaveProperty('--color-primary');
-    expect(result).toHaveProperty('--space-sm');
+    expect(result).toHaveProperty('--color-accent-primary');
+    expect(result).toHaveProperty('--space-small');
     expect(result).not.toHaveProperty('--local-color');
 
-    expect(result['--color-primary'].isExternal).toBe(true);
-    expect(result['--color-primary'].src).toBe('/fake/path/tokens.css');
+    expect(result['--color-accent-primary'].isExternal).toBe(true);
+    expect(result['--color-accent-primary'].src).toBe('/fake/path/tokens.css');
   });
 });

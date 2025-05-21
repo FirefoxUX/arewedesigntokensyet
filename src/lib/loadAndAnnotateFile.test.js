@@ -19,6 +19,7 @@ function getOffsetRange(lineText, snippet) {
 describe('loadAndAnnotateFile', () => {
   beforeEach(() => {
     jest.mock('node:fs/promises');
+    fs.readFile = jest.fn();
   });
 
   afterEach(() => {
@@ -28,30 +29,30 @@ describe('loadAndAnnotateFile', () => {
   test('renders highlighted HTML with annotations for design tokens', async () => {
     const css = `
       :root {
-        --color-primary: #f00;
+        --color-accent-primary: #f00;
       }
 
       .button {
-        color: var(--color-primary);
+        color: var(--color-accent-primary);
       }
     `;
 
-    fs.readFile = jest.fn().mockResolvedValueOnce(css);
+    fs.readFile.mockResolvedValueOnce(css);
 
     const line = css.split('\n')[6]; // 0-based line index for line 7 (actual code line)
     const { startColumn, endColumn } = getOffsetRange(
       line,
-      'var(--color-primary)',
+      'var(--color-accent-primary)',
     );
 
     const foundPropValues = [
       {
         property: 'color',
-        value: 'var(--color-primary)',
+        value: 'var(--color-accent-primary)',
         start: { line: 7, column: startColumn },
         end: { line: 7, column: endColumn },
         resolutionType: 'external',
-        resolutionTrace: ['var(--color-primary)', '#f00'],
+        resolutionTrace: ['var(--color-accent-primary)', '#f00'],
         resolutionSources: ['tokens/colors.css'],
         unresolvedVariables: [],
         containsDesignToken: true,
@@ -64,7 +65,7 @@ describe('loadAndAnnotateFile', () => {
       foundPropValues,
     );
 
-    expect(html).toMatch(/var\(--color-primary\)/);
+    expect(html).toMatch(/var\(--color-accent-primary\)/);
     expect(html).toMatch(/class="awdty--external"/);
     expect(html).toMatch(/data-trace/);
     expect(html).toMatch(/tokens\/colors\.css/);
@@ -77,7 +78,7 @@ describe('loadAndAnnotateFile', () => {
       }
     `;
 
-    fs.readFile = jest.fn().mockResolvedValueOnce(css);
+    fs.readFile.mockResolvedValueOnce(css);
     const html = await loadAndAnnotateFile('/project/card.css', []);
     expect(html).toMatch(/padding/);
     expect(html).toMatch(/16/);

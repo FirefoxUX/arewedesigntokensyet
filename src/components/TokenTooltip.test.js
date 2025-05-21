@@ -24,19 +24,11 @@ function setupTooltip(options = {}) {
   });
 }
 
-/**
- *
- * @param tooltip
- */
-function teardownTooltip(tooltip) {
-  tooltip?.remove();
-}
-
 describe('<token-tooltip>', () => {
   let tooltip;
 
   afterEach(() => {
-    teardownTooltip(tooltip);
+    tooltip?.remove();
   });
 
   test('renders trace and tokens correctly', async () => {

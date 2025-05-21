@@ -29,6 +29,16 @@ describe('LineHighlighter', () => {
     highlighter.destroy();
   });
 
+  test('parseLineHash returns empty list for bogus start', () => {
+    window.location.hash = '#Lwhatever-12';
+    expect(highlighter.parseLineHash()).toEqual([]);
+  });
+
+  test('parseLineHash returns empty list for bogus end', () => {
+    window.location.hash = '#L12-whatever';
+    expect(highlighter.parseLineHash()).toEqual([]);
+  });
+
   test('parseLineHash returns single line for #L12', () => {
     window.location.hash = '#L12';
     expect(highlighter.parseLineHash()).toEqual([12]);
