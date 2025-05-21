@@ -22,19 +22,18 @@ describe('buildResolutionTrace', () => {
 
   test('retains unresolved var names instead of "MISSING"', () => {
     const result = buildResolutionTrace('var(--x)', {});
-    // expect(result).toEqual(['var(--x)', 'var(--x)']);
     expect(result).toEqual(['var(--x)']);
   });
 });
 
 describe('analyzeTrace', () => {
   beforeAll(() => {
-    config.designTokenKeys = ['--color-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
     config.excludedCSSValues = ['inherit'];
   });
 
   test('detects design token and excluded values', () => {
-    const trace = ['var(--color-primary)', 'inherit'];
+    const trace = ['var(--color-accent-primary)', 'inherit'];
     const result = analyzeTrace(trace);
     expect(result.containsDesignToken).toBe(true);
     expect(result.containsExcludedValue).toBe(true);
@@ -43,7 +42,7 @@ describe('analyzeTrace', () => {
 
 describe('classifyResolutionFromTrace', () => {
   beforeAll(() => {
-    config.designTokenKeys = ['--color-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
     config.excludedCSSValues = ['inherit'];
     config.repoPath = '/project';
   });
@@ -112,9 +111,9 @@ describe('getResolvedVarOrigins', () => {
 
 describe('getUnresolvedVariablesFromTrace', () => {
   test('returns only unresolved, non-token vars', () => {
-    const trace = ['var(--unknown)', 'var(--color-primary)'];
+    const trace = ['var(--unknown)', 'var(--color-accent-primary)'];
     const foundVars = {
-      '--color-primary': { value: '#000' }, // token defined
+      '--color-accent-primary': { value: '#000' }, // token defined
     };
 
     const result = getUnresolvedVariablesFromTrace(trace, foundVars);
@@ -125,7 +124,7 @@ describe('getUnresolvedVariablesFromTrace', () => {
 describe('getResolutionSources', () => {
   beforeAll(() => {
     config.repoPath = '/project';
-    config.designTokenKeys = ['--color-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
     config.excludedCSSValues = [];
   });
 
