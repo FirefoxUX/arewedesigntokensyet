@@ -8,73 +8,73 @@ import {
 } from './tokenUtils.js';
 
 describe('isVariableDefinition', () => {
-  it('should return true for a CSS var', () => {
+  test('should return true for a CSS var', () => {
     expect(isVariableDefinition('--foo')).toBe(true);
   });
 
-  it(`should return false for value that isn't a CSS var`, () => {
+  test(`should return false for value that isn't a CSS var`, () => {
     expect(isVariableDefinition('whatever')).toBe(false);
   });
 
-  it('should return false for undefined', () => {
+  test('should return false for undefined', () => {
     expect(isVariableDefinition(undefined)).toBe(false);
   });
 
-  it('should return false for true', () => {
+  test('should return false for true', () => {
     expect(isVariableDefinition(true)).toBe(false);
   });
 
-  it('should return false for []', () => {
+  test('should return false for []', () => {
     expect(isVariableDefinition([])).toBe(false);
   });
 });
 
 describe('containsDesignTokenValue', () => {
-  it(`should be true for '--space-xsmall'`, () => {
+  test(`should be true for '--space-xsmall'`, () => {
     expect(containsDesignTokenValue('var(--space-xsmall)')).toBe(true);
   });
 
-  it(`should be true for a mixed value`, () => {
+  test(`should be true for a mixed value`, () => {
     expect(containsDesignTokenValue('4px var(--space-xsmall)')).toBe(true);
   });
 
-  it(`should not be true for a value that has no tokens present`, () => {
+  test(`should not be true for a value that has no tokens present`, () => {
     expect(containsDesignTokenValue('4px 4px')).toBe(false);
   });
 
-  it(`should not be true for an ignored value`, () => {
+  test(`should not be true for an ignored value`, () => {
     expect(containsDesignTokenValue('unset')).toBe(false);
   });
 });
 
 describe('containsExcludedValue', () => {
-  it('should ignore unset', () => {
+  test('should ignore unset', () => {
     expect(containsExcludedValue('unset')).toBe(true);
   });
 
-  it('should ignore 0', () => {
+  test('should ignore 0', () => {
     expect(containsExcludedValue('0')).toBe(true);
   });
 
-  it('should ignore an a pattern match for calc()', () => {
+  test('should ignore an a pattern match for calc()', () => {
     expect(containsExcludedValue('calc(100vh - 100px)')).toBe(true);
   });
 
-  it('should ignore a pattern match for max()', () => {
+  test('should ignore a pattern match for max()', () => {
     expect(containsExcludedValue('max(20vw, 400px)')).toBe(true);
   });
 
-  it('should not ignore a hard-coded value', () => {
+  test('should not ignore a hard-coded value', () => {
     expect(containsExcludedValue('400px')).toBe(false);
   });
 });
 
 describe('isTokenizableProperty', () => {
-  it(`should identify 'gap' as a  tokenizable property`, () => {
+  test(`should identify 'gap' as a  tokenizable property`, () => {
     expect(isTokenizableProperty('gap')).toBe(true);
   });
 
-  it(`should not identify 'width' as a  tokenizable property`, () => {
+  test(`should not identify 'width' as a  tokenizable property`, () => {
     expect(isTokenizableProperty('width')).toBe(false);
   });
 });

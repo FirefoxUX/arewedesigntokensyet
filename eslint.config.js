@@ -23,6 +23,7 @@ export default defineConfig([
     rules: {
       ...pluginJest.configs['flat/recommended'].rules,
       ...globalRules,
+      'jest/consistent-test-it': ['error', { fn: 'test' }],
     },
   },
   {

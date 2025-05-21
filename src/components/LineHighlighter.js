@@ -54,7 +54,7 @@ export class LineHighlighter {
     }
 
     const [start, end] = hash.slice(2).split('-').map(Number);
-    if (Number.isNaN(start)) {
+    if (Number.isNaN(start) || Number.isNaN(end)) {
       return [];
     }
 
