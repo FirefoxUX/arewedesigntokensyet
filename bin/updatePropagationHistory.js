@@ -45,6 +45,13 @@ async function getGitRevision(repoPath) {
  *
  * Each key represents a long-form CLI flag (e.g., '--force').
  * The associated value describes how to parse and display that option.
+ *
+ * @typedef {object} ParsedOptions
+ * @property {string} date - The date string in YYYY-MM-DD format.
+ * @property {boolean} force - Whether the --force flag was passed.
+ * @property {boolean} latestOnly - Whether the --latest-only flag was passed.
+ * @property {boolean} monthly - Whether the --monthly flag was passed.
+ *
  */
 const optionDefinitions = {
   '--date': {
@@ -84,7 +91,7 @@ const optionDefinitions = {
  * The returned object uses camelCased keys (without the `--` prefix).
  * If `--help` is passed, the help text is printed and the process exits.
  * @param {string[]} argv - The full `process.argv` array from the Node.js runtime.
- * @returns {Object<string, any>} - Parsed CLI options with defaults applied.
+ * @returns {ParsedOptions} - Parsed CLI options with defaults applied.
  * @example
  * // node script.js --date 2024-01-01 --force
  * const options = parseArgs(process.argv);

@@ -51,7 +51,6 @@ export default defineConfig([
       'jsdoc/require-param-description': 'off',
       'jsdoc/require-param-type': 'off',
       'jsdoc/no-undefined-types': 'off',
-      'jsdoc/check-types': 'off',
       'jsdoc/tag-lines': 'off',
     },
   },
