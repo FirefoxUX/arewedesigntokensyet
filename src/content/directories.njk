@@ -18,7 +18,7 @@ layout: base.njk
   {% for file in groupedFilesByDir[dir].files %}
     {% set filePropagation =  file.propagationData.percentage | ignoreFilter %}
     <li>
-      <a href="/{{ file.fileURI | url }}">{{ file.fileName }}</a>
+      <a href="/{{ file.fileURI }}">{{ file.fileName }}</a>
       <span class="{{ filePropagation | rangeClass }}">{{ filePropagation }}</span>
     </li>
   {% endfor %}
