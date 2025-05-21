@@ -61,6 +61,7 @@ const optionDefinitions = {
   },
   '--latest-only': {
     type: 'boolean',
+    key: 'latestOnly',
     description: `Process only the most recent entry. Note --force is ignored and this always writes out to ${HISTORY_PATH_LATEST}`,
     default: false,
   },
@@ -94,7 +95,10 @@ function parseArgs(argv) {
   const options = {};
 
   for (const [flag, def] of Object.entries(optionDefinitions)) {
-    options[flag.slice(2)] = def.default;
+    if (def.key === undefined) {
+      def.key = flag.slice(2);
+    }
+    options[def.key] = def.default;
   }
 
   for (let i = 0; i < args.length; i++) {
@@ -110,10 +114,11 @@ function parseArgs(argv) {
       process.exit(0);
     }
 
+    const key = optionDefinitions[arg]?.key || arg.slice(2);
     if (def.type === 'boolean') {
-      options[arg.slice(2)] = true;
+      options[key] = true;
     } else if (def.requiresValue) {
-      options[arg.slice(2)] = args[i + 1];
+      options[key] = args[i + 1];
       i++;
     }
   }
