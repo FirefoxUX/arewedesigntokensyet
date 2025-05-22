@@ -42,7 +42,7 @@
     "prettier-ci": "prettier -c '**'",
     "pre-commit-checks": "lint-staged",
     "postinstall": "husky",
-    "start": "npm run build:data && concurrently \"npm run build:components:watch\" \"npm run eleventy:watch\"",
+    "start": "npm run clean && npm run build:data && concurrently \"npm run build:components:watch\" \"npm run eleventy:watch\"",
     "test-ci": "npm run lint && npm run prettier-ci && npm run test",
     "test": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js --watch --no-coverage",

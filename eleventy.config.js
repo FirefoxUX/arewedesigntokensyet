@@ -17,9 +17,9 @@ const outputDir = path.relative(__dirname, 'build');
  * @param eleventyConfig
  */
 export default async function (eleventyConfig) {
-  // Tell 11ty to reload if the bundle put there by esbuild changes.
+  // Tell 11ty to reload if the JS is put there by esbuild changes.
   eleventyConfig.setServerOptions({
-    watch: ['build/**/*.bundle.js'],
+    watch: ['build/components/main.js', 'build/graph/render-graph.js'],
   });
 
   // Plugins.
@@ -31,9 +31,6 @@ export default async function (eleventyConfig) {
   // Files that are passed through.
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
   eleventyConfig.addPassthroughCopy('./src/content/css/');
-  eleventyConfig.addPassthroughCopy({
-    './src/data/propagationHistory.json': 'data/propagationHistory.json',
-  });
 
   // Filters.
   eleventyConfig.addFilter('slug', (str) =>
