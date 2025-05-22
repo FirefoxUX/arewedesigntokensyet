@@ -32,7 +32,7 @@ try {
   // eslint-disable-next-line no-unused-vars
 } catch (error) {
   console.warn(
-    `Can't find "tokens-storybook.mjs" This is either and old revision or we're running tests. Falling back to use the backup in src/data/tokensBackup.`,
+    `Can't find "tokens-storybook.mjs" This is either and old revision or we're running tests. Falling back to use the backup src/data/tokensBackup.json`,
   );
   const backupPath = pathToFileURL(path.join('./src/data/tokensBackup.json'));
   const designTokenKeysImport = await import(backupPath, {
@@ -43,7 +43,7 @@ try {
 
 export default {
   repoPath,
-  // Note this is mostly what we want but not always as some keys are not css properties.
+  // These are the properties we look for, and expect to utilize design tokens.
   designTokenProperties: [
     'background-color',
     'border',
@@ -129,7 +129,7 @@ export default {
   externalVarMapping: {
     // For everything that matches the glob on the left hand side, get the vars from
     // each file in the list on the right hand side. Files in the RHS list are ignored
-    // from the glob.
+    // during processing.
     'browser/components/aboutlogins/content/components/*.css': [
       'browser/components/aboutlogins/content/aboutLogins.css',
     ],
@@ -153,13 +153,13 @@ export default {
   excludedCSSValues: [
     0,
     'auto',
-    /calc(.*?)/,
     'currentColor',
     'inherit',
     'initial',
-    /max(.*?)/,
     'none',
     'transparent',
     'unset',
+    /calc(.*?)/,
+    /max(.*?)/,
   ],
 };
