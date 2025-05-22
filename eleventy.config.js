@@ -34,9 +34,6 @@ export default async function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({
     './src/data/propagationHistory.json': 'data/propagationHistory.json',
   });
-  eleventyConfig.addPassthroughCopy({
-    './src/graph/render-graph.js': 'js/render-graph.js',
-  });
 
   // Filters.
   eleventyConfig.addFilter('slug', (str) =>

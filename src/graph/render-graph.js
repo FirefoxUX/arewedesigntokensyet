@@ -1,2 +1,2 @@
-import { renderPropagationChart } from '/graph/propagation-graph.js';
+import { renderPropagationChart } from './propagation-graph.js';
 renderPropagationChart('propagationChart');

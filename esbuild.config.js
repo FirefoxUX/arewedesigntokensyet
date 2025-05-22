@@ -3,7 +3,7 @@ import { context } from 'esbuild';
 const watchMode = process.argv.includes('--watch');
 
 const ctx = await context({
-  entryPoints: ['./src/components/main.js', './src/graph/propagation-graph.js'],
+  entryPoints: ['./src/components/main.js', './src/graph/render-graph.js'],
   bundle: true,
   format: 'esm',
   outdir: './build/',
