@@ -6,7 +6,7 @@ import { codeToHtml } from 'shiki';
  * Determines whether a CSS variable name matches any known design token prefix.
  *
  * @param {string} name - The name of the variable (e.g. "--color-text").
- * @returns {boolean} - True if the name contains a design token key.
+ * @returns {boolean} - true if the name contains a design token key.
  */
 function isDesignToken(name) {
   return config.designTokenKeys.some((token) => name.includes(token));

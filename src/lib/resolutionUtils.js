@@ -34,9 +34,9 @@ export function buildResolutionTrace(initialValue, foundVariables) {
       visited.add(variable);
 
       const ref = foundVariables[variable];
-      const replacement = ref ? ref.value : `var(${variable})`;
 
-      if (nextValue.includes(`var(${variable})`)) {
+      const replacement = ref?.value;
+      if (nextValue.includes(`var(${variable})`) && replacement) {
         nextValue = nextValue.replace(`var(${variable})`, replacement);
         changed = true;
       }

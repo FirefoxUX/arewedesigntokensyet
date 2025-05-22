@@ -4,7 +4,7 @@ import config from '../../config.js';
  * Returns true if the property is a CSS custom property (e.g. starts with `--`).
  *
  * @param {string} prop - The CSS property name.
- * @returns {boolean} - True if it is a variable definition.
+ * @returns {boolean} - true if it is a variable definition.
  */
 export function isVariableDefinition(prop) {
   return !!prop?.startsWith?.('--');
@@ -14,7 +14,7 @@ export function isVariableDefinition(prop) {
  * Returns true if the value contains any configured design token key.
  *
  * @param {string} value - The CSS value to inspect.
- * @returns {boolean} - True if a design token key is found in the value.
+ * @returns {boolean} - true if a design token key is found in the value.
  */
 export function containsDesignTokenValue(value) {
   return config.designTokenKeys.some((token) => value?.includes(token));
@@ -22,11 +22,10 @@ export function containsDesignTokenValue(value) {
 
 /**
  * Returns true if the value matches any excluded CSS value or pattern.
- *
  * This includes exact string matches or RegExp patterns like 'inherit', 'unset', etc.
  *
  * @param {string} value - The CSS value to test.
- * @returns {boolean} - True if the value is considered excluded.
+ * @returns {boolean} - true if the value is considered excluded.
  */
 export function containsExcludedValue(value) {
   return config.excludedCSSValues.some((item) =>
@@ -36,11 +35,10 @@ export function containsExcludedValue(value) {
 
 /**
  * Returns true if the property is in the configured list of analyzable properties.
- *
  * These include CSS props like `color`, `background-color`, etc.
  *
  * @param {string} prop - The CSS property name.
- * @returns {boolean} - True if the property should be token-analyzed.
+ * @returns {boolean} - true if the property should be token-analyzed.
  */
 export function isTokenizableProperty(prop) {
   return config.designTokenProperties.includes(prop);
@@ -48,7 +46,6 @@ export function isTokenizableProperty(prop) {
 
 /**
  * Extracts all CSS custom property references from a value.
- *
  * Supports multiple nested references like `var(--a, var(--b))` → ['--a', '--b'].
  *
  * @param {string} value - The CSS value to search.
@@ -75,7 +72,7 @@ export function getCSSVariables(value) {
  * Valid selectors are `:root` and `:host` (optionally comma-separated).
  *
  * @param {import('postcss').Declaration} node - A PostCSS declaration node.
- * @returns {boolean} - True if the declaration is inside a valid selector.
+ * @returns {boolean} - true if the declaration is inside a valid selector.
  */
 export function isWithinValidParentSelector(node) {
   const parent = node.parent;

@@ -42,7 +42,7 @@ export class UnresolvedVarTracker {
    * Determines whether the variable name is considered a known design token.
    *
    * @param {string} name - The variable name to check.
-   * @returns {boolean} - True if it matches a configured design token key.
+   * @returns {boolean} - true if it matches a configured design token key.
    * @private
    */
   _isDesignToken(name) {

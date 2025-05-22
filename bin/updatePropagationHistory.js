@@ -183,7 +183,7 @@ function calculateDelta(history, date, newPercentage) {
  *
  * @param {string} date - ISO date string (YYYY-MM-DD).
  * @param {boolean} monthly - Whether monthly mode is enabled.
- * @returns {boolean} - True if the update should be skipped.
+ * @returns {boolean} - true if the update should be skipped.
  */
 function shouldSkipForMonthly(date, monthly) {
   if (!monthly) {

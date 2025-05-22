@@ -10,14 +10,37 @@ import {
 } from './resolutionUtils.js';
 
 describe('buildResolutionTrace', () => {
-  const foundVars = {
-    '--a': { value: 'var(--b)' },
-    '--b': { value: '12px' },
-  };
-
   test('resolves a nested chain', () => {
+    const foundVars = {
+      '--a': { value: 'var(--b)' },
+      '--b': { value: '12px' },
+    };
     const result = buildResolutionTrace('var(--a)', foundVars);
     expect(result).toEqual(['var(--a)', 'var(--b)', '12px']);
+  });
+
+  test('resolves a nested chain with multiple vars', () => {
+    const foundVars = {
+      '--a': { value: 'var(--b)' },
+      '--b': { value: '12px' },
+      '--c': { value: '24px' },
+    };
+    const result = buildResolutionTrace('var(--a) var(--c)', foundVars);
+    expect(result).toEqual(['var(--a) var(--c)', 'var(--b) 24px', '12px 24px']);
+  });
+
+  test('handles non-resolvable vars', () => {
+    const foundVars = {};
+    const result = buildResolutionTrace('12px 24px', foundVars);
+    expect(result).toEqual(['12px 24px']);
+  });
+
+  test('handles a potential loop', () => {
+    const foundVars = {
+      '--a': { value: 'var(--a)' },
+    };
+    const result = buildResolutionTrace('var(--a)', foundVars);
+    expect(result).toEqual(['var(--a)']);
   });
 
   test('retains unresolved var names instead of "MISSING"', () => {
@@ -37,6 +60,20 @@ describe('analyzeTrace', () => {
     const result = analyzeTrace(trace);
     expect(result.containsDesignToken).toBe(true);
     expect(result.containsExcludedValue).toBe(true);
+  });
+
+  test('correctly indentifies non-design token use', () => {
+    const trace = ['var(--not-token)', 'inherit'];
+    const result = analyzeTrace(trace);
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedValue).toBe(true);
+  });
+
+  test('correctly indentifies non-design token and non excluded value use', () => {
+    const trace = ['var(--not-token)', 'whatever'];
+    const result = analyzeTrace(trace);
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedValue).toBe(false);
   });
 });
 

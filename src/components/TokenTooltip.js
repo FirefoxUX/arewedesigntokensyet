@@ -7,11 +7,11 @@ import { LitElement, html, css } from 'lit';
  * about CSS design token usage.
  *
  * It renders:
- * - A status message ("good", "warn", or "bad")
- * - A list of design tokens used
- * - A trace of variable resolution
- * - The source file(s) involved
- * - Any unresolved variables
+ * - A status message based on whether tokens are used or not, or if the property value is ignored.
+ * - A list of design tokens used.
+ * - A trace of variable resolution.
+ * - The source file(s) involved,
+ * - Any unresolved variables.
  *
  * Intended for use as a floating tooltip element, e.g. in a code viewer.
  */
