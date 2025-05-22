@@ -1,25 +1,8 @@
-/* global fetch, document */
+/* global document */
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-luxon';
+import history from '../data/propagationHistory.json' with { type: 'json' };
 import latestHistory from '../data/propagationHistoryLatest.json' with { type: 'json' };
-
-/**
- * Fetches the historical design token propagation data from the server.
- *
- * This function retrieves the `propagationHistory.json` file from the `/data` directory.
- * If the response is not successful, it throws an error.
- *
- * @returns {Promise<Array<{ date: string, percentage: number, delta?: number }>>}
- *   A promise that resolves to an array of propagation data points.
- * @throws {Error} If the fetch request fails or returns a non-OK response.
- */
-async function fetchPropagationData() {
-  const res = await fetch('/data/propagationHistory.json');
-  if (!res.ok) {
-    throw new Error('Failed to load propagation history');
-  }
-  return res.json();
-}
 
 /**
  * Renders a line chart visualizing the propagation percentage over time.
@@ -36,10 +19,8 @@ async function fetchPropagationData() {
  * await renderPropagationChart('propagationChart');
  */
 export async function renderPropagationChart(canvasId) {
-  const historyData = await fetchPropagationData();
-
   // Merge in the latest data.
-  const data = [...historyData, ...latestHistory];
+  const data = [...history, ...latestHistory];
 
   new Chart(document.getElementById(canvasId), {
     type: 'line',
@@ -74,7 +55,6 @@ export async function renderPropagationChart(canvasId) {
           },
           tooltipFormat: 'DD',
           title: { display: true, text: 'Date' },
-          min: '2023-04-08',
         },
       },
       responsive: true,
