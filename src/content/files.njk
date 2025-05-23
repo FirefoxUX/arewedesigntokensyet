@@ -4,22 +4,22 @@ pagination:
   size: 1
   alias: file
 permalink: "/{{ file.fileURI }}/"
-layout: base.njk
+layout: filesLayout.njk
 
 ---
 
 <h1><a href="/{{ file.dirURI }}">{{ file.dirURI }}</a>/{{ file.fileName }}</h1>
-{% set totalPropagation = file.propagationData.percentage %}
-<p><strong>Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}%</span></p>
+{% set totalPropagation = file.propagationData.percentage | ignoreFilter %}
+<p><strong>Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}</span></p>
 
 {% include 'homeLink.njk' %}
 
 {% if file.absolutePath %}
-<pre class="line-numbers language-css"><code>
-{% loadAndAnnotateFile file.absolutePath, file.propagationData.foundPropValues %}
-</code></pre>
+  {% loadAndAnnotateFile file.absolutePath, file.propagationData.foundPropValues %}
 {% else %}
   <p>No file content available.</p>
 {% endif %}
 
 {% include 'homeLink.njk' %}
+
+

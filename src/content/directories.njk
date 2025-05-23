@@ -8,17 +8,18 @@ layout: base.njk
 ---
 
 <h1>{{ dir }}</h1>
-{% set totalPropagation =  groupedFilesByDir[dir].averagePropagation | round(2) %}
-<p><strong>Average Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}%</span></p>
+{% set totalPropagation =  groupedFilesByDir[dir].averagePropagation | ignoreFilter %}
+<p>
+  <strong>Average Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}</span></p>
 
 {% include 'homeLink.njk' %}
 
 <ul>
   {% for file in groupedFilesByDir[dir].files %}
-    {% set filePropagation =  file.propagationData.percentage | round(2) %}
+    {% set filePropagation =  file.propagationData.percentage | ignoreFilter %}
     <li>
-      <a href="/{{ file.fileURI | url }}">{{ file.fileName }}</a>
-      <span class="{{ filePropagation | rangeClass }}">{{ filePropagation }}%</span>
+      <a href="/{{ file.fileURI }}">{{ file.fileName }}</a>
+      <span class="{{ filePropagation | rangeClass }}">{{ filePropagation }}</span>
     </li>
   {% endfor %}
 </ul>

@@ -5,6 +5,8 @@
 
 /** @type {import('jest').Config} */
 const config = {
+  roots: ['<rootDir>'],
+  modulePaths: ['<rootDir>'],
   // Automatically clear mock calls, instances, contexts and results before every test
   clearMocks: false,
 
@@ -20,9 +22,10 @@ const config = {
   // An array of regexp pattern strings used to skip coverage collection
   coveragePathIgnorePatterns: [
     '/node_modules/',
+    '/build/',
     '/coverage/',
     '/src/data/',
-    '(?:eslint|eleventy).config.js',
+    '(?:esbuild|eslint|eleventy).config.js',
   ],
 
   // Indicates which provider should be used to instrument code for coverage
@@ -30,6 +33,13 @@ const config = {
 
   // A map from regular expressions to paths to transformers
   transform: {},
+
+  // Specify a setup file.
+  setupFilesAfterEnv: ['./jest.setup.js', '@testing-library/jest-dom'],
+
+  injectGlobals: true,
+
+  watchPathIgnorePatterns: ['<rootDir>/build/'],
 };
 
 export default config;

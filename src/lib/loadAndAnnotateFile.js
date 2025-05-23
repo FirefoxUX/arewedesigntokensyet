@@ -1,81 +1,162 @@
 import fs from 'node:fs/promises';
-
+import config from '../../config.js';
 import { codeToHtml } from 'shiki';
 
-/*
- * Async function to return CSS content, annotated with HTML markup for display.
+/**
+ * Determines whether a CSS variable name matches any known design token prefix.
  *
- * @param {string} filePath. The path to a file to load that should be copied and annotated for display.
- * @param {Array} foundPropValues. The list of objects that contain CSS properties that should be found and annotated.
- * @returns {<Promise<string>} A string to be rendered.
- *
+ * @param {string} name - The name of the variable (e.g. "--color-text").
+ * @returns {boolean} - true if the name contains a design token key.
  */
-export default async function (filePath, foundPropValues) {
-  try {
-    const content = await fs.readFile(filePath, 'utf8');
-    const namespace = 'awdty';
+function isDesignToken(name) {
+  return config.designTokenKeys.some((token) => name.includes(token));
+}
 
-    const strings = {
-      'indirect-ignore': {
-        modifier: 'indirect-ignore-current',
-        title:
-          'This property refs a variable that resolves to an ignored value',
-      },
-      'indirect-pass': {
-        modifier: 'indirect-token-current',
-        title:
-          'This property refs a variable that resolves to a design token in the current file',
-      },
-      pass: {
-        modifier: 'pass',
-        title: 'This value is using a design token ❤️',
-      },
-      fail: {
-        modifier: 'fail',
-        title: `This value doesn't directly use a design token`,
-      },
-      ignore: {
-        modifier: 'ignore',
-        title: 'This value is ignored by our rules',
-      },
-    };
-
-    const decorations = [];
-    for (const entry of foundPropValues) {
-      const { isDesignToken, isIndirectRef, isExcludedValue } = entry;
-      let decorationData = strings.fail;
-      if (isExcludedValue && isIndirectRef && !isDesignToken) {
-        decorationData = strings['indirect-ignore'];
-      } else if (isDesignToken && isIndirectRef) {
-        decorationData = strings['indirect-pass'];
-      } else if (isDesignToken) {
-        decorationData = strings.pass;
-      } else if (!isDesignToken && isExcludedValue) {
-        decorationData = strings.ignore;
-      }
-
-      decorations.push({
-        start: {
-          line: entry.start.line - 1,
-          character: entry.start.column - 1,
-        },
-        end: { line: entry.end.line - 1, character: entry.end.column - 1 },
-        properties: {
-          class: `${namespace}-line-${decorationData.modifier}`,
-          title: decorationData.title,
-        },
-      });
+/**
+ * Removes consecutive duplicate values from a resolution trace.
+ *
+ * @param {string[]} trace - The resolution trace to deduplicate.
+ * @returns {string[]} - A new array with consecutive duplicates removed.
+ */
+function dedupeTrace(trace = []) {
+  const result = [];
+  for (let i = 0; i < trace.length; i++) {
+    if (i === 0 || trace[i] !== trace[i - 1]) {
+      result.push(trace[i]);
     }
-
-    const html = await codeToHtml(content, {
-      theme: 'slack-ochin',
-      lang: 'css',
-      decorations,
-    });
-
-    return html;
-  } catch (e) {
-    console.log(e);
-    return 'Could not load file.';
   }
+  return result;
+}
+
+/**
+ * Returns a string representing the design token resolution status.
+ *
+ * @param {object} prop - A resolved property with token metadata.
+ * @param {boolean} prop.containsDesignToken - Whether the value includes a known token.
+ * @param {boolean} prop.containsExcludedValue - Whether the value includes an excluded pattern.
+ * @returns {'good' | 'warn' | 'bad'} - The resolution status.
+ */
+function getStatus(prop) {
+  return prop.containsDesignToken
+    ? 'good'
+    : prop.containsExcludedValue
+      ? 'warn'
+      : 'bad';
+}
+
+/**
+ * Constructs tooltip metadata for a given resolved property.
+ *
+ * Extracts trace, tokens used, resolution sources, and unresolved variables.
+ *
+ * @param {object} prop - A resolved property with metadata from analysis.
+ * @returns {{
+ *   status: string,
+ *   trace: string[],
+ *   tokens: string[],
+ *   source: string[],
+ *   unresolved: string[]
+ * }}
+ */
+function extractTooltipData(prop) {
+  const status = getStatus(prop);
+  const trace = dedupeTrace(prop.resolutionTrace || []);
+
+  const unresolved = (prop.unresolvedVariables || []).filter(
+    (v) => !isDesignToken(v),
+  );
+
+  const tokensUsed = new Set();
+  for (const step of trace) {
+    const matches = step.match(/--[\w-]+/g) || [];
+    for (const token of matches) {
+      if (isDesignToken(token)) {
+        tokensUsed.add(token);
+      }
+    }
+  }
+
+  return {
+    status,
+    trace,
+    tokens: [...tokensUsed],
+    source: !prop.containsExcludedValue ? prop.resolutionSources || [] : [],
+    unresolved,
+  };
+}
+
+/**
+ * Reads a CSS file, decorates it with Shiki, and embeds design token metadata as tooltip data.
+ *
+ * Adds data attributes to Shiki decorations for tooltip display, including resolution trace,
+ * token usage, unresolved variables, and resolution status.
+ *
+ * @param {string} filePath - Absolute path to the CSS file.
+ * @param {Array<object>} foundPropValues - An array of resolved CSS properties to annotate.
+ * @returns {Promise<string>} - HTML string with Shiki syntax highlighting and tooltip metadata.
+ */
+export default async function loadAndAnnotateFile(filePath, foundPropValues) {
+  const content = await fs.readFile(filePath, 'utf8');
+  const decorations = [];
+
+  for (const prop of foundPropValues) {
+    const { start, end, resolutionType } = prop;
+
+    const tooltipData = extractTooltipData(prop);
+
+    decorations.push({
+      start: {
+        line: start.line - 1,
+        character: start.column - 1,
+      },
+      end: {
+        line: end.line - 1,
+        character: end.column - 1,
+      },
+      properties: {
+        class: `awdty--${resolutionType}`,
+        'data-status': tooltipData.status,
+        'data-trace': JSON.stringify(tooltipData.trace),
+        'data-tokens': JSON.stringify(tooltipData.tokens),
+        'data-source': JSON.stringify(tooltipData.source),
+        'data-unresolved': JSON.stringify(tooltipData.unresolved),
+        tabindex: '0',
+        role: 'button',
+        'aria-describedby': 'token-tooltip',
+      },
+    });
+  }
+
+  const html = await codeToHtml(content, {
+    lang: 'css',
+    theme: 'slack-ochin',
+    tabindex: false,
+    decorations,
+    transformers: [
+      {
+        /**
+         * Adds a `data-line` attribute and unique `id` to each line for line highlighting.
+         *
+         * @param {import('hast').Element} node - The HAST line node.
+         * @param {number} line - The line number.
+         */
+        line(node, line) {
+          const existing = node.properties.class;
+          let existingClassList = [];
+
+          if (Array.isArray(existing)) {
+            existingClassList = existing;
+          } else if (typeof existing === 'string') {
+            existingClassList = existing.split(' ');
+          }
+
+          node.properties.id = `L${line}`;
+          node.properties['data-line'] = String(line);
+          node.properties.class = [...existingClassList, 'line-numbered'];
+        },
+      },
+    ],
+  });
+
+  return html;
 }

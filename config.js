@@ -1,5 +1,7 @@
-import { pathToFileURL } from 'node:url';
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
@@ -13,14 +15,44 @@ const tokensPath = pathToFileURL(
   ),
 );
 
-const { storybookTables } = await import(tokensPath);
+let designTokenKeys;
+
+// If we're backfilling old data from the Firefox tree go far enough back and the
+// Storybook tables won't exist. Hence this mechanism allows us to using a backup
+// json file of design token keys.
+try {
+  await fs.access(tokensPath, fs.constants.R_OK);
+  const { storybookTables } = await import(tokensPath);
+  designTokenKeys = Object.values(storybookTables).flatMap((list) =>
+    list.map((item) => item.name),
+  );
+  console.log(
+    `Using '/toolkit/themes/shared/design-system/tokens-storybook.mjs' as token source`,
+  );
+  // eslint-disable-next-line no-unused-vars
+} catch (error) {
+  console.warn(
+    `Can't find "tokens-storybook.mjs" This is either and old revision or we're running tests. Falling back to use the backup src/data/tokensBackup.json`,
+  );
+  const backupPath = pathToFileURL(path.join('./src/data/tokensBackup.json'));
+  const designTokenKeysImport = await import(backupPath, {
+    with: { type: 'json' },
+  });
+  designTokenKeys = designTokenKeysImport.default;
+}
 
 export default {
   repoPath,
-  // Note this is mostly what we want but not always as some keys are not css properties.
+  // These are the properties we look for, and expect to utilize design tokens.
   designTokenProperties: [
     'background-color',
     'border',
+    'border-block-end',
+    'border-block-end-color',
+    'border-block-end-width',
+    'border-block-start',
+    'border-block-start-color',
+    'border-block-start-width',
     'border-top',
     'border-right',
     'border-bottom',
@@ -28,6 +60,10 @@ export default {
     'border-color',
     'border-width',
     'border-radius',
+    'border-top-left-radius',
+    'border-top-right-radius',
+    'border-bottom-left-radius',
+    'border-bottom-right-radius',
     'border-inline',
     'border-inline-color',
     'border-inline-end',
@@ -54,6 +90,7 @@ export default {
     'inset-inline-end',
     'inset-inline-start',
     'gap',
+    'grid-gap', // Deprecated in favour of gap but still used.
     'margin',
     'margin-block',
     'margin-block-end',
@@ -81,9 +118,7 @@ export default {
     'padding-left',
     'row-gap',
   ],
-  designTokenKeys: Object.values(storybookTables).flatMap((list) =>
-    list.map((item) => item.name),
-  ),
+  designTokenKeys,
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [
     'browser/components/**/*.css',
@@ -91,6 +126,26 @@ export default {
     'browser/extensions/newtab/css/**/*.css',
     'toolkit/content/widgets/**/*.css',
   ],
+  externalVarMapping: {
+    // For everything that matches the glob on the left hand side, get the vars from
+    // each file in the list on the right hand side. Files in the RHS list are ignored
+    // during processing.
+    'browser/components/aboutlogins/content/components/*.css': [
+      'browser/components/aboutlogins/content/aboutLogins.css',
+    ],
+    'browser/components/firefoxview/*.css': [
+      'browser/components/firefoxview/firefoxview.css',
+    ],
+    'browser/components/sidebar/*.css': [
+      'browser/components/sidebar/sidebar.css',
+    ],
+    'toolkit/content/widgets/moz-box-*/*.css': [
+      'toolkit/content/widgets/moz-box-common.css',
+    ],
+    'toolkit/content/widgets/moz-page-nav/*.css': [
+      'toolkit/content/widgets/moz-page-nav/moz-page-nav.css',
+    ],
+  },
   // Paths in the repo matching these glob patterns will be ignored to avoid generating
   // coverage for storybook files, tests and node deps.
   ignorePatterns: ['**/test{,s}/**', '**/node_modules/**', '**/storybook/**'],
@@ -98,13 +153,13 @@ export default {
   excludedCSSValues: [
     0,
     'auto',
-    /calc(.*?)/,
     'currentColor',
     'inherit',
     'initial',
-    /max(.*?)/,
     'none',
     'transparent',
     'unset',
+    /calc(.*?)/,
+    /max(.*?)/,
   ],
 };
