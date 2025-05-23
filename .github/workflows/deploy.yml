@@ -58,13 +58,13 @@ jobs:
       working-directory: ./awdty
       id: check_changes
       run: |
-      if [[ -n "$(git diff --exit-code src/data/propagationHistory.json)" ]]; then
-        echo "History Changes detected."
-        echo "::set-output name=has_changes::true"
-      else
-        echo "No history changes detected."
-        echo "::set-output name=has_changes::false"
-      fi
+        if [[ -n "$(git diff --exit-code src/data/propagationHistory.json)" ]]; then
+          echo "History Changes detected."
+          echo "::set-output name=has_changes::true"
+        else
+          echo "No history changes detected."
+          echo "::set-output name=has_changes::false"
+        fi
 
     - name: Conditionally update history data
       working-directory: ./awdty
