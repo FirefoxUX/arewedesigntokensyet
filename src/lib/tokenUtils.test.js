@@ -56,6 +56,14 @@ describe('containsExcludedValue', () => {
     expect(containsExcludedValue('0')).toBe(true);
   });
 
+  test('should ignore unitless 1', () => {
+    expect(containsExcludedValue('1')).toBe(true);
+  });
+
+  test('should not ignore 1px', () => {
+    expect(containsExcludedValue('1px')).toBe(false);
+  });
+
   test('should ignore an a pattern match for calc()', () => {
     expect(containsExcludedValue('calc(100vh - 100px)')).toBe(true);
   });
