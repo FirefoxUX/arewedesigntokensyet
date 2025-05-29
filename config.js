@@ -152,6 +152,7 @@ export default {
   // supports RegExp or string.
   excludedCSSValues: [
     0,
+    1,
     'auto',
     'currentColor',
     'inherit',
