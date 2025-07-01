@@ -118,6 +118,30 @@ async function collectExternalVars(filePath) {
 }
 
 /**
+ * Checks whether a CSS rule (the parent of a declaration node) actually uses
+ * the custom property that the node defines.
+ *
+ * This function only applies to nodes of type `"decl"` whose `prop`
+ * represents a variable definition (as determined by `isVariableDefinition`).
+ * It converts the parent rule to a string and looks for the literal
+ * `var(<prop>)` usage.
+ *
+ * @param {object} node - A PostCSS AST node.
+ * @param {string} node.type - The node type (should be "decl").
+ * @param {string} node.prop - The property name (e.g. "--my-var").
+ * @param {object} node.parent - The parent rule node.
+ * @returns {boolean|undefined} `true` if the parent rule string includes
+ *   `var(<prop>)`, `false` if not, or `undefined` if the node is not a
+ *   variable declaration.
+ */
+function ruleConsumesVar(node) {
+  if (node.type === 'decl' && isVariableDefinition(node.prop)) {
+    const ruleString = node.parent.toString();
+    return ruleString?.includes(`var(${node.prop})`);
+  }
+}
+
+/**
  * Walks the CSS AST and collects:
  * - Tokenizable properties (e.g. `color`, `font-size`)
  * - Variable definitions (`--*`) that are not external
@@ -146,7 +170,7 @@ function collectDeclarations(root, foundVariables, filePath) {
       });
     } else if (
       isVariableDefinition(node.prop) &&
-      isWithinValidParentSelector(node)
+      (isWithinValidParentSelector(node) || ruleConsumesVar(node))
     ) {
       if (foundVariables[node.prop]) {
         console.log(
