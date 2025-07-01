@@ -6,14 +6,14 @@ import { promisify } from 'util';
 import config from '../config.js';
 
 import total from '../src/data/totals.js';
+import groupedFilesByDir from '../src/data/groupedFilesByDir.json' with { type: 'json' };
 
+const HISTORY_PROPAGATION_FILENAME = 'propagationHistory.json';
+const HISTORY_LATEST_FILENAME = 'propagationHistoryLatest.json';
 // Note: This data is committed to the repo. It is updated monthly.
-const HISTORY_PATH = path.join('./src/data', 'propagationHistory.json');
+const HISTORY_PATH = path.join('src/data', HISTORY_PROPAGATION_FILENAME);
 // Note: This latest data is not committed.
-const HISTORY_PATH_LATEST = path.join(
-  './src/data',
-  'propagationHistoryLatest.json',
-);
+const HISTORY_PATH_LATEST = path.join('src/data', HISTORY_LATEST_FILENAME);
 // The day of the month to append an entry if --monthly is passed.
 const DAY_OF_MONTH = 1;
 
@@ -196,12 +196,12 @@ function shouldSkipForMonthly(date, monthly) {
 /**
  * Reads and parses a JSON file. Returns an empty array if the file doesn't exist.
  *
- * @param {string} path - Path to the JSON file.
+ * @param {string} filePath - Path to the JSON file.
  * @returns {Promise<any[]>} - Parsed contents of the file, or an empty array.
  */
-async function readJsonFile(path) {
+async function readJsonFile(filePath) {
   try {
-    const file = await fs.readFile(path, 'utf-8');
+    const file = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(file);
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -214,12 +214,14 @@ async function readJsonFile(path) {
 /**
  * Writes a JavaScript object to a file as formatted JSON.
  *
- * @param {string} path - Path to the JSON file.
+ * @param {string} filePath - Path to the JSON file.
  * @param {any} data - Data to serialize and write.
  * @returns {Promise<void>}
  */
-async function writeJsonFile(path, data) {
-  await fs.writeFile(path, JSON.stringify(data, null, 2));
+async function writeJsonFile(filePath, data) {
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
 }
 
 /**
@@ -243,22 +245,31 @@ function buildNewEntry(date, percentage, delta, gitRevision) {
 }
 
 /**
- * Updates or inserts a new entry into the history array.
- * Logs the outcome and respects the --force flag.
+ * Updates a propagation history array with a new entry for a specific date.
  *
- * @param {Array} history - Existing array of entries.
- * @param {object} newEntry - The new history entry to insert.
- * @param {string} date - Date associated with the entry.
- * @param {boolean} force - Whether to allow overwriting existing entries.
- * @returns {Array|null} - The updated history array, or null if no update was performed.
+ * - If an entry for the given date exists:
+ *   - If `force` is `true`, it overwrites the existing entry.
+ *   - If `force` is `false`, it logs a warning and does not modify the array.
+ * - If no entry for the date exists, it appends the new entry.
+ * - The history array is sorted by date before any updates.
+ *
+ * @param {Array<object>} history - The current array of history entries. Each entry must have a `date` field.
+ * @param {string} historyPath - A string identifier used in logging (typically a file or directory path).
+ * @param {object} newEntry - The new history entry to insert or overwrite.
+ * @param {string} newEntry.date - The date string (ISO format) for the entry.
+ * @param {number} newEntry.percentage - The propagation percentage.
+ * @param {number} [newEntry.delta] - Optional delta value representing change from previous entry.
+ * @param {string} date - The date key to update or insert in the history array.
+ * @param {boolean} force - Whether to force overwrite an existing entry for the given date.
+ * @returns {Array<object> | null} The updated history array, or `null` if no change was made and `force` was not set.
  */
-function updateHistory(history, newEntry, date, force) {
+function updateHistory(history, historyPath, newEntry, date, force) {
   const existingIndex = history.findIndex((entry) => entry.date === date);
   history.sort((a, b) => a.date.localeCompare(b.date));
 
   if (existingIndex !== -1 && !force) {
     console.log(
-      `⚠ Entry for ${date} already exists. Use --force to overwrite.`,
+      `⚠ Entry for ${historyPath} ${date} already exists. Use --force to overwrite.`,
     );
     return null;
   }
@@ -266,16 +277,76 @@ function updateHistory(history, newEntry, date, force) {
   if (existingIndex !== -1) {
     history[existingIndex] = newEntry;
     console.log(
-      `✏ Overwrote entry for ${date}: ${newEntry.percentage}% (Δ ${newEntry.delta ?? 'n/a'})`,
+      `✏ Overwrote entry for ${historyPath} ${date}: ${newEntry.percentage}% (Δ ${newEntry.delta ?? 'n/a'})`,
     );
   } else {
     history.push(newEntry);
     console.log(
-      `✔ Added entry for ${date}: ${newEntry.percentage}% (Δ ${newEntry.delta ?? 'n/a'})`,
+      `✔ Added entry for ${historyPath} ${date}: ${newEntry.percentage}% (Δ ${newEntry.delta ?? 'n/a'})`,
     );
   }
 
   return history;
+}
+
+/**
+ * Writes a new propagation history entry to one or both history files.
+ *
+ * This function builds a new entry using the given date and percentage,
+ * calculates the delta from existing history, and stores the entry:
+ *
+ * - If `latestOnly` is false, it updates `historyPath` with the new entry,
+ *   appending or overwriting as needed (based on `force`), and also saves it to the build directory.
+ * - If `latestOnly` is true, it only writes the latest entry to `historyPathLatest` and its build copy.
+ *
+ * The function always writes to the corresponding paths in the `build/` directory,
+ * because the build process flattens folders via passthrough copy.
+ *
+ * @async
+ * @function writeHistory
+ * @param {object} [options] - The options for writing history.
+ * @param {string} options.date - The date string (ISO format) for the new entry.
+ * @param {boolean} options.force - Whether to force overwriting an existing entry for the date.
+ * @param {boolean} options.latestOnly - Whether to only update the latest history file.
+ * @param {string} options.historyPath - Path to the main history file.
+ * @param {string} options.historyPathLatest - Path to the latest-only history file.
+ * @param {number} options.newPercentage - The new propagation percentage to record.
+ * @returns {Promise<void>} Resolves when all write operations complete.
+ */
+export async function writeHistory({
+  date,
+  force,
+  latestOnly,
+  historyPath = HISTORY_PATH,
+  historyPathLatest = HISTORY_PATH_LATEST,
+  newPercentage = total().totalAveragePropagation,
+} = {}) {
+  let updatedHistory = null;
+  let history = await readJsonFile(historyPath);
+  const delta = calculateDelta(history, date, newPercentage);
+  const gitRevision = await getGitRevision(config.repoPath);
+  const newEntry = buildNewEntry(date, newPercentage, delta, gitRevision);
+
+  if (!latestOnly) {
+    updatedHistory = updateHistory(history, historyPath, newEntry, date, force);
+    if (updatedHistory !== null) {
+      await writeJsonFile(historyPath, updatedHistory);
+    }
+  } else {
+    console.log(
+      `✔ Wrote latest entry to ${historyPathLatest}: ${date} / ${newPercentage}% / (Δ ${delta ?? 'n/a'})`,
+    );
+    await writeJsonFile(historyPathLatest, [newEntry]);
+  }
+
+  // Always Duplicate files to build since passThroughCopy will flatten dirs for globs.
+  await writeJsonFile(
+    historyPath.replace('src/data/', 'build/'),
+    updatedHistory || history,
+  );
+  await writeJsonFile(historyPathLatest.replace('src/data/', 'build/'), [
+    newEntry,
+  ]);
 }
 
 /**
@@ -305,23 +376,39 @@ export async function updatePropagationHistory({
     return;
   }
 
-  const history = await readJsonFile(HISTORY_PATH);
-  const newPercentage = total().totalAveragePropagation;
-  const delta = calculateDelta(history, date, newPercentage);
-  const gitRevision = await getGitRevision(config.repoPath);
-  const newEntry = buildNewEntry(date, newPercentage, delta, gitRevision);
+  // Write the default top level roll-up data.
+  const dirWrites = [];
 
-  if (!latestOnly) {
-    const updatedHistory = updateHistory(history, newEntry, date, force);
-    if (updatedHistory !== null) {
-      await writeJsonFile(HISTORY_PATH, updatedHistory);
-    }
-  } else {
-    console.log(
-      `✔ Wrote latest entry for ${date}: ${newPercentage}% (Δ ${delta ?? 'n/a'})`,
+  dirWrites.push(writeHistory({ date, force, latestOnly }));
+
+  // Iterate over all of the dir data and create JSON files for every directory for graphing.
+  for (const dir in groupedFilesByDir) {
+    let newPercentage = groupedFilesByDir[dir].averagePropagation;
+    // -1 means no files have any coverage and are not to be counted in the roll-up so we need to graph that as 0.
+    newPercentage = newPercentage === -1 ? 0 : newPercentage;
+    const historyPath = path.join(
+      'src/data',
+      dir,
+      HISTORY_PROPAGATION_FILENAME,
     );
-    await writeJsonFile(HISTORY_PATH_LATEST, [newEntry]);
+    const historyPathLatest = path.join(
+      'src/data',
+      dir,
+      HISTORY_LATEST_FILENAME,
+    );
+    dirWrites.push(
+      writeHistory({
+        date,
+        force,
+        latestOnly,
+        newPercentage,
+        historyPathLatest,
+        historyPath,
+      }),
+    );
   }
+
+  return Promise.all(dirWrites);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

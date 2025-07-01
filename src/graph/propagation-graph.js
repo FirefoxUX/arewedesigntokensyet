@@ -1,8 +1,29 @@
-/* global document */
+/* global document, fetch */
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-luxon';
-import history from '../data/propagationHistory.json' with { type: 'json' };
-import latestHistory from '../data/propagationHistoryLatest.json' with { type: 'json' };
+
+/**
+ * Fetches and parses JSON data from two local files in parallel.
+ *
+ * This function retrieves `propagationHistory.json` and `propagationHistoryLatest.json`
+ * concurrently using `Promise.all`, and returns their parsed contents as an array.
+ *
+ * @async
+ * @function fetchData
+ * @returns {Promise<Array<object>>} A promise that resolves to an array containing
+ *   the parsed JSON data from both files.
+ *   If an error occurs, `undefined` is returned and an error is logged to the console.
+ */
+export async function fetchData() {
+  const urls = ['./propagationHistory.json', './propagationHistoryLatest.json'];
+
+  try {
+    const responses = await Promise.all(urls.map((url) => fetch(url)));
+    return Promise.all(responses.map((res) => res.json()));
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}
 
 /**
  * Renders a line chart visualizing the propagation percentage over time.
@@ -20,7 +41,10 @@ import latestHistory from '../data/propagationHistoryLatest.json' with { type: '
  */
 export async function renderPropagationChart(canvasId) {
   // Merge in the latest data.
-  const data = [...history, ...latestHistory];
+  const [history, historyLatest] = await fetchData();
+  const data = [...history, ...historyLatest];
+
+  console.log(data);
 
   new Chart(document.getElementById(canvasId), {
     type: 'line',
