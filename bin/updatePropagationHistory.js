@@ -28,7 +28,7 @@ const execFileAsync = promisify(execFile);
  * const sha = await getGitRevision('/path/to/repo');
  * console.log(sha); // e.g., 'a1b2c3d4...'
  */
-async function getGitRevision(repoPath) {
+export async function getGitRevision(repoPath) {
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
       cwd: repoPath,
@@ -265,7 +265,6 @@ function buildNewEntry(date, percentage, delta, gitRevision) {
  */
 function updateHistory(history, historyPath, newEntry, date, force) {
   const existingIndex = history.findIndex((entry) => entry.date === date);
-  history.sort((a, b) => a.date.localeCompare(b.date));
 
   if (existingIndex !== -1 && !force) {
     console.log(
@@ -286,6 +285,7 @@ function updateHistory(history, historyPath, newEntry, date, force) {
     );
   }
 
+  history.sort((a, b) => a.date.localeCompare(b.date));
   return history;
 }
 
