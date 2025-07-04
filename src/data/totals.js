@@ -7,7 +7,7 @@ import groupedFilesByDir from './groupedFilesByDir.json' with { type: 'json' };
  * result rounded to two decimal places.
  * @returns {{ totalAveragePropagation: number }} An object containing the average propagation percentage.
  */
-export default function() {
+export default function () {
   let total = 0;
   let count = 0;
   for (const dir in groupedFilesByDir) {
@@ -17,5 +17,3 @@ export default function() {
 
   return { totalAveragePropagation: +(total / count).toFixed(2) };
 }
-
-

@@ -1,0 +1,37 @@
+[
+  {
+    "date": "2023-09-01",
+    "percentage": 12.5,
+    "gitRevision": "51e423746640857ae5bb7d9a3a0d885e342764ad"
+  },
+  {
+    "date": "2024-01-01",
+    "percentage": 0,
+    "delta": -12.5,
+    "gitRevision": "eee59ea8b647d3fd396e087cbfcaa5d7063ce7d4"
+  },
+  {
+    "date": "2024-02-01",
+    "percentage": 0,
+    "delta": 0,
+    "gitRevision": "c5da337999a48609884bf945f5f4b4337de80ba2"
+  },
+  {
+    "date": "2024-03-01",
+    "percentage": 0,
+    "delta": 0,
+    "gitRevision": "35c5eb7dc0adc829c4f23f5241e8180b483f3607"
+  },
+  {
+    "date": "2024-04-08",
+    "percentage": 12.5,
+    "delta": 12.5,
+    "gitRevision": "c5fc021fec6aabbbafa592f5d52b57388507c7dd"
+  },
+  {
+    "date": "2024-05-01",
+    "percentage": 75,
+    "delta": 62.5,
+    "gitRevision": "370855abcd6ee6bfdf6d3f77716dde88539b2d3a"
+  }
+]
