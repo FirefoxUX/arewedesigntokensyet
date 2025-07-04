@@ -28,6 +28,8 @@
   },
   "scripts": {
     "clean": "rimraf --glob './build/**/*'",
+    "clean:propagationHistory": "rimraf --glob './src/data/{browser,toolkit}/**/propagationHist*.json'",
+    "backfillData": "node bin/backfillData.js",
     "build": "npm run clean && npm run build:data && npm run build:historyEntryMonthly && npm run build:components && npm run eleventy:build",
     "build:components": "node esbuild.config.js",
     "build:components:watch": "node esbuild.config.js --watch",
