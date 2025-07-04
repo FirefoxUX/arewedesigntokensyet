@@ -42,9 +42,11 @@ export async function fetchData() {
 export async function renderPropagationChart(canvasId) {
   // Merge in the latest data.
   const [history, historyLatest] = await fetchData();
-  const data = [...history, ...historyLatest];
 
-  console.log(data);
+  // Conditionally merge only if the date of the latest isn't already part of the historical data.
+  const latestDate = historyLatest[0].date;
+  const existingIndex = history.findIndex((entry) => entry.date === latestDate);
+  const data = existingIndex === -1 ? [...history, ...historyLatest] : history;
 
   new Chart(document.getElementById(canvasId), {
     type: 'line',
