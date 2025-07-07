@@ -7,8 +7,17 @@ const originalConfig = { ...config };
 describe('getPropagationData', () => {
   beforeAll(() => {
     Object.assign(config, {
-      designTokenKeys: ['--color-accent-primary'],
-      designTokenProperties: ['color', 'background-color', 'border'],
+      designTokenKeys: [
+        '--color-accent-primary',
+        '--border-radius-medium',
+        '--border-width',
+      ],
+      designTokenProperties: [
+        'color',
+        'background-color',
+        'border',
+        'border-radius',
+      ],
       excludedCSSValues: ['inherit'],
       externalVarMapping: {},
       repoPath: '/project',
@@ -27,6 +36,70 @@ describe('getPropagationData', () => {
 
   afterEach(() => {
     jest.resetAllMocks();
+  });
+
+  test('detects tokens used in vars defined and used in the same rule', async () => {
+    const css = `
+      :host {
+        --visual-picker-item-border-radius: var(--border-radius-medium);
+        --visual-picker-item-border-width: var(--border-width);
+        --visual-picker-item-border-color: var(--border-color-interactive);
+        cursor: default;
+      }
+
+      ::slotted(:first-child) {
+        --visual-picker-item-child-border-radius: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
+        border-radius: var(--visual-picker-item-child-border-radius);
+      }
+    `;
+    const filePath = '/project/test.css';
+    fs.readFile.mockResolvedValue(css);
+
+    const result = await getPropagationData(filePath);
+    const props = result.foundPropValues;
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'border-radius',
+          containsDesignToken: true,
+          resolutionType: 'local',
+        }),
+      ]),
+    );
+  });
+
+  test('does not detect vars referenced outside :host and :root or the same rule', async () => {
+    const css = `
+      :host {
+        --visual-picker-item-border-radius: var(--border-radius-medium);
+        --visual-picker-item-border-width: var(--border-width);
+        cursor: default;
+      }
+
+      .foo {
+        --visual-picker-item-child-border-radius: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
+      }
+
+      .foo .bar {
+        border-radius: var(--visual-picker-item-child-border-radius);
+      }
+    `;
+    const filePath = '/project/test.css';
+    fs.readFile.mockResolvedValue(css);
+
+    const result = await getPropagationData(filePath);
+    const props = result.foundPropValues;
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'border-radius',
+          containsDesignToken: false,
+          resolutionType: 'local',
+        }),
+      ]),
+    );
   });
 
   test('extracts token usage from a single CSS file', async () => {
