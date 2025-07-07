@@ -127,7 +127,7 @@ async function collectExternalVars(filePath) {
  * `var(<prop>)` usage.
  *
  * @param {object} node - A PostCSS AST node.
- * @param {string} node.type - The node type (should be "decl").
+ * @param {'decl'} node.type - The node type (should be "decl").
  * @param {string} node.prop - The property name (e.g. "--my-var").
  * @param {object} node.parent - The parent rule node.
  * @returns {boolean|undefined} `true` if the parent rule string includes
@@ -137,7 +137,7 @@ async function collectExternalVars(filePath) {
 function ruleConsumesVar(node) {
   if (node.type === 'decl' && isVariableDefinition(node.prop)) {
     const ruleString = node.parent.toString();
-    return ruleString?.includes(`var(${node.prop})`);
+    return ruleString.includes(`var(${node.prop})`);
   }
 }
 
