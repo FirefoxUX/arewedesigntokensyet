@@ -1,0 +1,37 @@
+[
+  {
+    "date": "2025-02-01",
+    "percentage": 100,
+    "gitRevision": "448d2690c9f795b7a0383ef0f6844fd3ed12b61a"
+  },
+  {
+    "date": "2025-03-01",
+    "percentage": 100,
+    "delta": 0,
+    "gitRevision": "49dde450e6ce4b4ecff1845cb1be4c1a4420ee56"
+  },
+  {
+    "date": "2025-04-01",
+    "percentage": 100,
+    "delta": 0,
+    "gitRevision": "5d6f87316fd373a57e46638164e3946453383c7c"
+  },
+  {
+    "date": "2025-05-01",
+    "percentage": 100,
+    "delta": 0,
+    "gitRevision": "23493dd54b370e1d96fe22931f47d9168d946312"
+  },
+  {
+    "date": "2025-06-01",
+    "percentage": 96.15,
+    "delta": -3.85,
+    "gitRevision": "4c7dbd19b5d8fc491d40f73a0b39601a795a21bc"
+  },
+  {
+    "date": "2025-07-01",
+    "percentage": 96.15,
+    "delta": 0,
+    "gitRevision": "2e1fed2cd0b1a6c47a92e639073e4caab83372c4"
+  }
+]

@@ -1,2 +1,7 @@
+/* global document */
 import { renderPropagationChart } from './propagation-graph.js';
-renderPropagationChart('propagationChart');
+
+// Only render if the #propagationChart markup is present.
+if (document.getElementById('propagationChart')) {
+  renderPropagationChart('propagationChart');
+}
