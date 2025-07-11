@@ -34,6 +34,37 @@ async function isGitRepoClean(repoPath = config.repoPath) {
 }
 
 /**
+ * Retrieves the name of the currently checked-out Git branch.
+ *
+ * Executes `git branch --show-current` in the specified repository directory
+ * and returns the branch name, trimmed of any surrounding whitespace.
+ *
+ * @async
+ * @function getCurrentBranchName
+ * @param {string} repoPath - Filesystem path to the Git repository (defaults to config.repoPath).
+ * @returns {Promise<string|null>} Resolves to the current branch name, or
+ *                                 `null` if an error occurs while executing the command.
+ */
+async function getCurrentBranchName(repoPath = config.repoPath) {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['branch', '--show-current'],
+      {
+        cwd: repoPath,
+      },
+    );
+    return stdout.trim();
+  } catch (error) {
+    console.error(
+      `Failed to get current branch name from git ${repoPath}`,
+      error,
+    );
+    return null;
+  }
+}
+
+/**
  * Checks out a specific Git revision in a given repository.
  *
  * @async
@@ -102,16 +133,26 @@ async function runPropagationUpdateScript(date) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  let startingGitBranch = null;
   let startingGitRev = null;
   try {
     if (!(await isGitRepoClean())) {
       console.log(
-        `Repo isn't clean. Aborting. Please stash any changes and try again.`,
+        `Repo at ${config.repoPath} isn't clean. Aborting. Please stash any changes and try again.`,
       );
       process.exit(1);
     }
     startingGitRev = await getGitRevision(config.repoPath);
-    console.log(`Starting script at git rev: ${startingGitRev}`);
+    startingGitBranch = await getCurrentBranchName(config.repoPath);
+
+    if (!startingGitBranch || !startingGitBranch) {
+      console.log('Failed to get current revision and branch data. Aborting');
+      process.exit(1);
+    }
+
+    console.log(
+      `Starting script at git rev: ${startingGitRev} branch: ${startingGitBranch}`,
+    );
 
     for (const entry of propagationHistoryData) {
       const { date, gitRevision } = entry;
@@ -122,9 +163,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   } catch (e) {
     throw new Error(e);
   } finally {
-    if (startingGitRev) {
-      console.log('Restoring starting rev');
-      await checkoutGitRev(startingGitRev);
+    if (startingGitBranch) {
+      console.log('Restoring original branch');
+      await checkoutGitRev(startingGitBranch);
+      const currentRev = await getGitRevision(config.repoPath);
+      if (currentRev != startingGitRev) {
+        console.error(
+          `Mismatch between the initial revision (${startingGitRev}) and the current revision (${currentRev}. Please check.`,
+        );
+      } else {
+        console.log(
+          `Starting revision ${currentRev} on branch ${startingGitBranch} successfully restored. Data backfill complete`,
+        );
+      }
     } else {
       console.error(
         'Error: No starting git rev captured. Check path config is correct.',
