@@ -12,26 +12,26 @@
   },
   {
     "date": "2025-04-01",
-    "percentage": 33.31,
-    "delta": 0.34,
+    "percentage": 33.46,
+    "delta": 0.49,
     "gitRevision": "5d6f87316fd373a57e46638164e3946453383c7c"
   },
   {
     "date": "2025-05-01",
-    "percentage": 41.77,
-    "delta": 8.46,
+    "percentage": 42.07,
+    "delta": 8.61,
     "gitRevision": "23493dd54b370e1d96fe22931f47d9168d946312"
   },
   {
     "date": "2025-06-01",
-    "percentage": 50.9,
-    "delta": 9.13,
+    "percentage": 51.17,
+    "delta": 9.1,
     "gitRevision": "4c7dbd19b5d8fc491d40f73a0b39601a795a21bc"
   },
   {
     "date": "2025-07-01",
-    "percentage": 72.5,
-    "delta": 21.6,
+    "percentage": 72.76,
+    "delta": 21.59,
     "gitRevision": "2e1fed2cd0b1a6c47a92e639073e4caab83372c4"
   }
 ]
