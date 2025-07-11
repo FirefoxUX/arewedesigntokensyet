@@ -9,6 +9,31 @@ import propagationHistoryData from '../src/data/propagationHistory.json' with { 
 const execFileAsync = promisify(execFile);
 
 /**
+ * Determines whether the specified Git repository has no pending changes.
+ *
+ * Executes `git status --porcelain` in the given repository directory and
+ * checks if the output is empty. An empty output indicates a “clean” repo
+ * (no modified, staged, or untracked files).
+ *
+ * @async
+ * @function isGitRepoClean
+ * @param {string} repoPath - Filesystem path to the Git repository to check (defaults to config.repoPath).
+ * @returns {Promise<boolean>} Resolves to `true` if the repository is clean (no changes),
+ *                              or `false` if there are any changes or if an error occurs.
+ */
+async function isGitRepoClean(repoPath = config.repoPath) {
+  try {
+    const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
+      cwd: repoPath,
+    });
+    return stdout.length === 0;
+  } catch (error) {
+    console.error(`Failed to check if repo is clean`, error);
+    return false;
+  }
+}
+
+/**
  * Checks out a specific Git revision in a given repository.
  *
  * @async
@@ -79,6 +104,12 @@ async function runPropagationUpdateScript(date) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   let startingGitRev = null;
   try {
+    if (!(await isGitRepoClean())) {
+      console.log(
+        `Repo isn't clean. Aborting. Please stash any changes and try again.`,
+      );
+      process.exit(1);
+    }
     startingGitRev = await getGitRevision(config.repoPath);
     console.log(`Starting script at git rev: ${startingGitRev}`);
 
