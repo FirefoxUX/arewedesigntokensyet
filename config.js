@@ -54,9 +54,13 @@ export default {
     'border-block-start-color',
     'border-block-start-width',
     'border-top',
+    'border-top-color',
     'border-right',
+    'border-right-color',
     'border-bottom',
+    'border-bottom-color',
     'border-left',
+    'border-left-color',
     'border-color',
     'border-width',
     'border-radius',
@@ -124,7 +128,9 @@ export default {
     'browser/components/**/*.css',
     // Add New Tab directory path (note: located in browser/components/ dir)
     'browser/extensions/newtab/css/**/*.css',
+    'browser/themes/**/*.css',
     'toolkit/content/widgets/**/*.css',
+    'toolkit/themes/**/*.css',
   ],
   externalVarMapping: {
     // For everything that matches the glob on the left hand side, get the vars from
@@ -152,6 +158,7 @@ export default {
   // supports RegExp or string.
   excludedCSSValues: [
     0,
+    '0px',
     1,
     'auto',
     'currentColor',
