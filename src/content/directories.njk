@@ -4,15 +4,28 @@ pagination:
   size: 1
   alias: dir
 permalink: "/{{ dir }}/"
-layout: base.njk
+layout: dirsLayout.njk
 ---
 
-<h1>{{ dir }}</h1>
-{% set totalPropagation =  groupedFilesByDir[dir].averagePropagation | ignoreFilter %}
-<p>
-  <strong>Average Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}</span></p>
-
+<h1><code>{{ dir }}</code></h1>
 {% include 'homeLink.njk' %}
+
+<h2>Historical Design Token Propagation</h2>
+
+{% set totalPropagation =  groupedFilesByDir[dir].averagePropagation | ignoreFilter %}
+
+{% if groupedFilesByDir[dir].averagePropagation != -1 %}
+<div class="chart-container">
+  <canvas id="propagationChart" width="800" height="400"></canvas>
+<div>
+{% else %}
+<p><em>No data to display</em></p>
+{% endif %}
+
+<p>
+  <strong>Current Average Propagation:</strong> <span class="{{ totalPropagation | rangeClass }}">{{ totalPropagation }}</span>
+</p>
+
 
 <ul>
   {% for file in groupedFilesByDir[dir].files %}

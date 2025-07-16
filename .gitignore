@@ -4,6 +4,9 @@ node_modules
 .DS_Store
 
 # General ignores for script built files that shouldn't be committed.
-src/data/*
+src/data/groupedFilesByDir.json
+src/data/**/propagationHistoryLatest.json
+src/data/unresolvedVars.json
+src/data/cssFilesList.json
 build/*
 coverage/*
