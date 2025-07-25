@@ -53,5 +53,5 @@ By default the site assumes a checkout of mozilla-central is in
 `../mozilla-unified` (above the source directory) but you can override that by
 setting the `MOZILLA_CENTRAL_REPO_PATH` env var as needed.
 
-- `npm install`
+- `npm ci`
 - `npm start`
