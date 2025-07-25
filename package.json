@@ -2,29 +2,29 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@11ty/eleventy": "^3.0.0",
-    "@eslint/js": "^9.24.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "chart.js": "^4.4.9",
-    "chartjs-adapter-luxon": "^1.3.1",
-    "concurrently": "^9.1.2",
-    "eleventy-auto-cache-buster": "^0.8.1",
-    "esbuild": "^0.25.4",
-    "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.2",
-    "eslint-plugin-jest": "^28.11.0",
-    "eslint-plugin-jsdoc": "^50.6.17",
-    "glob": "^11.0.1",
-    "husky": "^9.1.7",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "lint-staged": "^15.5.0",
-    "lit": "^3.3.0",
-    "luxon": "^3.6.1",
-    "minimatch": "^10.0.1",
-    "postcss": "^8.5.3",
-    "prettier": "^3.5.3",
-    "shiki": "^3.2.2"
+    "@11ty/eleventy": "3.0.0",
+    "@eslint/js": "9.24.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "chart.js": "4.4.9",
+    "chartjs-adapter-luxon": "1.3.1",
+    "concurrently": "9.1.2",
+    "eleventy-auto-cache-buster": "0.8.1",
+    "esbuild": "0.25.4",
+    "eslint": "9.24.0",
+    "eslint-config-prettier": "10.1.2",
+    "eslint-plugin-jest": "28.11.0",
+    "eslint-plugin-jsdoc": "50.6.17",
+    "glob": "11.0.1",
+    "husky": "9.1.7",
+    "jest": "29.7.0",
+    "jest-environment-jsdom": "29.7.0",
+    "lint-staged": "15.5.0",
+    "lit": "3.3.0",
+    "luxon": "3.6.1",
+    "minimatch": "10.0.1",
+    "postcss": "8.5.3",
+    "prettier": "3.5.3",
+    "shiki": "3.2.2"
   },
   "scripts": {
     "clean": "rimraf --glob './build/**/*'",
@@ -57,6 +57,6 @@
     ]
   },
   "overrides": {
-    "glob": "^11.0.1"
+    "glob": "11.0.1"
   }
 }
