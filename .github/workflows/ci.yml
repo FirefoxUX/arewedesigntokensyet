@@ -22,12 +22,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: ./awdty
 
       - name: Checkout mozilla-firefox/firefox
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: mozilla-firefox/firefox
           path: ./mozilla-unified
