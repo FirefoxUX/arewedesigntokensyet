@@ -24,7 +24,7 @@
     "minimatch": "10.0.1",
     "postcss": "8.5.3",
     "prettier": "3.5.3",
-    "shiki": "3.2.2"
+    "shiki": "3.12.2"
   },
   "scripts": {
     "clean": "rimraf --glob './build/**/*'",
