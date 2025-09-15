@@ -1,4 +1,6 @@
 name: Node.js CI
+permissions:
+  contents: read
 
 on:
   push:
@@ -24,11 +26,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           path: ./awdty
 
       - name: Checkout mozilla-firefox/firefox
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: mozilla-firefox/firefox
           path: ./mozilla-unified
 
