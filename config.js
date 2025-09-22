@@ -5,41 +5,134 @@ import { pathToFileURL } from 'node:url';
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
-// pathToFileURL ensures a x-platform path for the dynamic import
-// otherwise this will fail on windows with
-// ERR_UNSUPORTED_ESM_URL_SCHEME
-const tokensPath = pathToFileURL(
-  path.join(
-    repoPath,
-    '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
-  ),
-);
-
-let designTokenKeys;
-
-// If we're backfilling old data from the Firefox tree go far enough back and the
-// Storybook tables won't exist. Hence this mechanism allows us to using a backup
-// json file of design token keys.
-try {
-  await fs.access(tokensPath, fs.constants.R_OK);
-  const { storybookTables } = await import(tokensPath);
-  designTokenKeys = Object.values(storybookTables).flatMap((list) =>
+const extractFromTokenTables = (mod, key) =>
+  Object.values(mod?.[key] || {}).flatMap((list) =>
     list.map((item) => item.name),
   );
-  console.log(
-    `Using '/toolkit/themes/shared/design-system/tokens-storybook.mjs' as token source`,
-  );
-  // eslint-disable-next-line no-unused-vars
-} catch (error) {
-  console.warn(
-    `Can't find "tokens-storybook.mjs" This is either and old revision or we're running tests. Falling back to use the backup src/data/tokensBackup.json`,
-  );
-  const backupPath = pathToFileURL(path.join('./src/data/tokensBackup.json'));
-  const designTokenKeysImport = await import(backupPath, {
-    with: { type: 'json' },
-  });
-  designTokenKeys = designTokenKeysImport.default;
+
+const extractFromJSONList = (jsonMod) => jsonMod.default ?? [];
+
+/**
+ * Attempts to import a module or JSON file from a given path/URL.
+ *
+ * This helper performs a lightweight existence check with `fs.access` first
+ * to avoid noisy stack traces when expected files are absent (e.g. older
+ * revisions of the Firefox tree). It then dynamically imports the module.
+ *
+ * Only "not found" class errors (`ERR_MODULE_NOT_FOUND`, `ENOENT`) are
+ * swallowed and reported as `{ ok: false, reason: 'not-found' }`. All other
+ * errors (e.g. syntax errors, runtime errors inside the module) are rethrown.
+ *
+ * @async
+ * @function tryImport
+ * @param {string|URL} url - Absolute path or file:// URL to the target file.
+ *   Can point to an `.mjs` or `.json` file.
+ * @param {object} [options]
+ * @param {'mjs'|'json'} options.type - Module type. Defaults to `"mjs"`. `'mjs'` performs a
+ *   normal import, `'json'` imports with `{ with: { type: 'json' } }`.
+ * @returns {Promise<{ok: true, mod: any} | {ok: false, reason: 'not-found'}>}
+ *   - On success, returns `{ ok: true, mod }` where `mod` is the imported module.
+ *   - On missing file, returns `{ ok: false, reason: 'not-found' }`.
+ * @throws {Error} Re-throws any non "not found" errors from the import attempt.
+ */
+async function tryImport(url, { type = 'mjs' } = {}) {
+  try {
+    await fs.access(url, fs.constants.R_OK);
+  } catch {
+    return { ok: false, reason: 'not-found' };
+  }
+
+  try {
+    let mod;
+    if (type === 'json') {
+      mod = await import(url, { with: { type: 'json' } });
+    } else {
+      mod = await import(url);
+    }
+    return { ok: true, mod };
+  } catch (err) {
+    if (err && (err.code === 'ERR_MODULE_NOT_FOUND' || err.code === 'ENOENT')) {
+      return { ok: false, reason: 'not-found' };
+    }
+    throw err;
+  }
 }
+
+/**
+ * Loads design token keys by attempting multiple sources in order.
+ *
+ * The function tries to import from two `.mjs` modules (usually containing
+ * `storybookTables`) and finally falls back to a backup JSON file that contains
+ * a direct list of keys. The first candidate that succeeds is used.
+ *
+ * This is designed to support backfilling data across Firefox revisions, where
+ * newer revisions have Storybook table modules and older ones only have a
+ * cached JSON snapshot.
+ *
+ * @async
+ * @function loadDesignTokenKeys
+ * @returns {Promise<string[]>} An array of design token key names.
+ * @throws {Error} If none of the sources could be loaded successfully.
+ *
+ */
+export async function loadDesignTokenKeys() {
+  const sources = [
+    {
+      label: 'tokens-tables.mjs',
+      // Note that pathToFileURL ensures a x-platform path for the dynamic import
+      // otherwise this will fail on windows with ERR_UNSUPORTED_ESM_URL_SCHEME
+      url: pathToFileURL(
+        path.join(
+          repoPath,
+          '/toolkit/themes/shared/design-system/tokens-table.mjs',
+        ),
+      ),
+      type: 'mjs',
+      pick: extractFromTokenTables,
+      key: 'tokensTable',
+    },
+    {
+      label: 'tokens-storybook.mjs',
+      url: pathToFileURL(
+        path.join(
+          repoPath,
+          '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
+        ),
+      ),
+      type: 'mjs',
+      pick: extractFromTokenTables,
+      key: 'storybookTables',
+    },
+    {
+      label: 'tokensBackup.json',
+      url: pathToFileURL('./src/data/tokensBackup.json'),
+      type: 'json',
+      pick: extractFromJSONList,
+    },
+  ];
+
+  let designTokenKeys;
+  let chosen;
+
+  for (const src of sources) {
+    const res = await tryImport(src.url, { type: src.type });
+    if (res.ok) {
+      designTokenKeys = src.pick(res.mod, src.key);
+      chosen = src.label;
+      break;
+    }
+  }
+
+  if (chosen) {
+    console.log(`Using '${chosen}' as token source`);
+    return designTokenKeys;
+  }
+
+  // If none of the candidates were usable
+  throw new Error('Could not load design token keys from any source!');
+}
+
+const designTokenKeys = await loadDesignTokenKeys();
 
 export default {
   repoPath,
