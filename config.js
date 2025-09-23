@@ -5,6 +5,21 @@ import { pathToFileURL } from 'node:url';
 export const repoPath =
   process.env.MOZILLA_CENTRAL_REPO_PATH || '../mozilla-unified';
 
+// Note that pathToFileURL ensures a x-platform path for the dynamic import
+// otherwise this will fail on windows with ERR_UNSUPORTED_ESM_URL_SCHEME
+export const tokensTablePath = pathToFileURL(
+  path.join(repoPath, '/toolkit/themes/shared/design-system/tokens-table.mjs'),
+);
+
+export const tokensStorybookPath = pathToFileURL(
+  path.join(
+    repoPath,
+    '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
+  ),
+);
+
+export const tokensFallbackPath = pathToFileURL('./src/data/tokensBackup.json');
+
 const extractFromTokenTables = (mod, key) =>
   Object.values(mod?.[key] || {}).flatMap((list) =>
     list.map((item) => item.name),
@@ -78,34 +93,22 @@ async function tryImport(url, { type = 'mjs' } = {}) {
 export async function loadDesignTokenKeys() {
   const sources = [
     {
-      label: 'tokens-tables.mjs',
-      // Note that pathToFileURL ensures a x-platform path for the dynamic import
-      // otherwise this will fail on windows with ERR_UNSUPORTED_ESM_URL_SCHEME
-      url: pathToFileURL(
-        path.join(
-          repoPath,
-          '/toolkit/themes/shared/design-system/tokens-table.mjs',
-        ),
-      ),
+      label: 'tokens-table.mjs',
+      url: tokensTablePath,
       type: 'mjs',
       pick: extractFromTokenTables,
       key: 'tokensTable',
     },
     {
       label: 'tokens-storybook.mjs',
-      url: pathToFileURL(
-        path.join(
-          repoPath,
-          '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
-        ),
-      ),
+      url: tokensStorybookPath,
       type: 'mjs',
       pick: extractFromTokenTables,
       key: 'storybookTables',
     },
     {
       label: 'tokensBackup.json',
-      url: pathToFileURL('./src/data/tokensBackup.json'),
+      url: tokensFallbackPath,
       type: 'json',
       pick: extractFromJSONList,
     },
