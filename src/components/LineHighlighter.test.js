@@ -1,7 +1,4 @@
-/**
- * @jest-environment jsdom
- */
-
+// @vitest-environment jsdom
 /* globals document, window, Element, MouseEvent */
 
 import { LineHighlighter } from './LineHighlighter.js';
@@ -10,7 +7,7 @@ describe('LineHighlighter', () => {
   let highlighter;
 
   beforeAll(() => {
-    Element.prototype.scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = vi.fn();
   });
 
   beforeEach(() => {

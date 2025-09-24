@@ -1,7 +1,4 @@
-/**
- * @jest-environment jsdom
- */
-
+// @vitest-environment jsdom
 /* globals document */
 
 import { TooltipController, safeParseJSON } from './TooltipController.js';
@@ -72,8 +69,8 @@ describe('TooltipController', () => {
 
   test('initGlobalEvents and destroy remove listeners and tooltip', () => {
     controller = new TooltipController();
-    const spyAdd = jest.spyOn(document, 'addEventListener');
-    const spyRemove = jest.spyOn(document, 'removeEventListener');
+    const spyAdd = vi.spyOn(document, 'addEventListener');
+    const spyRemove = vi.spyOn(document, 'removeEventListener');
 
     controller.initGlobalEvents();
     expect(spyAdd).toHaveBeenCalledWith('mouseover', expect.any(Function));

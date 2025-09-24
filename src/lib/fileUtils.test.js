@@ -18,13 +18,13 @@ describe('getCssFilesList', () => {
   const fakeRepo = '/fake/repo';
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   beforeEach(() => {
-    jest.mock('node:fs/promises');
-    fs.writeFile = jest.fn();
-    fs.readFile = jest.fn();
+    vi.mock('node:fs/promises');
+    fs.writeFile = vi.fn();
+    fs.readFile = vi.fn();
   });
 
   test('returns css file objects as expected', async () => {
@@ -45,7 +45,7 @@ describe('getCssFilesList', () => {
     const result = await getCssFilesList(fakeRepo, {
       includePatterns: ['**/*.css'],
       ignorePatterns: [],
-      __glob: jest.fn(() => mockFiles),
+      __glob: vi.fn(() => mockFiles),
     });
 
     expect(result).toHaveLength(2);

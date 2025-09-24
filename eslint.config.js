@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
-import pluginJest from 'eslint-plugin-jest';
 import pluginJSdoc from 'eslint-plugin-jsdoc';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
@@ -14,16 +13,20 @@ export default defineConfig([
   globalIgnores(['**/*.min.js', 'build/**/*']),
   {
     files: ['**/*.test.js'],
-    plugins: { jest: pluginJest },
     languageOptions: {
       globals: {
-        ...pluginJest.environments.globals.globals,
+        vi: 'readonly',
+        expect: 'readonly',
+        test: 'readonly',
+        describe: 'readonly',
+        afterAll: 'readonly',
+        beforeAll: 'readonly',
+        afterEach: 'readonly',
+        beforeEach: 'readonly',
       },
     },
     rules: {
-      ...pluginJest.configs['flat/recommended'].rules,
       ...globalRules,
-      'jest/consistent-test-it': ['error', { fn: 'test' }],
     },
   },
   {

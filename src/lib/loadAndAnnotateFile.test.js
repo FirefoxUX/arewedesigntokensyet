@@ -18,12 +18,12 @@ function getOffsetRange(lineText, snippet) {
 
 describe('loadAndAnnotateFile', () => {
   beforeEach(() => {
-    jest.mock('node:fs/promises');
-    fs.readFile = jest.fn();
+    vi.mock('node:fs/promises');
+    fs.readFile = vi.fn();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('renders highlighted HTML with annotations for design tokens', async () => {

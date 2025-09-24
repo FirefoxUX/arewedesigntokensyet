@@ -2,7 +2,7 @@ import { memoize } from './memoize.js';
 
 describe('memoize', () => {
   test('calls the original function only once for the same arguments', () => {
-    const fn = jest.fn((x) => x * 2);
+    const fn = vi.fn((x) => x * 2);
     const memoized = memoize(fn);
 
     expect(memoized(3)).toBe(6); // calls fn
@@ -11,7 +11,7 @@ describe('memoize', () => {
   });
 
   test('caches based on argument values', () => {
-    const fn = jest.fn((a, b) => a + b);
+    const fn = vi.fn((a, b) => a + b);
     const memoized = memoize(fn);
 
     expect(memoized(1, 2)).toBe(3); // calls fn
@@ -21,7 +21,7 @@ describe('memoize', () => {
   });
 
   test('can clear the cache', () => {
-    const fn = jest.fn((x) => x + 1);
+    const fn = vi.fn((x) => x + 1);
     const memoized = memoize(fn);
 
     memoized(5);
