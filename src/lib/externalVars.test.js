@@ -62,12 +62,12 @@ describe('getExternalVars', () => {
   });
 
   beforeEach(() => {
-    jest.mock('node:fs/promises');
-    fs.readFile = jest.fn();
+    vi.mock('node:fs/promises');
+    fs.readFile = vi.fn();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('extracts external vars defined in :root', async () => {

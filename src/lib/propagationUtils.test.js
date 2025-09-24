@@ -29,13 +29,13 @@ describe('getPropagationData', () => {
   });
 
   beforeEach(() => {
-    jest.mock('node:fs/promises');
-    fs.writeFile = jest.fn();
-    fs.readFile = jest.fn();
+    vi.mock('node:fs/promises');
+    fs.writeFile = vi.fn();
+    fs.readFile = vi.fn();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('detects tokens used in vars defined and used in the same rule', async () => {
