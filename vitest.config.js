@@ -22,5 +22,6 @@ export default defineConfig({
         return false;
       }
     },
+    setupFiles: ['./vitest.setup.js'],
   },
 });

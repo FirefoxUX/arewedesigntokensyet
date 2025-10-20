@@ -1,16 +1,16 @@
 ---
+layout: base.njk
 pagination:
   data: groupedFilesByDir
   size: 1
   alias: dir
 permalink: "/{{ dir }}/"
-layout: dirsLayout.njk
 ---
 
-<h1><code>{{ dir }}</code></h1>
+<h2><code>{{ dir }}</code></h2>
 {% include 'homeLink.njk' %}
 
-<h2>Historical Design Token Propagation</h2>
+<h3>Historical Design Token Propagation</h3>
 
 {% set totalPropagation =  groupedFilesByDir[dir].averagePropagation | ignoreFilter %}
 
@@ -37,3 +37,6 @@ layout: dirsLayout.njk
   {% endfor %}
 </ul>
 
+{% block scripts %}
+<script type="module" src="/js/render-graph.js"></script>
+{% endblock %}

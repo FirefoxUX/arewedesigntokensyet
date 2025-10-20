@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { EleventyHtmlBasePlugin } from '@11ty/eleventy';
+import eleventyNavigationPlugin from '@11ty/eleventy-navigation';
 import eleventyAutoCacheBuster from 'eleventy-auto-cache-buster';
 
 import loadAndAnnotateFile from './src/lib/loadAndAnnotateFile.js';
@@ -19,10 +20,11 @@ const outputDir = path.relative(__dirname, 'build');
 export default async function (eleventyConfig) {
   // Tell 11ty to reload if the JS is put there by esbuild changes.
   eleventyConfig.setServerOptions({
-    watch: ['build/components/main.js', 'build/graph/render-graph.js'],
+    watch: ['build/js/*.js'],
   });
 
   // Plugins.
+  eleventyConfig.addPlugin(eleventyNavigationPlugin);
   eleventyConfig.addPlugin(EleventyHtmlBasePlugin);
   eleventyConfig.addPlugin(eleventyAutoCacheBuster, {
     hashAlgorithm: 'md5',
@@ -31,6 +33,7 @@ export default async function (eleventyConfig) {
   // Files that are passed through.
   eleventyConfig.addPassthroughCopy('./src/content/fonts/');
   eleventyConfig.addPassthroughCopy('./src/content/css/');
+  eleventyConfig.addPassthroughCopy('./src/content/img/');
 
   // Filters.
   eleventyConfig.addFilter('slug', (str) =>

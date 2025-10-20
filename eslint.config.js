@@ -51,11 +51,32 @@ export default defineConfig([
     extends: [eslintConfigPrettier],
     rules: {
       ...pluginJSdoc.configs['flat/recommended-error'].rules,
+      'jsdoc/valid-types': 'error',
+      'jsdoc/check-param-names': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/check-types': 'error',
+      'jsdoc/require-param-type': 'error',
+
       'jsdoc/require-returns-description': 'off',
       'jsdoc/require-param-description': 'off',
-      'jsdoc/require-param-type': 'off',
       'jsdoc/no-undefined-types': 'off',
       'jsdoc/tag-lines': 'off',
+
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          require: {
+            ClassDeclaration: true,
+            ClassExpression: true,
+            MethodDefinition: true,
+          },
+          exemptEmptyConstructors: true,
+          contexts: [
+            // Optional: also enforce on arrow functions assigned to class fields
+            'PropertyDefinition > ArrowFunctionExpression',
+          ],
+        },
+      ],
     },
   },
 ]);

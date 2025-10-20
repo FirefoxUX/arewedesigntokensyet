@@ -7,11 +7,25 @@
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
+    <header>
+      <h1><a href="/">Are we Design Tokens yet?</a></h1>
+
+      <nav class="menu">
+        {% set navPages = collections.all | eleventyNavigation %}
+        <ul>
+        {%- for entry in navPages %}
+          <li{% if entry.url == page.url %} class="active"{% endif %}>
+          {% if entry.url != page.url %}<a href="{{ entry.url }}">{%  endif %}{{ entry.title }}{% if entry.url != page.url %}</a>{% endif %}
+          </li>
+        {%- endfor %}
+        </ul>
+      </nav>
+    </header>
     <div class="content">
     {{ content | safe }}
     </div>
     <footer>
-      <p class="credits">Site built by the 🌰 Acorn Design Systems Team at <a href="https://www.mozilla.org/">Mozilla</a></p>
+      <p class="credits">Site built by the <img class="acorn" src="/img/acorn.svg" width="16px" height="16px" alt="" /> Acorn Design Systems Team at <a href="https://www.mozilla.org/">Mozilla</a></p>
     </footer>
 
     {% block scripts %}{% endblock %}

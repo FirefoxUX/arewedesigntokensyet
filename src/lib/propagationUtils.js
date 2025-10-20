@@ -8,6 +8,7 @@ import {
   isVariableDefinition,
   isTokenizableProperty,
   isWithinValidParentSelector,
+  extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
 import { getExternalVars, getVarData } from './externalVars.js';
@@ -21,6 +22,26 @@ import {
 } from './resolutionUtils.js';
 
 import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
+
+/**
+ * Convert an absolute file path to a repo-relative path for output.
+ * Falls back to the original path if it cannot be relativized.
+ * @param {string} absolutePath
+ * @returns {string}
+ */
+export function normalizePathForOutput(absolutePath) {
+  try {
+    if (!absolutePath || typeof absolutePath !== 'string') {
+      return absolutePath;
+    }
+    const relative = path.relative(config.repoPath, absolutePath);
+    return relative && !relative.startsWith('..')
+      ? relative.replace(/^[/\\]/, '')
+      : absolutePath;
+  } catch {
+    return absolutePath;
+  }
+}
 
 /**
  * Analyzes a CSS file to determine the percentage of properties using design tokens.
@@ -185,7 +206,14 @@ function collectDeclarations(root, foundVariables, filePath) {
   return declarations;
 }
 
+// Track unresolved variables and token usage globally within this run.
 const tracker = new UnresolvedVarTracker();
+
+/** @type {Array<{ path: string, descriptor: string, value: string, isToken: boolean, isIgnored: boolean, tokens?: string[] }>} */
+const usageFindingsBuffer = [];
+const TOKEN_KEY_SET = new Set(
+  Array.isArray(config.designTokenKeys) ? config.designTokenKeys : [],
+);
 
 /**
  * Resolves variable references for each declaration, attaches trace data,
@@ -210,6 +238,9 @@ async function resolveDeclarationReferences(
     decl.resolutionTrace = trace;
     decl.containsDesignToken = analysis.containsDesignToken;
     decl.containsExcludedValue = analysis.containsExcludedValue;
+
+    const isIgnoredValue =
+      Boolean(analysis.containsExcludedValue) && !analysis.containsDesignToken;
 
     decl.isExternalVar = trace.some((val) =>
       Object.values(foundVariables).some(
@@ -237,13 +268,45 @@ async function resolveDeclarationReferences(
     );
 
     decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
+
+    // Capture all tokens, preserving duplicates for accurate frequency counting.
+    const tokenIds = extractDesignTokenIdsFromDecl(decl, TOKEN_KEY_SET);
+    if (tokenIds.length > 0) {
+      decl.tokens = tokenIds;
+    }
+
+    usageFindingsBuffer.push({
+      path: filePath,
+      descriptor: decl.property,
+      value: decl.value,
+      isToken: Boolean(decl.containsDesignToken),
+      isIgnored: isIgnoredValue,
+      ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
+    });
   }
 
   const unresolvedReport = tracker.toReport();
-  await fs.writeFile(
-    path.join('./src/data', 'unresolvedVars.json'),
-    JSON.stringify(unresolvedReport, null, 2),
-  );
+  const { tokenUsage, descriptorValues } =
+    buildUsageAggregates(usageFindingsBuffer);
+
+  // Create ./build/data dir.
+  await fs.mkdir('./build/data', { recursive: true });
+
+  await Promise.all([
+    fs.writeFile(
+      path.join('./src/data', 'unresolvedVars.json'),
+      JSON.stringify(unresolvedReport, null, 2),
+    ),
+    fs.writeFile(
+      path.join('./src/data', 'tokenUsage.json'),
+      JSON.stringify(tokenUsage, null, 2),
+    ),
+    // Write directly to build/data.
+    fs.writeFile(
+      path.join('./build/data', 'descriptorValues.json'),
+      JSON.stringify(descriptorValues, null, 2),
+    ),
+  ]);
 }
 
 /**
@@ -261,4 +324,131 @@ function computeDesignTokenSummary(declarations) {
       (d) => d.containsExcludedValue && !d.containsDesignToken,
     ).length,
   };
+}
+
+/**
+ * Build token and descriptor aggregates from a list of findings.
+ *
+ * @param {Array<{ path: string, descriptor: string, value: string, isToken: boolean, isIgnored: boolean, tokens?: string[] }>} usageFindings
+ * @returns {{
+ *   tokenUsage: {
+ *     byToken: Record<string, {
+ *       total: number,
+ *       files: Record<string, number>,
+ *       descriptors: Record<string, number>,
+ *     }>,
+ *     totals: { tokenUsages: number },
+ *     generatedAt: string,
+ *     schemaVersion: number,
+ *   },
+ *   descriptorValues: {
+ *     byDescriptor: Record<string, {
+ *       id?: string,
+ *       values: Record<string, {
+ *         id?: string,
+ *         count: number,
+ *         isToken: boolean,
+ *         isIgnored: boolean,
+ *         tokens?: string[],
+ *         files: Record<string, number>,
+ *       }>,
+ *       totals: { token: number, nonToken: number, ignored: number },
+ *     }>,
+ *     generatedAt: string,
+ *     schemaVersion: number,
+ *   }
+ * }}
+ */
+export function buildUsageAggregates(usageFindings) {
+  const generatedAt = new Date().toISOString();
+
+  const tokenUsage = {
+    byToken: {},
+    totals: { tokenUsages: 0 },
+    generatedAt,
+    schemaVersion: 1,
+  };
+
+  const descriptorValues = {
+    byDescriptor: {},
+    generatedAt,
+    schemaVersion: 1,
+  };
+
+  for (const finding of usageFindings) {
+    const relativePath = normalizePathForOutput(finding.path);
+
+    // ---- descriptor-centric aggregation ----
+    const descriptorEntry =
+      descriptorValues.byDescriptor[finding.descriptor] ??
+      (descriptorValues.byDescriptor[finding.descriptor] = {
+        values: {},
+        totals: { token: 0, nonToken: 0, ignored: 0 },
+      });
+
+    const valueEntry =
+      descriptorEntry.values[finding.value] ??
+      (descriptorEntry.values[finding.value] = {
+        count: 0,
+        isToken: finding.isToken,
+        isIgnored: finding.isIgnored,
+        ...(Array.isArray(finding.tokens) && finding.tokens.length > 0
+          ? { tokens: finding.tokens }
+          : {}),
+        files: {},
+      });
+
+    valueEntry.count += 1;
+    if (finding.isIgnored) {
+      valueEntry.isIgnored = true;
+    }
+    valueEntry.files[relativePath] = (valueEntry.files[relativePath] ?? 0) + 1;
+
+    if (finding.isToken) {
+      descriptorEntry.totals.token += 1;
+    } else {
+      descriptorEntry.totals.nonToken += 1;
+    }
+    if (finding.isIgnored) {
+      descriptorEntry.totals.ignored += 1;
+    }
+
+    // ---- token-centric aggregation (count every occurrence)
+    if (Array.isArray(finding.tokens)) {
+      for (const tokenId of finding.tokens) {
+        const tokenEntry =
+          tokenUsage.byToken[tokenId] ??
+          (tokenUsage.byToken[tokenId] = {
+            total: 0,
+            files: {},
+            descriptors: {},
+          });
+
+        tokenEntry.total += 1;
+        tokenUsage.totals.tokenUsages += 1;
+
+        // files: per-file occurrence count
+        tokenEntry.files[relativePath] =
+          (tokenEntry.files[relativePath] ?? 0) + 1;
+
+        // descriptors: global occurrence count per descriptor
+        tokenEntry.descriptors[finding.descriptor] =
+          (tokenEntry.descriptors[finding.descriptor] ?? 0) + 1;
+      }
+    }
+  }
+
+  // Assign compact numeric IDs to descriptors and values for deterministic lookup.
+  let nextId = 0;
+  const descriptorNames = Object.keys(descriptorValues.byDescriptor).sort();
+  for (const descriptorName of descriptorNames) {
+    const descriptorEntry = descriptorValues.byDescriptor[descriptorName];
+    descriptorEntry.id = String(nextId++);
+    const valueKeys = Object.keys(descriptorEntry.values).sort();
+    for (const valueKey of valueKeys) {
+      descriptorEntry.values[valueKey].id = String(nextId++);
+    }
+  }
+
+  return { tokenUsage, descriptorValues };
 }

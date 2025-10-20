@@ -1,0 +1,25 @@
+---
+layout: base.njk
+title: "Descriptors"
+permalink: "/non-token-values/"
+eleventyAllowMissingExtension: true
+eleventyNavigation:
+  key: Non-token Values
+  order: 3
+---
+
+<h2>Non token values</h2>
+
+{% include 'homeLink.njk' %}
+
+<p>This search can be used to find what are the common non-token values for a given CSS descriptor.</p>
+
+<non-token-values exclude-ignored></non-token-values>
+
+
+{% include 'homeLink.njk' %}
+
+
+{% block scripts %}
+<script type="module" src="/js/NonTokenValues.js"></script>
+{% endblock %}

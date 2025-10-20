@@ -1,6 +1,6 @@
 /* globals document */
 
-import '../src/components/TokenTooltip.js';
+import '../src/content/js/TokenTooltip.js';
 
 /**
  * Creates a mock HTML element to simulate a design token target for tooltip testing.

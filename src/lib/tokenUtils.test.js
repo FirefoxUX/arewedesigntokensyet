@@ -5,6 +5,7 @@ import {
   isTokenizableProperty,
   getCSSVariables,
   isWithinValidParentSelector,
+  extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
 describe('isVariableDefinition', () => {
@@ -148,5 +149,158 @@ describe('isWithinValidParentSelector', () => {
       },
     };
     expect(isWithinValidParentSelector(node)).toBe(true);
+  });
+});
+
+describe('extractDesignTokenIdsFromDecl', () => {
+  // Small helper to build a decl-like object
+  function makeDecl(value, resolutionTrace) {
+    return { value, resolutionTrace };
+  }
+
+  test('returns [] for empty input or empty token set', () => {
+    expect(extractDesignTokenIdsFromDecl(undefined, new Set())).toEqual([]);
+    expect(extractDesignTokenIdsFromDecl({}, new Set(['--a']))).toEqual([]);
+    expect(
+      extractDesignTokenIdsFromDecl(makeDecl('', []), new Set(['--a'])),
+    ).toEqual([]);
+    expect(
+      extractDesignTokenIdsFromDecl(makeDecl('var(--a)', []), new Set()),
+    ).toEqual([]);
+  });
+
+  test('ignores non-canonical vars entirely when tokenKeySet does not include them', () => {
+    const d = makeDecl('var(--not-a-token) var(--also-not-token)', [
+      'var(--also-not-token)',
+    ]);
+    const tokenKeySet = new Set(['--real-token']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([]);
+  });
+
+  test('preserves duplicates from authored value (no trace)', () => {
+    const d = makeDecl('var(--a) var(--a)', []);
+    const tokenKeySet = new Set(['--a']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--a',
+    ]);
+  });
+
+  test('preserves duplicates from authored value and ignores echo trace (exact match)', () => {
+    const d = makeDecl('var(--a) var(--a)', ['var(--a) var(--a)']);
+    const tokenKeySet = new Set(['--a']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--a',
+    ]);
+  });
+
+  test('echo suppression trims whitespace', () => {
+    const d = makeDecl('var(--a) var(--a)', [
+      '   var(--a) var(--a)   ',
+      'var(--a)',
+    ]);
+    const tokenKeySet = new Set(['--a']);
+    // authored contributes 2, later distinct trace adds 1
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--a',
+      '--a',
+    ]);
+  });
+
+  test('retains discovery order across authored value then trace strings', () => {
+    const d = makeDecl('var(--a) var(--b) var(--a)', [
+      'var(--a) var(--b) var(--a)', // echo, ignore
+      'color-mix(in srgb, var(--b) 75%, var(--c))',
+      'var(--a)',
+    ]);
+    const tokenKeySet = new Set(['--a', '--b', '--c']);
+    // authored: --a, --b, --a  then trace: --b, --c, --a
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--b',
+      '--a',
+      '--b',
+      '--c',
+      '--a',
+    ]);
+  });
+
+  test('detects canonical tokens appearing later within CSS-like trace strings', () => {
+    const d = makeDecl('var(--alias)', [
+      'var(--alias)', // echo, ignore
+      'color-mix(in srgb, var(--alias) 75%, var(--canonical))',
+    ]);
+    const tokenKeySet = new Set(['--canonical']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--canonical',
+    ]);
+  });
+
+  test('color-mix trace without canonical tokens yields empty', () => {
+    const d = makeDecl('1px solid var(--border)', [
+      '1px solid var(--border)',
+      '1px solid color-mix(in srgb, var(--bg) 75%, #000)',
+      '1px solid color-mix(in srgb, #F9F9FB 75%, #000)',
+    ]);
+    const tokenKeySet = new Set(['--canonical']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([]);
+  });
+
+  test('later trace includes canonical but no authored aliases from that step, counts once', () => {
+    const d = makeDecl('var(--other)', [
+      'var(--other)', // echo
+      'color-mix(in srgb, #000 50%, var(--canonical) 50%)',
+    ]);
+    const tokenKeySet = new Set(['--canonical']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--canonical',
+    ]);
+  });
+
+  test('when multiple aliases in value map to same canonical later, duplicates preserved via multiplier', () => {
+    const d = makeDecl('var(--x) var(--y) var(--y)', [
+      'var(--x) var(--y) var(--y)', // echo
+      // realistic CSS-like step where canonical appears alongside aliases
+      'color-mix(in srgb, var(--x) 50%, var(--y) 50%, var(--token))',
+    ]);
+    const tokenKeySet = new Set(['--token']);
+    // max occurrence among aliases present in this trace step is 2 (for --y)
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--token',
+      '--token',
+    ]);
+  });
+
+  test('robust to non-string entries in trace, which are ignored', () => {
+    // Production emits strings, but ensure odd entries do not break things.
+    const d = makeDecl('var(--a)', [
+      'var(--a)',
+      null,
+      42,
+      {},
+      'color-mix(in srgb, var(--a), var(--b))',
+    ]);
+    const tokenKeySet = new Set(['--a', '--b']);
+    // authored: --a; trace: echo ignored, null/42/{} ignored, last step adds --a and --b
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--a',
+      '--b',
+    ]);
+  });
+
+  test('whitespace-only trace entries are ignored', () => {
+    const d = makeDecl('var(--a)', [
+      '   ',
+      '\n\t',
+      'color-mix(in srgb, #000, var(--a))',
+    ]);
+    const tokenKeySet = new Set(['--a']);
+    expect(extractDesignTokenIdsFromDecl(d, tokenKeySet)).toEqual([
+      '--a',
+      '--a',
+    ]);
   });
 });

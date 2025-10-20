@@ -4,7 +4,7 @@
 import { TooltipController, safeParseJSON } from './TooltipController.js';
 import './TokenTooltip.js';
 
-import { createMockTrigger } from '../../testing/testUtils.js';
+import { createMockTrigger } from '../../../testing/testUtils.js';
 
 describe('TooltipController', () => {
   let controller;

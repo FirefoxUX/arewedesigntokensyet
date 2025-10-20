@@ -1,0 +1,40 @@
+---
+layout: base.njk
+title: "Token Stats"
+permalink: "/token-stats/"
+eleventyNavigation:
+  key: Token Stats
+  order: 2
+---
+
+<h2>Token Stats</h2>
+
+{% include 'homeLink.njk' %}
+
+{% from 'macros/statsItem.njk' import statsItem %}
+
+<div class="stats-grid">
+  <section class="tokens">
+    <h3>All tokens by count (highest first)</h3>
+    <ol class="token-list">
+    {% for row in tokenLists.tokensByCountDesc %}
+      {{ statsItem(row) }}
+    {% endfor %}
+    </ol>
+  </section>
+
+  <section class="tokens">
+    <h3>All tokens by count (lowest first)</h3>
+    <ol class="token-list">
+    {% for row in tokenLists.tokensByCountAsc %}
+      {{ statsItem(row) }}
+    {% endfor %}
+    </ol>
+  </section>
+</div>
+
+{% include 'homeLink.njk' %}
+
+{% block scripts %}
+  <script type="module" src="/js/details-state.js"></script>
+{% endblock %}

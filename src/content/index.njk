@@ -1,9 +1,7 @@
 ---
-layout: homeLayout.njk
+layout: base.njk
 title: "Are we Design Tokens yet?"
 ---
-
-<h1>{{ title }}</h1>
 
 <p>This site’s goal is to track how design tokens are making their way into our stylesheets. It grabs CSS files from a set of predetermined paths, then scans for <a href="/properties/">CSS properties</a> that should (ideally) be backed by a token.</p>
 
@@ -30,3 +28,7 @@ title: "Are we Design Tokens yet?"
   <li><a href="/{{ dir }}/"><code>{{ dir }}</code></a> <span class="{{ propagation | rangeClass }} percentage">{{ propagation }}</span></li>
 {% endfor %}
 </ul>
+
+{% block scripts %}
+<script type="module" src="/js/render-graph.js"></script>
+{% endblock %}
