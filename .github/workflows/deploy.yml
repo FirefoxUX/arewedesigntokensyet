@@ -68,16 +68,17 @@ jobs:
       if: steps.check_changes.outputs.has_changes == 'true'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        REPO: ${{ github.repository }}
-        BRANCH: ${{ github.ref_name }}
-      # Using persist-credentials: false in the checkout requires
-      # utilizing the GH_TOKEN in the push url.
+        GH_HOST: github.com
+      # Using `persist-credentials: false` in the checkout means we'll need to use
+      # gh to configure git to use the Github CLI as a credential helper. This will use the
+      # GH_TOKEN in the env without that being persisted.
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
         git add 'src/data/**/propagationHistory.json' 'src/data/propagationHistory.json'
         git commit -m "Update history data $(git -C ../mozilla-unified show -s --format=%cs)"
-        git push https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git HEAD:${BRANCH}
+        gh auth setup-git
+        git push https://github.com/FirefoxUX/arewedesigntokensyet.git main
 
     - name: Upload build artifacts
       uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
