@@ -56,7 +56,7 @@ describe('loadAndAnnotateFile', () => {
         resolutionSources: ['tokens/colors.css'],
         unresolvedVariables: [],
         containsDesignToken: true,
-        containsExcludedValue: false,
+        containsExcludedDeclaration: false,
       },
     ];
 

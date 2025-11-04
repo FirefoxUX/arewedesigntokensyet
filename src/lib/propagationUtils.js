@@ -67,6 +67,7 @@ export async function getPropagationData(filePath) {
     const root = await parseCSS(filePath);
 
     const foundPropValues = collectDeclarations(root, foundVariables, filePath);
+
     await resolveDeclarationReferences(
       foundPropValues,
       foundVariables,
@@ -184,7 +185,7 @@ function collectDeclarations(root, foundVariables, filePath) {
 
     if (isTokenizableProperty(node.prop)) {
       declarations.push({
-        property: node.prop,
+        prop: node.prop,
         value: node.value,
         start: node.source.start,
         end: node.source.end,
@@ -233,14 +234,15 @@ async function resolveDeclarationReferences(
 ) {
   for (const decl of declarations) {
     const trace = buildResolutionTrace(decl.value, foundVariables);
-    const analysis = analyzeTrace(trace);
+    const analysis = analyzeTrace(trace, decl.prop);
 
     decl.resolutionTrace = trace;
     decl.containsDesignToken = analysis.containsDesignToken;
-    decl.containsExcludedValue = analysis.containsExcludedValue;
+    decl.isExcluded = analysis.containsExcludedDeclaration;
 
     const isIgnoredValue =
-      Boolean(analysis.containsExcludedValue) && !analysis.containsDesignToken;
+      Boolean(analysis.containsExcludedDeclaration) &&
+      !analysis.containsDesignToken;
 
     decl.isExternalVar = trace.some((val) =>
       Object.values(foundVariables).some(
@@ -277,7 +279,7 @@ async function resolveDeclarationReferences(
 
     usageFindingsBuffer.push({
       path: filePath,
-      descriptor: decl.property,
+      descriptor: decl.prop,
       value: decl.value,
       isToken: Boolean(decl.containsDesignToken),
       isIgnored: isIgnoredValue,
@@ -321,7 +323,7 @@ function computeDesignTokenSummary(declarations) {
   return {
     designTokenCount: declarations.filter((d) => d.containsDesignToken).length,
     ignoredValueCount: declarations.filter(
-      (d) => d.containsExcludedValue && !d.containsDesignToken,
+      (d) => d.isExcluded && !d.containsDesignToken,
     ).length,
   };
 }

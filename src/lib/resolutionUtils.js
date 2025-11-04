@@ -3,7 +3,7 @@ import config from '../../config.js';
 import {
   getCSSVariables,
   containsDesignTokenValue,
-  containsExcludedValue,
+  isExcludedDeclaration,
 } from './tokenUtils.js';
 
 /**
@@ -54,12 +54,19 @@ export function buildResolutionTrace(initialValue, foundVariables) {
 /**
  * Analyzes a trace to determine if it includes design tokens or excluded values.
  * @param {string[]} trace - A resolution trace of CSS values.
- * @returns {{ containsDesignToken: boolean, containsExcludedValue: boolean }}
+ * @param {string} descriptor - A CSS descriptor to enable specific exclusions based on the value and descriptor combination.
+ * @returns {{ containsDesignToken: boolean, containsExcludedDeclaration: boolean }}
  */
-export function analyzeTrace(trace) {
+export function analyzeTrace(trace, descriptor) {
   return {
     containsDesignToken: trace.some(containsDesignTokenValue),
-    containsExcludedValue: trace.some(containsExcludedValue),
+    containsExcludedDeclaration: trace.some((traceValue) => {
+      const result = isExcludedDeclaration({
+        prop: descriptor,
+        value: traceValue,
+      });
+      return result;
+    }),
   };
 }
 

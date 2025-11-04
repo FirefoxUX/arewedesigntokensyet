@@ -23,7 +23,7 @@ describe('getPropagationData', () => {
         'border',
         'border-radius',
       ],
-      excludedCSSValues: ['inherit'],
+      excludedDeclarations: [{ descriptors: '*', values: ['inherit'] }],
       externalVarMapping: {},
       repoPath: '/project',
     });
@@ -66,7 +66,7 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'border-radius',
+          prop: 'border-radius',
           containsDesignToken: true,
           resolutionType: 'local',
         }),
@@ -99,7 +99,7 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'border-radius',
+          prop: 'border-radius',
           containsDesignToken: false,
           resolutionType: 'local',
         }),
@@ -137,18 +137,18 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'color',
+          prop: 'color',
           containsDesignToken: true,
           resolutionType: 'local',
         }),
         expect.objectContaining({
-          property: 'border',
+          prop: 'border',
           resolutionType: 'local',
           containsDesignToken: false,
         }),
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -184,18 +184,18 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'color',
+          prop: 'color',
           containsDesignToken: false,
           resolutionType: 'local',
         }),
         expect.objectContaining({
-          property: 'border',
+          prop: 'border',
           resolutionType: 'local',
           containsDesignToken: false,
         }),
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -230,8 +230,8 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -258,10 +258,10 @@ describe('usage aggregation', () => {
     return (result.foundPropValues || []).map((d) => {
       const base = {
         path: filePath,
-        descriptor: d.property,
+        descriptor: d.prop,
         value: d.value,
         isToken: Boolean(d.containsDesignToken),
-        isIgnored: Boolean(d.containsExcludedValue),
+        isIgnored: Boolean(d.isExcluded),
       };
       if (Array.isArray(d.tokens) && d.tokens.length > 0) {
         base.tokens = d.tokens;

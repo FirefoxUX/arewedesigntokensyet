@@ -21,16 +21,99 @@ export function containsDesignTokenValue(value) {
 }
 
 /**
- * Returns true if the value matches any excluded CSS value or pattern.
- * This includes exact string matches or RegExp patterns like 'inherit', 'unset', etc.
+ * Determine whether a CSS declaration should be excluded based on provided rules.
  *
- * @param {string} value - The CSS value to test.
- * @returns {boolean} - true if the value is considered excluded.
+ * Accepts either:
+ * - A PostCSS Declaration node, or
+ * - A plain object with `prop` and `value` string fields.
+ *
+ * Each rule defines one or more CSS descriptors (properties) and a list of excluded values.
+ * A declaration matches a rule if:
+ * - The rule's `descriptors` field is `"*"`, meaning it applies to all properties, or
+ * - The declaration's property (`prop`) exactly matches one of the strings in `descriptors`.
+ *
+ * Once a rule applies, the declaration is excluded if its `value` matches any entry
+ * in the rule’s `values` list. Matching supports both exact string comparison (case-insensitive)
+ * and regular expressions.
+ *
+ * Example rule set:
+ * [
+ *   { descriptors: ['font-weight'], values: ['normal'] },
+ *   { descriptors: '*', values: ['0', 'auto', /calc\(.*?\)/] }
+ * ]
+ *
+ * Matching behavior:
+ * - If `descriptors` is `"*"`, the rule applies to all declaration properties.
+ * - If `descriptors` is an array, the rule applies only when `prop` is included in it.
+ * - String values in `values` are compared case-insensitively against the raw `value`.
+ * - RegExp values in `values` are tested directly against the raw `value`.
+ *
+ * Errors:
+ * - Throws if `decl` is missing or does not contain string `prop` and `value` fields.
+ * - Throws if `rules` is missing, empty, or contains invalid rule shapes.
+ *
+ * @typedef {{ prop: string, value: string }} PlainDeclaration
+ *
+ * @param {import('postcss').Declaration | PlainDeclaration} decl
+ *   The declaration to evaluate. May be a PostCSS node or a plain object with `prop` and `value`.
+ * @param {Array<{ descriptors: '*' | string[], values: Array<string | RegExp> }>} rules
+ *   The exclusion rule set, typically from configuration.
+ * @returns {boolean} `true` if the declaration should be excluded, otherwise `false`.
  */
-export function containsExcludedValue(value) {
-  return config.excludedCSSValues.some((item) =>
-    item instanceof RegExp ? item.test(value) : value === String(item),
-  );
+export function isExcludedDeclaration(
+  decl,
+  rules = config.excludedDeclarations,
+) {
+  if (
+    !decl ||
+    typeof decl.prop !== 'string' ||
+    typeof decl.value !== 'string'
+  ) {
+    throw new Error(
+      'Invalid declaration: expected a PostCSS Declaration or { prop: string, value: string }.',
+    );
+  }
+
+  if (!Array.isArray(rules) || rules.length === 0) {
+    throw new Error('rules not provided');
+  }
+
+  // PostCSS typically lowercases props already, but keep it simple and exact.
+  const prop = decl.prop.trim();
+  const value = decl.value.trim();
+  const valueLower = value.toLowerCase();
+
+  for (const rule of rules) {
+    if (
+      !rule ||
+      !rule.values ||
+      (rule.descriptors !== '*' && !Array.isArray(rule.descriptors))
+    ) {
+      throw new Error(`invalid exclusion rule ${rule}`);
+    }
+
+    // Descriptor match: '*' or exact prop in list.
+    const descriptorMatches =
+      rule.descriptors === '*' ? true : rule.descriptors.includes(prop);
+
+    if (!descriptorMatches) {
+      continue;
+    }
+
+    // Value match: string equals, case-insensitive, or RegExp.test
+    for (const pattern of rule.values) {
+      if (typeof pattern === 'string') {
+        if (valueLower === pattern.toLowerCase()) {
+          return true;
+        }
+      } else if (pattern instanceof RegExp) {
+        if (pattern.test(value)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /**

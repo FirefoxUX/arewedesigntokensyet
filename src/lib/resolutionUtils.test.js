@@ -9,6 +9,8 @@ import {
   getUnresolvedVariablesFromTrace,
 } from './resolutionUtils.js';
 
+const originalConfig = { ...config };
+
 describe('buildResolutionTrace', () => {
   test('resolves a nested chain', () => {
     const foundVars = {
@@ -52,36 +54,65 @@ describe('buildResolutionTrace', () => {
 describe('analyzeTrace', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedCSSValues = ['inherit'];
+    config.excludedDeclarations = [
+      {
+        descriptors: '*',
+        values: ['inherit'],
+      },
+      {
+        descriptors: ['font-weight'],
+        values: ['normal'],
+      },
+    ];
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
   });
 
   test('detects design token and excluded values', () => {
     const trace = ['var(--color-accent-primary)', 'inherit'];
-    const result = analyzeTrace(trace);
+    const result = analyzeTrace(trace, 'any-prop');
     expect(result.containsDesignToken).toBe(true);
-    expect(result.containsExcludedValue).toBe(true);
+    expect(result.containsExcludedDeclaration).toBe(true);
+  });
+
+  test('detects font-weight: normal specific exclusion', () => {
+    const trace = ['var(--some-var)', 'normal'];
+    // Check with random descriptor first.
+    const result = analyzeTrace(trace, 'any-prop');
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedDeclaration).toBe(false);
+    // This should be excluded.
+    const result2 = analyzeTrace(trace, 'font-weight');
+    expect(result2.containsDesignToken).toBe(false);
+    expect(result2.containsExcludedDeclaration).toBe(true);
   });
 
   test('correctly indentifies non-design token use', () => {
     const trace = ['var(--not-token)', 'inherit'];
-    const result = analyzeTrace(trace);
+    const result = analyzeTrace(trace, 'any-prop');
     expect(result.containsDesignToken).toBe(false);
-    expect(result.containsExcludedValue).toBe(true);
+    expect(result.containsExcludedDeclaration).toBe(true);
   });
 
   test('correctly indentifies non-design token and non excluded value use', () => {
     const trace = ['var(--not-token)', 'whatever'];
-    const result = analyzeTrace(trace);
+    const result = analyzeTrace(trace, 'any-prop');
     expect(result.containsDesignToken).toBe(false);
-    expect(result.containsExcludedValue).toBe(false);
+    expect(result.containsExcludedDeclaration).toBe(false);
   });
 });
 
 describe('classifyResolutionFromTrace', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedCSSValues = ['inherit'];
+    config.excludedDeclarations = [{ descriptors: '*', values: ['inherit'] }];
     config.repoPath = '/project';
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
   });
 
   const currentFile = '/src/components/button.css';
@@ -130,6 +161,14 @@ describe('classifyResolutionFromTrace', () => {
 });
 
 describe('getResolvedVarOrigins', () => {
+  beforeAll(() => {
+    config.repoPath = '/project';
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
+  });
+
   test('returns map of var names to source paths', () => {
     const foundVars = {
       '--a': { value: '12px', src: '/project/tokens/spacing.css' },
@@ -163,6 +202,10 @@ describe('getResolutionSources', () => {
     config.repoPath = '/project';
     config.designTokenKeys = ['--color-accent-primary'];
     config.excludedCSSValues = [];
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
   });
 
   const currentFile = '/project/src/components/button.css';
