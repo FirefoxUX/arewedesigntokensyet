@@ -54,15 +54,15 @@ export function buildResolutionTrace(initialValue, foundVariables) {
 /**
  * Analyzes a trace to determine if it includes design tokens or excluded values.
  * @param {string[]} trace - A resolution trace of CSS values.
- * @param {string} descriptor - A CSS descriptor to enable specific exclusions based on the value and descriptor combination.
+ * @param {string} originalProperty - The original CSS property used to determine exclusions based on the value and property combination.
  * @returns {{ containsDesignToken: boolean, containsExcludedDeclaration: boolean }}
  */
-export function analyzeTrace(trace, descriptor) {
+export function analyzeTrace(trace, originalProperty) {
   return {
     containsDesignToken: trace.some(containsDesignTokenValue),
     containsExcludedDeclaration: trace.some((traceValue) => {
       const result = isExcludedDeclaration({
-        prop: descriptor,
+        prop: originalProperty,
         value: traceValue,
       });
       return result;

@@ -255,11 +255,11 @@ export default {
   // Patterns for declarations that should be excluded.
   excludedDeclarations: [
     {
-      descriptors: ['font-weight'],
+      properties: ['font-weight'],
       values: ['normal'],
     },
     {
-      descriptors: '*',
+      properties: '*',
       values: [
         '0',
         '0px',

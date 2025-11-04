@@ -27,10 +27,10 @@ export function containsDesignTokenValue(value) {
  * - A PostCSS Declaration node, or
  * - A plain object with `prop` and `value` string fields.
  *
- * Each rule defines one or more CSS descriptors (properties) and a list of excluded values.
+ * Each rule defines one or more CSS properties and a list of excluded values.
  * A declaration matches a rule if:
- * - The rule's `descriptors` field is `"*"`, meaning it applies to all properties, or
- * - The declaration's property (`prop`) exactly matches one of the strings in `descriptors`.
+ * - The rule's `properties` field is `"*"`, meaning it applies to all properties, or
+ * - The declaration's property (`prop`) exactly matches one of the strings in `properties`.
  *
  * Once a rule applies, the declaration is excluded if its `value` matches any entry
  * in the rule’s `values` list. Matching supports both exact string comparison (case-insensitive)
@@ -38,13 +38,13 @@ export function containsDesignTokenValue(value) {
  *
  * Example rule set:
  * [
- *   { descriptors: ['font-weight'], values: ['normal'] },
- *   { descriptors: '*', values: ['0', 'auto', /calc\(.*?\)/] }
+ *   { properties: ['font-weight'], values: ['normal'] },
+ *   { properties: '*', values: ['0', 'auto', /calc\(.*?\)/] }
  * ]
  *
  * Matching behavior:
- * - If `descriptors` is `"*"`, the rule applies to all declaration properties.
- * - If `descriptors` is an array, the rule applies only when `prop` is included in it.
+ * - If `properties` is `"*"`, the rule applies to all declaration properties.
+ * - If `properties` is an array, the rule applies only when `prop` is included in it.
  * - String values in `values` are compared case-insensitively against the raw `value`.
  * - RegExp values in `values` are tested directly against the raw `value`.
  *
@@ -56,7 +56,7 @@ export function containsDesignTokenValue(value) {
  *
  * @param {import('postcss').Declaration | PlainDeclaration} decl
  *   The declaration to evaluate. May be a PostCSS node or a plain object with `prop` and `value`.
- * @param {Array<{ descriptors: '*' | string[], values: Array<string | RegExp> }>} rules
+ * @param {Array<{ properties: '*' | string[], values: Array<string | RegExp> }>} rules
  *   The exclusion rule set, typically from configuration.
  * @returns {boolean} `true` if the declaration should be excluded, otherwise `false`.
  */
@@ -87,16 +87,16 @@ export function isExcludedDeclaration(
     if (
       !rule ||
       !rule.values ||
-      (rule.descriptors !== '*' && !Array.isArray(rule.descriptors))
+      (rule.properties !== '*' && !Array.isArray(rule.properties))
     ) {
       throw new Error(`invalid exclusion rule ${rule}`);
     }
 
-    // Descriptor match: '*' or exact prop in list.
-    const descriptorMatches =
-      rule.descriptors === '*' ? true : rule.descriptors.includes(prop);
+    // Property match: '*' or exact prop in list.
+    const propertyMatches =
+      rule.properties === '*' ? true : rule.properties.includes(prop);
 
-    if (!descriptorMatches) {
+    if (!propertyMatches) {
       continue;
     }
 

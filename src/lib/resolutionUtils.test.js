@@ -56,11 +56,11 @@ describe('analyzeTrace', () => {
     config.designTokenKeys = ['--color-accent-primary'];
     config.excludedDeclarations = [
       {
-        descriptors: '*',
+        properties: '*',
         values: ['inherit'],
       },
       {
-        descriptors: ['font-weight'],
+        properties: ['font-weight'],
         values: ['normal'],
       },
     ];
@@ -79,7 +79,7 @@ describe('analyzeTrace', () => {
 
   test('detects font-weight: normal specific exclusion', () => {
     const trace = ['var(--some-var)', 'normal'];
-    // Check with random descriptor first.
+    // Check with random property first.
     const result = analyzeTrace(trace, 'any-prop');
     expect(result.containsDesignToken).toBe(false);
     expect(result.containsExcludedDeclaration).toBe(false);
@@ -107,7 +107,7 @@ describe('analyzeTrace', () => {
 describe('classifyResolutionFromTrace', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedDeclarations = [{ descriptors: '*', values: ['inherit'] }];
+    config.excludedDeclarations = [{ properties: '*', values: ['inherit'] }];
     config.repoPath = '/project';
   });
 

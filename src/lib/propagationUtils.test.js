@@ -23,7 +23,7 @@ describe('getPropagationData', () => {
         'border',
         'border-radius',
       ],
-      excludedDeclarations: [{ descriptors: '*', values: ['inherit'] }],
+      excludedDeclarations: [{ properties: '*', values: ['inherit'] }],
       externalVarMapping: {},
       repoPath: '/project',
     });
@@ -258,7 +258,7 @@ describe('usage aggregation', () => {
     return (result.foundPropValues || []).map((d) => {
       const base = {
         path: filePath,
-        descriptor: d.prop,
+        property: d.prop,
         value: d.value,
         isToken: Boolean(d.containsDesignToken),
         isIgnored: Boolean(d.isExcluded),
@@ -290,7 +290,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 2,
-      descriptors: { 'border-color': 2 },
+      properties: { 'border-color': 2 },
       files: { [filePath]: 2 },
     });
 
@@ -315,7 +315,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 3,
-      descriptors: {
+      properties: {
         color: 1,
         'background-color': 1,
         'border-color': 1,
@@ -343,7 +343,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 2,
-      descriptors: {
+      properties: {
         color: 1,
         'background-color': 1,
       },
@@ -355,7 +355,7 @@ describe('usage aggregation', () => {
     expect(aggregates.tokenUsage.byToken['--accent-strong']).toBeUndefined();
   });
 
-  test('descriptor values aggregate normally even when tokens only appear via aliases', async () => {
+  test('property values aggregate normally even when tokens only appear via aliases', async () => {
     fs.readFile.mockResolvedValueOnce(`
       :root {
         --accent: var(--color-accent-primary);
@@ -364,12 +364,12 @@ describe('usage aggregation', () => {
       .beta  { padding: 4px; }
     `);
 
-    const filePath = '/project/alias-descriptors.css';
+    const filePath = '/project/alias-properties.css';
     const result = await getPropagationData(filePath);
     const aggregates = buildUsageAggregates(toFindings(result, filePath));
 
-    // Non-token descriptor aggregation
-    const dv = aggregates.descriptorValues.byDescriptor;
+    // Non-token property aggregation
+    const dv = aggregates.propertyValues.byProperty;
     const paddingBucket = Object.values(dv).find(
       (d) => d.values && d.values['4px'],
     );
@@ -380,7 +380,7 @@ describe('usage aggregation', () => {
     const colorToken = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(colorToken).toEqual({
       total: 1,
-      descriptors: { color: 1 },
+      properties: { color: 1 },
       files: { [filePath]: 1 },
     });
   });

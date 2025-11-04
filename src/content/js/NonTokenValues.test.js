@@ -20,7 +20,7 @@ function makeElementAt(pathAndQuery) {
 
 function sampleData() {
   return {
-    byDescriptor: {
+    byProperty: {
       margin: {
         values: {
           0: {
@@ -70,12 +70,12 @@ function sampleData() {
 
 describe('NonTokenValuesElement URL state helpers', () => {
   beforeEach(() => {
-    setURLPath('/stats/descriptors/?pattern=*&ex=0');
+    setURLPath('/stats/non-token-values/?pattern=*&ex=0');
     vi.restoreAllMocks();
   });
 
   test('_readControlsFromURL returns expected defaults and parsed state', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=1&o=a,b,c');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=1&o=a,b,c');
     const state = el._readControlsFromURL();
 
     expect(state.pattern).toBe('*');
@@ -84,7 +84,9 @@ describe('NonTokenValuesElement URL state helpers', () => {
   });
 
   test('_writeStateToURL clears open set when pattern or exclude changes', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0&o=foo,bar');
+    const el = makeElementAt(
+      '/stats/non-token-values/?pattern=*&ex=0&o=foo,bar',
+    );
     el.pattern = 'mar*';
     el.excludeIgnored = true;
     el.openDetails = ['x', 'y'];
@@ -93,7 +95,7 @@ describe('NonTokenValuesElement URL state helpers', () => {
     el._writeStateToURL({ replace: true });
 
     expect(el.openDetails).toEqual([]);
-    expect(window.location.pathname).toBe('/stats/descriptors/');
+    expect(window.location.pathname).toBe('/stats/non-token-values/');
     expect(window.location.search).toContain('pattern=mar*');
     expect(window.location.search).toContain('ex=1');
     expect(window.location.search).not.toContain('o=');
@@ -101,7 +103,7 @@ describe('NonTokenValuesElement URL state helpers', () => {
   });
 
   test('_writeStateToURL preserves open set when unchanged', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el.pattern = '*';
     el.excludeIgnored = false;
     el.openDetails = ['a', 'b', 'c'];
@@ -109,7 +111,7 @@ describe('NonTokenValuesElement URL state helpers', () => {
     const pushSpy = vi.spyOn(history, 'pushState');
     el._writeStateToURL({ replace: false });
 
-    expect(window.location.pathname).toBe('/stats/descriptors/');
+    expect(window.location.pathname).toBe('/stats/non-token-values/');
     expect(window.location.search).toContain('pattern=*');
     expect(window.location.search).toContain('ex=0');
     expect(window.location.search).toContain('o=a%2Cb%2Cc');
@@ -117,7 +119,7 @@ describe('NonTokenValuesElement URL state helpers', () => {
   });
 
   test('_onToggleDetails adds and removes keys from openDetails', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el.pattern = '*';
     el.excludeIgnored = false;
     el.openDetails = [];
@@ -140,14 +142,14 @@ describe('NonTokenValuesElement URL state helpers', () => {
 });
 
 describe('NonTokenValuesElement data helpers', () => {
-  test('_descriptorNames returns sorted descriptor keys', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+  test('_propertyNames returns sorted property keys', () => {
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el._data = sampleData();
-    expect(el._descriptorNames()).toEqual(['margin', 'padding']);
+    expect(el._propertyNames()).toEqual(['margin', 'padding']);
   });
 
   test('_rows returns empty when no data or invalid pattern', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el.pattern = '*';
     el.excludeIgnored = false;
     el._data = null;
@@ -159,13 +161,13 @@ describe('NonTokenValuesElement data helpers', () => {
   });
 
   test('_rows includes only non-token values and respects excludeIgnored=false', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el._data = sampleData();
     el.pattern = '*';
     el.excludeIgnored = false;
 
     const rows = el._rows();
-    const key = (r) => `${r.descriptor}:${r.value}`;
+    const key = (r) => `${r.property}:${r.value}`;
     const keys = rows.map(key);
 
     expect(keys).not.toContain('margin:var(--token-x)');
@@ -174,30 +176,30 @@ describe('NonTokenValuesElement data helpers', () => {
   });
 
   test('_rows filters by suffix wildcard and excludes ignored when requested', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=mar*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=mar*&ex=0');
     el._data = sampleData();
     el.pattern = 'mar*';
     el.excludeIgnored = true;
 
     const rows = el._rows();
-    const set = new Set(rows.map((r) => r.descriptor));
+    const set = new Set(rows.map((r) => r.property));
 
     expect(set).toEqual(new Set(['margin']));
     expect(rows.find((r) => r.value === '0')).toBeUndefined();
     expect(rows.find((r) => r.value === '0 auto')).toBeDefined();
   });
 
-  test('_rows sorts by count desc, then descriptor:value lexicographically', () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+  test('_rows sorts by count desc, then property:value lexicographically', () => {
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el._data = sampleData();
     el.pattern = '*';
     el.excludeIgnored = false;
 
     const rows = el._rows();
 
-    expect(rows[0].descriptor).toBe('padding');
+    expect(rows[0].property).toBe('padding');
     expect(rows[0].count).toBe(10);
-    expect(rows[1].descriptor).toBe('padding');
+    expect(rows[1].property).toBe('padding');
     expect(rows[1].count).toBe(10);
 
     const topTwoValues = [rows[0].value, rows[1].value].sort((a, b) => {
@@ -205,9 +207,9 @@ describe('NonTokenValuesElement data helpers', () => {
     });
     expect(topTwoValues).toEqual(['2px', '4px']);
 
-    expect(rows[2].descriptor).toBe('margin');
+    expect(rows[2].property).toBe('margin');
     expect(rows[2].count).toBe(3);
-    expect(rows[3].descriptor).toBe('margin');
+    expect(rows[3].property).toBe('margin');
     expect(rows[3].count).toBe(2);
   });
 });
@@ -215,10 +217,10 @@ describe('NonTokenValuesElement data helpers', () => {
 describe('NonTokenValuesElement data loading', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    setURLPath('/stats/descriptors/?pattern=*&ex=0');
+    setURLPath('/stats/non-token-values/?pattern=*&ex=0');
   });
 
-  test('connectedCallback fetches descriptorValues and sets _data on success', async () => {
+  test('connectedCallback fetches propertyValues and sets _data on success', async () => {
     const payload = sampleData();
 
     // Mock a proper Response-like value so res.json() exists
@@ -242,7 +244,7 @@ describe('NonTokenValuesElement data loading', () => {
     // Wait for Lit updates
     await el.updateComplete;
 
-    expect(fetchSpy).toHaveBeenCalledWith('../data/descriptorValues.json');
+    expect(fetchSpy).toHaveBeenCalledWith('../data/propertyValues.json');
     expect(el._data).toEqual(payload);
     expect(el._error).toBeFalsy();
 
@@ -267,7 +269,7 @@ describe('NonTokenValuesElement data loading', () => {
     await vi.runAllTimersAsync();
     await el.updateComplete;
 
-    expect(fetchSpy).toHaveBeenCalledWith('../data/descriptorValues.json');
+    expect(fetchSpy).toHaveBeenCalledWith('../data/propertyValues.json');
     expect(el._data).toBeNull();
     expect(typeof el._error).toBe('string');
 
@@ -283,7 +285,7 @@ describe('check handling of malformed user content', () => {
   test('URL writing: pattern is safely encoded in query string', () => {
     // Malicious-looking pattern with angle brackets and event handler.
     const bad = '<img src=x onerror=alert(1)>';
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
 
     el.pattern = bad;
     el.excludeIgnored = false;
@@ -302,7 +304,7 @@ describe('check handling of malformed user content', () => {
   test('Rendering: hostile values are text, not HTML', async () => {
     // Local fetch mock with hostile content
     const payload = {
-      byDescriptor: {
+      byProperty: {
         color: {
           values: {
             '<script>alert(1)</script>': {
@@ -333,7 +335,7 @@ describe('check handling of malformed user content', () => {
     });
 
     // Ensure all rows match
-    setURLPath('/stats/descriptors/?p=*&ex=0');
+    setURLPath('/stats/non-token-values/?p=*&ex=0');
 
     // Avoid waiting 850 ms in real time
     vi.useFakeTimers();
@@ -359,7 +361,7 @@ describe('check handling of malformed user content', () => {
   });
 
   test('Rendering: hostile openDetails entries cannot inject DOM', async () => {
-    const el = makeElementAt('/stats/descriptors/?pattern=*&ex=0');
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el._data = sampleData();
     el.pattern = '*';
     el.excludeIgnored = false;
@@ -390,7 +392,7 @@ describe('stats components: safe links and attributes', () => {
   test('generated <a href> never uses javascript: and is path-based', async () => {
     // Local payload that guarantees at least one link
     const payload = {
-      byDescriptor: {
+      byProperty: {
         margin: {
           values: {
             0: {
@@ -417,7 +419,7 @@ describe('stats components: safe links and attributes', () => {
     });
 
     // Ensure pattern matches and ignored values are included
-    setURLPath('/stats/descriptors/?pattern=*&ex=0');
+    setURLPath('/stats/non-token-values/?pattern=*&ex=0');
 
     vi.useFakeTimers();
 
@@ -447,7 +449,7 @@ describe('stats components: safe links and attributes', () => {
   test('data-attributes are not broken by hostile ids', async () => {
     // Hostile-ish id to exercise attribute escaping; component prefixes with "d"
     const payload = {
-      byDescriptor: {
+      byProperty: {
         color: {
           values: {
             '#fff': {
@@ -470,7 +472,7 @@ describe('stats components: safe links and attributes', () => {
       },
     });
 
-    setURLPath('/stats/descriptors/?pattern=*&ex=0');
+    setURLPath('/stats/non-token-values/?pattern=*&ex=0');
 
     vi.useFakeTimers();
 

@@ -33,7 +33,7 @@ function dedupeTrace(trace = []) {
  *
  * @param {object} prop - A resolved property with token metadata.
  * @param {boolean} prop.containsDesignToken - Whether the value includes a known token.
- * @param {boolean} prop.isExcluded whether this descriptor/value combination is excluded.
+ * @param {boolean} prop.isExcluded whether this property/value combination is excluded.
  * @returns {'good' | 'warn' | 'bad'} - The resolution status.
  */
 function getStatus(prop) {
