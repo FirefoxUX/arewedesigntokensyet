@@ -141,6 +141,7 @@ export default {
   repoPath,
   // These are the properties we look for, and expect to utilize design tokens.
   designTokenProperties: [
+    'background',
     'background-color',
     'border',
     'border-block-end',
