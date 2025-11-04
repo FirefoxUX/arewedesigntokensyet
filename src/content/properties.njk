@@ -2,16 +2,21 @@
 title: "Tokenizable CSS Properties List"
 permalink: "/properties/"
 layout: base.njk
-
+eleventyNavigation:
+  key: Properties
+  order: 4
 ---
 
-<h1>{{ title }}</h1>
+<h2>{{ title }}</h2>
 <p>This is the list of design tokens that we look at and expect to be tokenized</p>
 
 {% include 'homeLink.njk' %}
 
-<ul>
-{% for prop in propList %}
- <li>{{ prop }}</li>
-{% endfor %}
-</ul>
+<section class="properties">
+  <h3>Properties List</h3>
+  <ul>
+  {% for prop in propList %}
+    <li><code>{{ prop }}</code></li>
+  {% endfor %}
+  </ul>
+</section>

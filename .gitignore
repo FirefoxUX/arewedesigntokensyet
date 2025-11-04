@@ -8,5 +8,6 @@ src/data/groupedFilesByDir.json
 src/data/**/propagationHistoryLatest.json
 src/data/unresolvedVars.json
 src/data/cssFilesList.json
+src/data/tokenUsage.json
 build/*
 coverage/*

@@ -1,0 +1,35 @@
+{% macro statsItem(row) %}
+<li class="token-item">
+  <details data-details-key="t{{row.id}}">
+    <summary>
+      <code>{{ row.token }}</code>
+      <span>[{{ row.count }}]</span>
+    </summary>
+
+    {# Descriptors #}
+    {% if row.descriptors and row.descriptors.length %}
+    <h4>Descriptors</h4>
+    <ul class="paths">
+      {% for pair in row.descriptors %}
+        <li class="mono">
+          <code>{{ pair[0] }}</code>
+          <span>[{{ pair[1] }}]</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {# Files #}
+    {% if row.files and row.files.length %}
+    <h4>Files</h4>
+    <ul class="paths">
+    {% for filePair in row.files %}
+      <li class="mono">
+        <a href="/{{ filePair[0] | url }}">/{{ filePair[0] }}</a>&nbsp;<span>[{{ filePair[1] }}]</span>
+      </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+  </details>
+</li>
+{% endmacro %}
