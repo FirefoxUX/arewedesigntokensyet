@@ -8,6 +8,9 @@ import {
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
+import config from '../../config.js';
+const originalConfig = { ...config };
+
 describe('isVariableDefinition', () => {
   test('should return true for a CSS var', () => {
     expect(isVariableDefinition('--foo')).toBe(true);
@@ -49,10 +52,58 @@ describe('containsDesignTokenValue', () => {
 });
 
 describe('isExcludedDeclaration', () => {
+  beforeAll(() => {
+    Object.assign(config, {
+      excludedDeclarations: [
+        { property: 'font-weight', values: ['normal', '!inherit'] },
+        {
+          property: '*',
+          values: [
+            '0',
+            '0px',
+            '1',
+            'inherit',
+            'unset',
+            /calc(.*?)/,
+            /max(.*?)/,
+          ],
+        },
+      ],
+    });
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
+  });
+
   test('should ignore font-weight: normal', () => {
     expect(
       isExcludedDeclaration({ prop: 'font-weight', value: 'normal' }),
     ).toBe(true);
+  });
+
+  test('should ignore font-weight: NoRmAl due to case insensitive match', () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'NoRmAl' }),
+    ).toBe(true);
+  });
+
+  test(`should not ignore font-weight: inherit as inherit is negated and it's higher in the list`, () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'inherit' }),
+    ).toBe(false);
+  });
+
+  test(`should not ignore font-weight: INHERIT due to case insensitive negation`, () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'INHERIT' }),
+    ).toBe(false);
+  });
+
+  test(`should ignore font-weight: unset as it's covered by the wildcard`, () => {
+    expect(isExcludedDeclaration({ prop: 'font-weight', value: 'unset' })).toBe(
+      true,
+    );
   });
 
   test('should ignore unset', () => {

@@ -253,13 +253,18 @@ export default {
   // coverage for storybook files, tests and node deps.
   ignorePatterns: ['**/test{,s}/**', '**/node_modules/**', '**/storybook/**'],
   // Patterns for declarations that should be excluded.
+  // Processed in order, first matched or negated wins.
+  // Values can be strings or regexes.
+  // A wildcard '*', can be used to match all properties.
+  // Value negation is possible with a leading '!' such as '!normal'. Use this
+  //    if you don't want a wildcard value to match a specific property.
   excludedDeclarations: [
     {
-      properties: ['font-weight'],
+      property: 'font-weight',
       values: ['normal'],
     },
     {
-      properties: '*',
+      property: '*',
       values: [
         '0',
         '0px',

@@ -56,12 +56,12 @@ describe('analyzeTrace', () => {
     config.designTokenKeys = ['--color-accent-primary'];
     config.excludedDeclarations = [
       {
-        properties: '*',
-        values: ['inherit'],
+        property: 'font-weight',
+        values: ['normal'],
       },
       {
-        properties: ['font-weight'],
-        values: ['normal'],
+        property: '*',
+        values: ['inherit'],
       },
     ];
   });
@@ -107,7 +107,6 @@ describe('analyzeTrace', () => {
 describe('classifyResolutionFromTrace', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedDeclarations = [{ properties: '*', values: ['inherit'] }];
     config.repoPath = '/project';
   });
 
@@ -201,7 +200,6 @@ describe('getResolutionSources', () => {
   beforeAll(() => {
     config.repoPath = '/project';
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedCSSValues = [];
   });
 
   afterAll(() => {

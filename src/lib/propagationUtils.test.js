@@ -23,7 +23,7 @@ describe('getPropagationData', () => {
         'border',
         'border-radius',
       ],
-      excludedDeclarations: [{ properties: '*', values: ['inherit'] }],
+      excludedDeclarations: [{ property: '*', values: ['inherit'] }],
       externalVarMapping: {},
       repoPath: '/project',
     });
