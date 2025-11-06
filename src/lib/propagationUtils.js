@@ -340,7 +340,6 @@ function computeDesignTokenSummary(declarations) {
  *       properties: Record<string, number>,
  *     }>,
  *     generatedAt: string,
- *     schemaVersion: number,
  *   },
  *   propertyValues: {
  *     byProperty: Record<string, {
@@ -355,7 +354,6 @@ function computeDesignTokenSummary(declarations) {
  *       }>,
  *     }>,
  *     generatedAt: string,
- *     schemaVersion: number,
  *   }
  * }}
  */
@@ -365,13 +363,11 @@ export function buildUsageAggregates(usageFindings) {
   const tokenUsage = {
     byToken: {},
     generatedAt,
-    schemaVersion: 1,
   };
 
   const propertyValues = {
     byProperty: {},
     generatedAt,
-    schemaVersion: 1,
   };
 
   for (const finding of usageFindings) {
