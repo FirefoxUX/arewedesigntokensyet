@@ -3,8 +3,6 @@ import { parseCSS } from './cssParser.js';
 import {
   isVariableDefinition,
   isWithinValidParentSelector,
-  containsDesignTokenValue,
-  containsExcludedValue,
 } from './tokenUtils.js';
 
 /**
@@ -48,7 +46,6 @@ export const getExternalVars = memoize(__getExternalVars);
  *
  * This includes:
  * - The raw value
- * - Flags indicating token/excluded token usage
  * - Source location info (start/end)
  * - Whether it's external and where it came from
  *
@@ -61,8 +58,6 @@ export const getExternalVars = memoize(__getExternalVars);
  * @example
  * {
  *   value: 'var(--color-primary)',
- *   containsDesignToken: true,
- *   containsExcludedValue: false,
  *   isExternal: true,
  *   start: { line: 5, column: 3 },
  *   end: { line: 5, column: 42 },
@@ -71,13 +66,9 @@ export const getExternalVars = memoize(__getExternalVars);
  */
 export function getVarData(node, { isExternal = false, filePath = null } = {}) {
   const value = node.value;
-  const containsDesignToken = containsDesignTokenValue(value);
-  const containsExcluded = containsExcludedValue(value);
 
   const data = {
     value,
-    containsDesignToken,
-    containsExcludedValue: containsExcluded,
     isExternal,
     start: node.source.start,
     end: node.source.end,

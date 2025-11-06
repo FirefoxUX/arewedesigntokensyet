@@ -23,7 +23,7 @@ describe('getPropagationData', () => {
         'border',
         'border-radius',
       ],
-      excludedCSSValues: ['inherit'],
+      excludedDeclarations: [{ property: '*', values: ['inherit'] }],
       externalVarMapping: {},
       repoPath: '/project',
     });
@@ -66,7 +66,7 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'border-radius',
+          prop: 'border-radius',
           containsDesignToken: true,
           resolutionType: 'local',
         }),
@@ -99,7 +99,7 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'border-radius',
+          prop: 'border-radius',
           containsDesignToken: false,
           resolutionType: 'local',
         }),
@@ -137,18 +137,18 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'color',
+          prop: 'color',
           containsDesignToken: true,
           resolutionType: 'local',
         }),
         expect.objectContaining({
-          property: 'border',
+          prop: 'border',
           resolutionType: 'local',
           containsDesignToken: false,
         }),
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -184,18 +184,18 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'color',
+          prop: 'color',
           containsDesignToken: false,
           resolutionType: 'local',
         }),
         expect.objectContaining({
-          property: 'border',
+          prop: 'border',
           resolutionType: 'local',
           containsDesignToken: false,
         }),
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -230,8 +230,8 @@ describe('getPropagationData', () => {
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          property: 'background-color',
-          containsExcludedValue: true,
+          prop: 'background-color',
+          isExcluded: true,
         }),
       ]),
     );
@@ -258,10 +258,10 @@ describe('usage aggregation', () => {
     return (result.foundPropValues || []).map((d) => {
       const base = {
         path: filePath,
-        descriptor: d.property,
+        property: d.prop,
         value: d.value,
         isToken: Boolean(d.containsDesignToken),
-        isIgnored: Boolean(d.containsExcludedValue),
+        isIgnored: Boolean(d.isExcluded),
       };
       if (Array.isArray(d.tokens) && d.tokens.length > 0) {
         base.tokens = d.tokens;
@@ -290,7 +290,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 2,
-      descriptors: { 'border-color': 2 },
+      properties: { 'border-color': 2 },
       files: { [filePath]: 2 },
     });
 
@@ -315,7 +315,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 3,
-      descriptors: {
+      properties: {
         color: 1,
         'background-color': 1,
         'border-color': 1,
@@ -343,7 +343,7 @@ describe('usage aggregation', () => {
     const tokenData = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(tokenData).toEqual({
       total: 2,
-      descriptors: {
+      properties: {
         color: 1,
         'background-color': 1,
       },
@@ -355,7 +355,7 @@ describe('usage aggregation', () => {
     expect(aggregates.tokenUsage.byToken['--accent-strong']).toBeUndefined();
   });
 
-  test('descriptor values aggregate normally even when tokens only appear via aliases', async () => {
+  test('property values aggregate normally even when tokens only appear via aliases', async () => {
     fs.readFile.mockResolvedValueOnce(`
       :root {
         --accent: var(--color-accent-primary);
@@ -364,12 +364,12 @@ describe('usage aggregation', () => {
       .beta  { padding: 4px; }
     `);
 
-    const filePath = '/project/alias-descriptors.css';
+    const filePath = '/project/alias-properties.css';
     const result = await getPropagationData(filePath);
     const aggregates = buildUsageAggregates(toFindings(result, filePath));
 
-    // Non-token descriptor aggregation
-    const dv = aggregates.descriptorValues.byDescriptor;
+    // Non-token property aggregation
+    const dv = aggregates.propertyValues.byProperty;
     const paddingBucket = Object.values(dv).find(
       (d) => d.values && d.values['4px'],
     );
@@ -380,7 +380,7 @@ describe('usage aggregation', () => {
     const colorToken = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(colorToken).toEqual({
       total: 1,
-      descriptors: { color: 1 },
+      properties: { color: 1 },
       files: { [filePath]: 1 },
     });
   });

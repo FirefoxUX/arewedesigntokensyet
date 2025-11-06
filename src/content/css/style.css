@@ -273,8 +273,7 @@ code {
 }
 
 .tokens,
-.properties,
-.descriptors {
+.properties {
   background: var(--card-background);
   padding: 0 var(--space-xlarge) var(--space-large);
   border-radius: var(--radius-large);

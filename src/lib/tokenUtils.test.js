@@ -1,12 +1,15 @@
 import {
   isVariableDefinition,
   containsDesignTokenValue,
-  containsExcludedValue,
+  isExcludedDeclaration,
   isTokenizableProperty,
   getCSSVariables,
   isWithinValidParentSelector,
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
+
+import config from '../../config.js';
+const originalConfig = { ...config };
 
 describe('isVariableDefinition', () => {
   test('should return true for a CSS var', () => {
@@ -48,33 +51,97 @@ describe('containsDesignTokenValue', () => {
   });
 });
 
-describe('containsExcludedValue', () => {
+describe('isExcludedDeclaration', () => {
+  beforeAll(() => {
+    Object.assign(config, {
+      excludedDeclarations: [
+        { property: 'font-weight', values: ['normal', '!inherit'] },
+        {
+          property: '*',
+          values: [
+            '0',
+            '0px',
+            '1',
+            'inherit',
+            'unset',
+            /calc(.*?)/,
+            /max(.*?)/,
+          ],
+        },
+      ],
+    });
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
+  });
+
+  test('should ignore font-weight: normal', () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'normal' }),
+    ).toBe(true);
+  });
+
+  test('should ignore font-weight: NoRmAl due to case insensitive match', () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'NoRmAl' }),
+    ).toBe(true);
+  });
+
+  test(`should not ignore font-weight: inherit as inherit is negated and it's higher in the list`, () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'inherit' }),
+    ).toBe(false);
+  });
+
+  test(`should not ignore font-weight: INHERIT due to case insensitive negation`, () => {
+    expect(
+      isExcludedDeclaration({ prop: 'font-weight', value: 'INHERIT' }),
+    ).toBe(false);
+  });
+
+  test(`should ignore font-weight: unset as it's covered by the wildcard`, () => {
+    expect(isExcludedDeclaration({ prop: 'font-weight', value: 'unset' })).toBe(
+      true,
+    );
+  });
+
   test('should ignore unset', () => {
-    expect(containsExcludedValue('unset')).toBe(true);
+    expect(isExcludedDeclaration({ prop: 'any-prop', value: 'unset' })).toBe(
+      true,
+    );
   });
 
   test('should ignore 0', () => {
-    expect(containsExcludedValue('0')).toBe(true);
+    expect(isExcludedDeclaration({ prop: 'any-prop', value: '0' })).toBe(true);
   });
 
   test('should ignore unitless 1', () => {
-    expect(containsExcludedValue('1')).toBe(true);
+    expect(isExcludedDeclaration({ prop: 'any-prop', value: '1' })).toBe(true);
   });
 
   test('should not ignore 1px', () => {
-    expect(containsExcludedValue('1px')).toBe(false);
+    expect(isExcludedDeclaration({ prop: 'any-prop', value: '1px' })).toBe(
+      false,
+    );
   });
 
   test('should ignore an a pattern match for calc()', () => {
-    expect(containsExcludedValue('calc(100vh - 100px)')).toBe(true);
+    expect(
+      isExcludedDeclaration({ prop: 'any-prop', value: 'calc(100vh - 100px)' }),
+    ).toBe(true);
   });
 
   test('should ignore a pattern match for max()', () => {
-    expect(containsExcludedValue('max(20vw, 400px)')).toBe(true);
+    expect(
+      isExcludedDeclaration({ prop: 'any-prop', value: 'max(20vw, 400px)' }),
+    ).toBe(true);
   });
 
   test('should not ignore a hard-coded value', () => {
-    expect(containsExcludedValue('400px')).toBe(false);
+    expect(isExcludedDeclaration({ prop: 'any-prop', value: '400px' })).toBe(
+      false,
+    );
   });
 });
 

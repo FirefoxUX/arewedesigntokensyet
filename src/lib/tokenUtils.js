@@ -21,16 +21,93 @@ export function containsDesignTokenValue(value) {
 }
 
 /**
- * Returns true if the value matches any excluded CSS value or pattern.
- * This includes exact string matches or RegExp patterns like 'inherit', 'unset', etc.
+ * Determine whether a CSS declaration should be excluded based on a set of rules.
  *
- * @param {string} value - The CSS value to test.
- * @returns {boolean} - true if the value is considered excluded.
+ * Each rule describes one or more property–value pairs that should be ignored.
+ * Matching proceeds as follows:
+ * - The rule applies if its `property` matches the declaration’s property name,
+ *   or if `property` is the wildcard `"*"`, which matches any property.
+ * - The rule’s `values` array is then tested against the declaration’s value:
+ *   - String patterns are compared case-insensitively.
+ *   - Strings prefixed with `!` represent negation, meaning that if the value matches,
+ *     the declaration is explicitly **not excluded**, and later rules are ignored.
+ *   - RegExp patterns are tested as-is.
+ * - The first matching rule determines the result:
+ *   - A normal (non-negated) match returns `true` (excluded).
+ *   - A negated match (`!value`) returns `false` (not excluded), overriding later matches.
+ *
+ * Throws an error if:
+ * - `decl` is not a PostCSS Declaration or an object with `prop` and `value` strings.
+ * - `rules` is not a non-empty array.
+ * - Any rule object is malformed.
+ *
+ * @param {import('postcss').Declaration | { prop: string, value: string }} decl
+ *   The CSS declaration to test. Must include string `prop` and `value` keys.
+ * @param {Array<{ property: string, values: Array<string|RegExp> }>} rules
+ *   List of exclusion rules. Each rule defines a `property` and matching `values`.
+ * @returns {boolean}
+ *   Returns `true` if the declaration matches any exclusion rule, or `false` if none apply
+ *   or if a negated match explicitly cancels exclusion.
+ * @throws {Error}
+ *   If input arguments or rule shapes are invalid.
  */
-export function containsExcludedValue(value) {
-  return config.excludedCSSValues.some((item) =>
-    item instanceof RegExp ? item.test(value) : value === String(item),
-  );
+export function isExcludedDeclaration(
+  decl,
+  rules = config.excludedDeclarations,
+) {
+  if (
+    !decl ||
+    typeof decl.prop !== 'string' ||
+    typeof decl.value !== 'string'
+  ) {
+    throw new Error(
+      'Invalid declaration: expected a PostCSS Declaration or { prop: string, value: string }.',
+    );
+  }
+
+  if (!Array.isArray(rules) || rules.length === 0) {
+    throw new Error('rules not provided');
+  }
+
+  const prop = decl.prop.trim();
+  const value = decl.value.trim();
+
+  for (const rule of rules) {
+    if (
+      !rule ||
+      !Array.isArray(rule.values) ||
+      typeof rule.property !== 'string'
+    ) {
+      throw new Error(`invalid exclusion rule ${rule}`);
+    }
+
+    // Property match: '*' wildcard or exact property provided.
+    const propertyMatches =
+      rule.property === '*' ? true : rule.property === prop;
+
+    if (!propertyMatches) {
+      continue;
+    }
+
+    // Value match: case-insensitive string check or RegExp.test
+    for (const pattern of rule.values) {
+      if (typeof pattern === 'string') {
+        let patternLower = pattern.toLowerCase();
+        let valueLower = value.toLowerCase();
+        if (valueLower === patternLower) {
+          return true;
+          // Support simple negation.
+        } else if (`!${valueLower}` === patternLower) {
+          return false;
+        }
+      } else if (pattern instanceof RegExp) {
+        if (pattern.test(value)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /**

@@ -113,41 +113,41 @@ function validatePattern(pattern) {
 }
 
 /**
- * Check whether a given descriptor string matches a pattern that may include a trailing wildcard (`*`).
+ * Check whether a given property string matches a pattern that may include a trailing wildcard (`*`).
  *
  * Matching behavior:
- * - A pattern of `"*"` matches all descriptors.
- * - If the pattern contains no wildcard, it must match the descriptor exactly.
- * - If the pattern ends with `"*"`, the descriptor must start with the pattern's prefix before the wildcard.
+ * - A pattern of `"*"` matches all properties.
+ * - If the pattern contains no wildcard, it must match the property exactly.
+ * - If the pattern ends with `"*"`, the property must start with the pattern's prefix before the wildcard.
  *
- * @param {string} descriptor - The descriptor name to test (e.g., `"border-color"`).
+ * @param {string} property - The property name to test (e.g., `"border-color"`).
  * @param {string} pattern - The pattern to match against, which may include a trailing `"*"` wildcard.
- * @returns {boolean} `true` if the descriptor matches the pattern, otherwise `false`.
+ * @returns {boolean} `true` if the property matches the pattern, otherwise `false`.
  */
-function matchesDescriptorPattern(descriptor, pattern) {
+function matchesPropertyPattern(property, pattern) {
   if (pattern === '*') {
     return true;
   }
   if (!pattern.includes('*')) {
-    return descriptor === pattern;
+    return property === pattern;
   }
   const prefix = pattern.slice(0, -1);
-  return descriptor.startsWith(prefix);
+  return property.startsWith(prefix);
 }
 
 /**
- * Renders a filterable list of non-token descriptor values from `descriptorValues.json`,
+ * Renders a filterable list of non-token property values from `propertyValues.json`,
  * with controls synced to the URL query string. Provides a pattern filter, an option
  * to exclude ignored values, and per-file usage breakdowns. Shows a loader while
  * fetching, and a clear error message on failure.
  *
  * URL parameters:
- * - `pattern`: descriptor filter, `*` or suffix wildcard allowed, defaults to `*`
+ * - `pattern`: property filter, `*` or suffix wildcard allowed, defaults to `*`
  * - `ex`: exclude ignored values flag, `"1"` enables
  * - `o`: comma separated list of open <details> ids
  *
  * Lit reactive properties:
- * @property {string} pattern Current descriptor filter. Reflected to the URL.
+ * @property {string} pattern Current property filter. Reflected to the URL.
  * @property {string[]} openDetails Keys of <details> elements that are open. Reflected.
  * @property {boolean} excludeIgnored When true, ignored values are excluded. Reflected as `exclude-ignored`.
  *
@@ -156,7 +156,7 @@ function matchesDescriptorPattern(descriptor, pattern) {
  * @property {object|null} _data Loaded dataset, or null on error.
  * @property {string|null} _error Error message to display, or null.
  *
- * Fetches `../data/descriptorValues.json`. Non-2xx responses raise an error so the
+ * Fetches `../data/propertyValues.json`. Non-2xx responses raise an error so the
  * UI can present feedback and avoid rendering stale data.
  *
  * Behaviour summary:
@@ -255,7 +255,7 @@ export class NonTokenValuesElement extends BaseElement {
   }
 
   /**
-   * Fetch descriptor data from `../data/descriptorValues.json`.
+   * Fetch property data from `../data/propertyValues.json`.
    *
    * Throws an error on non-2xx responses or unexpected fetch results.
    * Accepts mock objects in tests when the response includes `ok: true`.
@@ -265,14 +265,12 @@ export class NonTokenValuesElement extends BaseElement {
    * @throws {Error} If the fetch fails or returns an unexpected format.
    */
   async #fetchData() {
-    const res = await fetch('../data/descriptorValues.json');
+    const res = await fetch('../data/propertyValues.json');
 
     // Throw on non-2xx so #load() can set _error and null _data
     if (!res || (typeof res.ok === 'boolean' && !res.ok)) {
       const status = typeof res?.status === 'number' ? res.status : 'unknown';
-      throw new Error(
-        `Failed to fetch descriptorValues.json, status ${status}`,
-      );
+      throw new Error(`Failed to fetch propertyValues.json, status ${status}`);
     }
 
     if (typeof res.json === 'function') {
@@ -310,7 +308,7 @@ export class NonTokenValuesElement extends BaseElement {
    * Read current control state from the URL query string.
    *
    * Recognized parameters:
-   * - `pattern`: descriptor filter, may be `*` or suffix wildcard, defaults to `*`.
+   * - `pattern`: property filter, may be `*` or suffix wildcard, defaults to `*`.
    * - `ex`: exclude ignored values flag, `"1"` to enable.
    * - `o`: comma separated list of open detail ids.
    *
@@ -387,7 +385,7 @@ export class NonTokenValuesElement extends BaseElement {
   }
 
   /**
-   * Handle user input for the descriptor pattern field.
+   * Handle user input for the property pattern field.
    * Trims whitespace and, when the pattern is valid, writes state to the URL.
    *
    * @private
@@ -416,47 +414,47 @@ export class NonTokenValuesElement extends BaseElement {
   }
 
   /**
-   * Return a sorted list of known descriptor names from the loaded dataset.
+   * Return a sorted list of known property names from the loaded dataset.
    *
    * @private
-   * @returns {string[]} Alphabetically sorted descriptor names, empty if data is missing.
+   * @returns {string[]} Alphabetically sorted property names, empty if data is missing.
    */
-  _descriptorNames() {
-    if (!this._data?.byDescriptor) {
+  _propertyNames() {
+    if (!this._data?.byProperty) {
       return [];
     }
-    return Object.keys(this._data.byDescriptor).sort((a, b) => {
+    return Object.keys(this._data.byProperty).sort((a, b) => {
       return a.localeCompare(b);
     });
   }
 
   /**
-   * Build and return a flattened list of non-token descriptor/value usage records
+   * Build and return a flattened list of non-token property/value usage records
    * filtered by the current pattern and configuration flags.
    *
-   * The returned array contains one entry per unique descriptor/value pair
+   * The returned array contains one entry per unique property/value pair
    * (excluding design token values and optionally ignored ones),
    * each including its usage count and per-file breakdown.
    *
    * Filtering behavior:
-   * - Skips if `this._data.byDescriptor` is missing.
+   * - Skips if `this._data.byProperty` is missing.
    * - Skips entirely if the current `this.pattern` is invalid per `validatePattern()`.
-   * - Includes only descriptors matching `this.pattern` via `matchesDescriptorPattern()`.
+   * - Includes only propertys matching `this.pattern` via `matchesPropertyPattern()`.
    * - Excludes entries where `valObj.isToken === true`.
    * - Excludes ignored entries if `this.excludeIgnored` is true.
    *
    * @private
    * @returns {Array<{
-   *   descriptor: string,
+   *   property: string,
    *   value: string,
    *   count: number,
    *   files: Array<{ path: string, count: number }>,
    *   id: string
-   * }>} Array of descriptor/value records suitable for table rendering or aggregation.
+   * }>} Array of property/value records suitable for table rendering or aggregation.
    */
   _rows() {
     const data = this._data;
-    if (!data?.byDescriptor) {
+    if (!data?.byProperty) {
       return [];
     }
     const valid = validatePattern(this.pattern);
@@ -464,13 +462,13 @@ export class NonTokenValuesElement extends BaseElement {
       return [];
     }
 
-    /** @type {Array<{ descriptor: string, value: string, count: number, files: Array<{ path: string, count: number }>, id: string }>} */
+    /** @type {Array<{ property: string, value: string, count: number, files: Array<{ path: string, count: number }>, id: string }>} */
     const rows = [];
-    for (const [descriptor, descObj] of Object.entries(data.byDescriptor)) {
-      if (!matchesDescriptorPattern(descriptor, this.pattern)) {
+    for (const [property, propObj] of Object.entries(data.byProperty)) {
+      if (!matchesPropertyPattern(property, this.pattern)) {
         continue;
       }
-      const values = descObj?.values || {};
+      const values = propObj?.values || {};
       for (const [value, valObj] of Object.entries(values)) {
         if (!valObj || typeof valObj.count !== 'number') {
           continue;
@@ -488,7 +486,7 @@ export class NonTokenValuesElement extends BaseElement {
           filesArray.push({ path, count: Number(cnt) || 0 });
         }
         rows.push({
-          descriptor,
+          property,
           value,
           count: valObj.count,
           files: filesArray,
@@ -501,8 +499,8 @@ export class NonTokenValuesElement extends BaseElement {
       if (b.count !== a.count) {
         return b.count - a.count;
       }
-      const ka = `${a.descriptor}:${a.value}`;
-      const kb = `${b.descriptor}:${b.value}`;
+      const ka = `${a.property}:${a.value}`;
+      const kb = `${b.property}:${b.value}`;
       return ka.localeCompare(kb);
     });
     return rows;
@@ -511,7 +509,7 @@ export class NonTokenValuesElement extends BaseElement {
   /**
    * Render the controls and the non-token value list.
    * Shows validation feedback for the pattern, a toggle to exclude ignored values,
-   * and a grouped list of descriptor values with per-file counts.
+   * and a grouped list of property values with per-file counts.
    *
    * @returns {import('lit').TemplateResult}
    */
@@ -529,7 +527,7 @@ export class NonTokenValuesElement extends BaseElement {
 
       ${!this._loading
         ? html` <form
-              id="descriptor-controls"
+              id="property-controls"
               class="controls"
               @submit=${(e) => {
                 e.preventDefault();
@@ -541,18 +539,18 @@ export class NonTokenValuesElement extends BaseElement {
               }}
             >
               <div class="control">
-                <label for="pattern">Descriptor Pattern</label>
+                <label for="pattern">Property Pattern</label>
                 <input
                   id="pattern"
                   .value=${this.pattern}
                   @input=${(e) => {
                     this._onPatternInput(e);
                   }}
-                  list="descriptor-suggestions"
+                  list="property-suggestions"
                   autocomplete="off"
                 />
-                <datalist id="descriptor-suggestions">
-                  ${this._descriptorNames().map((name) => {
+                <datalist id="property-suggestions">
+                  ${this._propertyNames().map((name) => {
                     return html`<option value=${name}></option>`;
                   })}
                 </datalist>
@@ -589,7 +587,7 @@ export class NonTokenValuesElement extends BaseElement {
             </form>
 
             ${check.ok
-              ? html` <section id="non-token-section" class="descriptors">
+              ? html` <section id="non-token-section" class="properties">
                   <h3 id="non-token-heading" ?hidden=${rows.length === 0}>
                     Most common non-token values for:
                     <code>${this.pattern}</code>
@@ -621,7 +619,7 @@ export class NonTokenValuesElement extends BaseElement {
                                   @toggle=${this._onToggleDetails}
                                 >
                                   <summary>
-                                    <code>${row.descriptor}: ${row.value}</code>
+                                    <code>${row.property}: ${row.value}</code>
                                     <span class="count">[${row.count}]</span>
                                   </summary>
                                   <ul>

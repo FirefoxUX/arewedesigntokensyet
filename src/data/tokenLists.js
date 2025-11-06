@@ -48,10 +48,10 @@ function sortByCountStable(rows, dir) {
  * - `tokensByCountAsc` {Array<{ token: string, count: number }>} Tokens sorted by ascending usage count.
  */
 export default function () {
-  /** @type {{ byToken: Record<string, { count: number, files?: Record<string, number>, descriptors?: Record<string, number> }> }} */
+  /** @type {{ byToken: Record<string, { count: number, files?: Record<string, number>, properties?: Record<string, number> }> }} */
   const usage = JSON.parse(fs.readFileSync(USAGE_PATH, 'utf8'));
 
-  /** @type {Array<{ token: string, count: number, files: Array<[string, number]>, descriptors: Array<[string, number]> }>} */
+  /** @type {Array<{ token: string, count: number, files: Array<[string, number]>, properties: Array<[string, number]> }>} */
   const base = Object.entries(usage.byToken).map(([token, v], i) => {
     const id = String(i);
     return {
@@ -59,7 +59,7 @@ export default function () {
       token,
       count: v.total,
       files: entriesSortedDesc(v.files || {}),
-      descriptors: entriesSortedDesc(v.descriptors || {}),
+      properties: entriesSortedDesc(v.properties || {}),
     };
   });
 

@@ -252,19 +252,33 @@ export default {
   // Paths in the repo matching these glob patterns will be ignored to avoid generating
   // coverage for storybook files, tests and node deps.
   ignorePatterns: ['**/test{,s}/**', '**/node_modules/**', '**/storybook/**'],
-  // supports RegExp or string.
-  excludedCSSValues: [
-    0,
-    '0px',
-    1,
-    'auto',
-    'currentColor',
-    'inherit',
-    'initial',
-    'none',
-    'transparent',
-    'unset',
-    /calc(.*?)/,
-    /max(.*?)/,
+  // Patterns for declarations that should be excluded.
+  // Processed in order, first matched or negated wins.
+  // Values can be strings or regexes.
+  // A wildcard '*', can be used to match all properties.
+  // Value negation is possible with a leading '!' such as '!normal'. Use this
+  //    if you don't want a wildcard value to match a specific property.
+  excludedDeclarations: [
+    {
+      property: 'font-weight',
+      values: ['normal'],
+    },
+    {
+      property: '*',
+      values: [
+        '0',
+        '0px',
+        '1',
+        'auto',
+        'currentColor',
+        'inherit',
+        'initial',
+        'none',
+        'transparent',
+        'unset',
+        /calc(.*?)/,
+        /max(.*?)/,
+      ],
+    },
   ],
 };

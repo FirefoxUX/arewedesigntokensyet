@@ -33,15 +33,11 @@ function dedupeTrace(trace = []) {
  *
  * @param {object} prop - A resolved property with token metadata.
  * @param {boolean} prop.containsDesignToken - Whether the value includes a known token.
- * @param {boolean} prop.containsExcludedValue - Whether the value includes an excluded pattern.
+ * @param {boolean} prop.isExcluded whether this property/value combination is excluded.
  * @returns {'good' | 'warn' | 'bad'} - The resolution status.
  */
 function getStatus(prop) {
-  return prop.containsDesignToken
-    ? 'good'
-    : prop.containsExcludedValue
-      ? 'warn'
-      : 'bad';
+  return prop.containsDesignToken ? 'good' : prop.isExcluded ? 'warn' : 'bad';
 }
 
 /**
@@ -80,7 +76,7 @@ function extractTooltipData(prop) {
     status,
     trace,
     tokens: [...tokensUsed],
-    source: !prop.containsExcludedValue ? prop.resolutionSources || [] : [],
+    source: !prop.isExcluded ? prop.resolutionSources || [] : [],
     unresolved,
   };
 }

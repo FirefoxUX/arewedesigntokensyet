@@ -9,7 +9,6 @@ const originalConfig = { ...config };
 describe('getVarData', () => {
   beforeAll(() => {
     config.designTokenKeys = ['--color-accent-primary'];
-    config.excludedCSSValues = ['inherit'];
     config.repoPath = '/project';
   });
 
@@ -17,7 +16,7 @@ describe('getVarData', () => {
     Object.assign(config, originalConfig);
   });
 
-  test('marks design tokens and flags metadata correctly', () => {
+  test('provides file and source data', () => {
     const node = {
       value: 'var(--color-accent-primary)',
       source: { start: { line: 1 }, end: { line: 1 } },
@@ -29,21 +28,17 @@ describe('getVarData', () => {
     });
 
     expect(result.value).toBe('var(--color-accent-primary)');
-    expect(result.containsDesignToken).toBe(true);
-    expect(result.containsExcludedValue).toBe(false);
     expect(result.isExternal).toBe(true);
     expect(result.src).toBe('/project/tokens/colors.css');
   });
 
-  test('flags excluded value', () => {
+  test(`doesn't record src if isExternal is false`, () => {
     const node = {
       value: 'inherit',
       source: { start: { line: 2 }, end: { line: 2 } },
     };
-
     const result = getVarData(node, { isExternal: false });
-
-    expect(result.containsExcludedValue).toBe(true);
+    expect(result.src).toBe(undefined);
     expect(result.isExternal).toBe(false);
   });
 });
@@ -52,7 +47,6 @@ describe('getExternalVars', () => {
   beforeAll(() => {
     Object.assign(config, {
       designTokenKeys: ['--color-accent-primary'],
-      excludedCSSValues: ['inherit'],
       repoPath: '/project',
     });
   });

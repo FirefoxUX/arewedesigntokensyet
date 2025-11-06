@@ -6,11 +6,11 @@
       <span>[{{ row.count }}]</span>
     </summary>
 
-    {# Descriptors #}
-    {% if row.descriptors and row.descriptors.length %}
-    <h4>Descriptors</h4>
+    {# Properties #}
+    {% if row.properties and row.properties.length %}
+    <h4>Properties</h4>
     <ul class="paths">
-      {% for pair in row.descriptors %}
+      {% for pair in row.properties %}
         <li class="mono">
           <code>{{ pair[0] }}</code>
           <span>[{{ pair[1] }}]</span>
