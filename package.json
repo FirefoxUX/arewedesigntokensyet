@@ -10,7 +10,7 @@
     "chartjs-adapter-luxon": "1.3.1",
     "concurrently": "9.1.2",
     "eleventy-auto-cache-buster": "0.8.1",
-    "esbuild": "0.25.4",
+    "esbuild": "0.25.12",
     "eslint": "9.24.0",
     "eslint-config-prettier": "10.1.2",
     "eslint-plugin-jsdoc": "61.1.12",
