@@ -62,6 +62,9 @@ export default defineConfig([
       'jsdoc/no-undefined-types': 'off',
       'jsdoc/tag-lines': 'off',
 
+      'jsdoc/reject-function-type': 'off',
+      'jsdoc/reject-any-type': 'off',
+
       'jsdoc/require-jsdoc': [
         'error',
         {
