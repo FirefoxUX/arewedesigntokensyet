@@ -4,6 +4,7 @@ import {
   tokensFallbackPath,
   tokensStorybookPath,
   tokensTablePath,
+  tokensTableDistPath,
 } from 'config';
 
 const CONFIG_PATH = new URL('./config.js', import.meta.url).href;
@@ -16,10 +17,46 @@ async function importConfigFresh() {
   return { config, consoleSpy };
 }
 
+function mockTokensFile(tokensFilePath) {
+  vi.doMock('node:fs/promises', () => ({
+    default: {
+      constants: { R_OK: 4 },
+      access: async (url) => {
+        if (url == String(tokensFilePath)) {
+          return;
+        } else {
+          const err = new Error('not found');
+          err.code = 'ENOENT';
+          throw err;
+        }
+      },
+    },
+  }));
+}
+
 describe('loadDesignTokenKeys fallback', () => {
   afterEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+  });
+
+  test('uses dist/tokens-table.mjs when present', async () => {
+    vi.doMock(String(tokensTableDistPath), () => ({
+      tokensTable: {
+        colors: [{ name: '--color-accent-dist' }],
+        spacing: [{ name: '--space-xsmall-dist' }],
+      },
+    }));
+
+    mockTokensFile(tokensTableDistPath);
+
+    const { config, consoleSpy } = await importConfigFresh();
+    const keys = await config.loadDesignTokenKeys();
+
+    expect(keys).toEqual(['--color-accent-dist', '--space-xsmall-dist']);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Using 'dist/tokens-table.mjs' as token source",
+    );
   });
 
   test('uses tokens-table.mjs when present', async () => {
@@ -30,16 +67,7 @@ describe('loadDesignTokenKeys fallback', () => {
       },
     }));
 
-    // Not strictly if you have a checkout, but we can't guarantee
-    // a test runner has this file present in the correct location.
-    vi.doMock('node:fs/promises', () => ({
-      default: {
-        constants: { R_OK: 4 },
-        access: async () => {
-          return;
-        },
-      },
-    }));
+    mockTokensFile(tokensTablePath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
@@ -58,20 +86,7 @@ describe('loadDesignTokenKeys fallback', () => {
       },
     }));
 
-    vi.doMock('node:fs/promises', () => ({
-      default: {
-        constants: { R_OK: 4 },
-        access: async (url) => {
-          if (url == String(tokensStorybookPath)) {
-            return;
-          } else {
-            const err = new Error('not found');
-            err.code = 'ENOENT';
-            throw err;
-          }
-        },
-      },
-    }));
+    mockTokensFile(tokensStorybookPath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
@@ -86,20 +101,7 @@ describe('loadDesignTokenKeys fallback', () => {
       default: ['--color-accent3', '--space-xsmall3'],
     }));
 
-    vi.doMock('node:fs/promises', () => ({
-      default: {
-        constants: { R_OK: 4 },
-        access: async (url) => {
-          if (url == String(tokensFallbackPath)) {
-            return;
-          } else {
-            const err = new Error('not found');
-            err.code = 'ENOENT';
-            throw err;
-          }
-        },
-      },
-    }));
+    mockTokensFile(tokensFallbackPath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();

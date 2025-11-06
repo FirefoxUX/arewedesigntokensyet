@@ -7,6 +7,13 @@ export const repoPath =
 
 // Note that pathToFileURL ensures a x-platform path for the dynamic import
 // otherwise this will fail on windows with ERR_UNSUPORTED_ESM_URL_SCHEME
+export const tokensTableDistPath = pathToFileURL(
+  path.join(
+    repoPath,
+    '/toolkit/themes/shared/design-system/dist/tokens-table.mjs',
+  ),
+);
+
 export const tokensTablePath = pathToFileURL(
   path.join(repoPath, '/toolkit/themes/shared/design-system/tokens-table.mjs'),
 );
@@ -92,6 +99,13 @@ async function tryImport(url, { type = 'mjs' } = {}) {
  */
 export async function loadDesignTokenKeys() {
   const sources = [
+    {
+      label: 'dist/tokens-table.mjs',
+      url: tokensTableDistPath,
+      type: 'mjs',
+      pick: extractFromTokenTables,
+      key: 'tokensTable',
+    },
     {
       label: 'tokens-table.mjs',
       url: tokensTablePath,
