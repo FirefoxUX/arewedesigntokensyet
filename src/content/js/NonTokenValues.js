@@ -439,8 +439,8 @@ export class NonTokenValuesElement extends BaseElement {
    * Filtering behavior:
    * - Skips if `this._data.byProperty` is missing.
    * - Skips entirely if the current `this.pattern` is invalid per `validatePattern()`.
-   * - Includes only propertys matching `this.pattern` via `matchesPropertyPattern()`.
-   * - Excludes entries where `valObj.isToken === true`.
+   * - Includes only properties matching `this.pattern` via `matchesPropertyPattern()`.
+   * - Excludes entries where `valObj.containsToken === true`.
    * - Excludes ignored entries if `this.excludeIgnored` is true.
    *
    * @private
@@ -473,7 +473,7 @@ export class NonTokenValuesElement extends BaseElement {
         if (!valObj || typeof valObj.count !== 'number') {
           continue;
         }
-        if (valObj.isToken === true) {
+        if (valObj.containsToken === true) {
           continue;
         }
         // non-token values only

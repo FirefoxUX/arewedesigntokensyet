@@ -210,7 +210,7 @@ function collectDeclarations(root, foundVariables, filePath) {
 // Track unresolved variables and token usage globally within this run.
 const tracker = new UnresolvedVarTracker();
 
-/** @type {Array<{ path: string, property: string, value: string, isToken: boolean, isIgnored: boolean, tokens?: string[] }>} */
+/** @type {Array<{ path: string, property: string, value: string, containsToken: boolean, isIgnored: boolean, tokens?: string[] }>} */
 const usageFindingsBuffer = [];
 const TOKEN_KEY_SET = new Set(
   Array.isArray(config.designTokenKeys) ? config.designTokenKeys : [],
@@ -281,7 +281,7 @@ async function resolveDeclarationReferences(
       path: filePath,
       property: decl.prop,
       value: decl.value,
-      isToken: Boolean(decl.containsDesignToken),
+      containsToken: Boolean(decl.containsDesignToken),
       isIgnored: isIgnoredValue,
       ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
     });
@@ -331,7 +331,7 @@ function computeDesignTokenSummary(declarations) {
 /**
  * Build token and property aggregates from a list of findings.
  *
- * @param {Array<{ path: string, property: string, value: string, isToken: boolean, isIgnored: boolean, tokens?: string[] }>} usageFindings
+ * @param {Array<{ path: string, property: string, value: string, containsToken: boolean, isIgnored: boolean, tokens?: string[] }>} usageFindings
  * @returns {{
  *   tokenUsage: {
  *     byToken: Record<string, {
@@ -339,9 +339,7 @@ function computeDesignTokenSummary(declarations) {
  *       files: Record<string, number>,
  *       properties: Record<string, number>,
  *     }>,
- *     totals: { tokenUsages: number },
  *     generatedAt: string,
- *     schemaVersion: number,
  *   },
  *   propertyValues: {
  *     byProperty: Record<string, {
@@ -349,15 +347,13 @@ function computeDesignTokenSummary(declarations) {
  *       values: Record<string, {
  *         id?: string,
  *         count: number,
- *         isToken: boolean,
+ *         containsToken: boolean,
  *         isIgnored: boolean,
  *         tokens?: string[],
  *         files: Record<string, number>,
  *       }>,
- *       totals: { token: number, nonToken: number, ignored: number },
  *     }>,
  *     generatedAt: string,
- *     schemaVersion: number,
  *   }
  * }}
  */
@@ -366,15 +362,12 @@ export function buildUsageAggregates(usageFindings) {
 
   const tokenUsage = {
     byToken: {},
-    totals: { tokenUsages: 0 },
     generatedAt,
-    schemaVersion: 1,
   };
 
   const propertyValues = {
     byProperty: {},
     generatedAt,
-    schemaVersion: 1,
   };
 
   for (const finding of usageFindings) {
@@ -385,14 +378,13 @@ export function buildUsageAggregates(usageFindings) {
       propertyValues.byProperty[finding.property] ??
       (propertyValues.byProperty[finding.property] = {
         values: {},
-        totals: { token: 0, nonToken: 0, ignored: 0 },
       });
 
     const valueEntry =
       propertyEntry.values[finding.value] ??
       (propertyEntry.values[finding.value] = {
         count: 0,
-        isToken: finding.isToken,
+        containsToken: finding.containsToken,
         isIgnored: finding.isIgnored,
         ...(Array.isArray(finding.tokens) && finding.tokens.length > 0
           ? { tokens: finding.tokens }
@@ -406,15 +398,6 @@ export function buildUsageAggregates(usageFindings) {
     }
     valueEntry.files[relativePath] = (valueEntry.files[relativePath] ?? 0) + 1;
 
-    if (finding.isToken) {
-      propertyEntry.totals.token += 1;
-    } else {
-      propertyEntry.totals.nonToken += 1;
-    }
-    if (finding.isIgnored) {
-      propertyEntry.totals.ignored += 1;
-    }
-
     // ---- token-centric aggregation (count every occurrence)
     if (Array.isArray(finding.tokens)) {
       for (const tokenId of finding.tokens) {
@@ -427,7 +410,6 @@ export function buildUsageAggregates(usageFindings) {
           });
 
         tokenEntry.total += 1;
-        tokenUsage.totals.tokenUsages += 1;
 
         // files: per-file occurrence count
         tokenEntry.files[relativePath] =
