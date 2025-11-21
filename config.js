@@ -278,6 +278,10 @@ export default {
   //    if you don't want a wildcard value to match a specific property.
   excludedDeclarations: [
     {
+      property: 'outline-style',
+      values: ['solid', 'auto'],
+    },
+    {
       property: 'margin',
       values: ['0 auto', 'auto 0'],
     },
