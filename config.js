@@ -206,6 +206,8 @@ export default {
     'inset-inline-start',
     'gap',
     'grid-gap', // Deprecated in favour of gap but still used.
+    'row-gap',
+    'column-gap',
     'margin',
     'margin-block',
     'margin-block-end',
@@ -219,7 +221,10 @@ export default {
     'margin-left',
     'opacity',
     'outline',
+    'outline-color',
     'outline-offset',
+    'outline-width',
+    'outline-style',
     'padding',
     'padding-block',
     'padding-block-end',
@@ -231,7 +236,6 @@ export default {
     'padding-right',
     'padding-bottom',
     'padding-left',
-    'row-gap',
   ],
   designTokenKeys,
   // Globs to find CSS to get design token propagation data for.
@@ -274,6 +278,14 @@ export default {
   //    if you don't want a wildcard value to match a specific property.
   excludedDeclarations: [
     {
+      property: 'outline-style',
+      values: ['solid', 'auto'],
+    },
+    {
+      property: 'margin',
+      values: ['0 auto', 'auto 0'],
+    },
+    {
       property: 'font-weight',
       values: ['normal'],
     },
@@ -285,9 +297,12 @@ export default {
         '1',
         'auto',
         'currentColor',
+        'fit-content',
         'inherit',
         'initial',
         'none',
+        'revert',
+        'revert-layer',
         'transparent',
         'unset',
         /calc(.*?)/,
