@@ -21,5 +21,11 @@
     "percentage": 73.50666666666667,
     "delta": 1.28,
     "gitRevision": "40933b16233b5b9b6206d34821530a9aecac98fd"
+  },
+  {
+    "date": "2025-12-01",
+    "percentage": 70,
+    "delta": -3.51,
+    "gitRevision": "7032b912c282da6b9b8219e779b2a441a27aaec9"
   }
 ]
