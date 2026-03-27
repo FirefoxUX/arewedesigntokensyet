@@ -150,8 +150,8 @@ describe('isTokenizableProperty', () => {
     expect(isTokenizableProperty('gap')).toBe(true);
   });
 
-  test(`should not identify 'width' as a  tokenizable property`, () => {
-    expect(isTokenizableProperty('width')).toBe(false);
+  test(`should not identify 'outline-offset' as a  tokenizable property`, () => {
+    expect(isTokenizableProperty('outline-offset')).toBe(false);
   });
 });
 

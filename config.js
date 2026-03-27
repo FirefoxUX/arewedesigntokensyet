@@ -13,24 +13,36 @@ export const tokensTableDistPath = pathToFileURL(
     '/toolkit/themes/shared/design-system/dist/tokens-table.mjs',
   ),
 );
-
 export const tokensTablePath = pathToFileURL(
   path.join(repoPath, '/toolkit/themes/shared/design-system/tokens-table.mjs'),
 );
-
 export const tokensStorybookPath = pathToFileURL(
   path.join(
     repoPath,
     '/toolkit/themes/shared/design-system/tokens-storybook.mjs',
   ),
 );
-
 export const tokensFallbackPath = pathToFileURL('./src/data/tokensBackup.json');
+
+// Tokenizable Property Paths
+export const stylelintPluginConfigPath = pathToFileURL(
+  path.join(
+    repoPath,
+    '/tools/lint/stylelint/stylelint-plugin-mozilla/config.mjs',
+  ),
+);
+export const tokenPropsFallbackPath = pathToFileURL(
+  './src/data/propsBackup.json',
+);
 
 const extractFromTokenTables = (mod, key) =>
   Object.values(mod?.[key] || {}).flatMap((list) =>
     list.map((item) => item.name),
   );
+
+const extractPropsConfig = (mod, key) => {
+  return Object.keys(mod?.[key]);
+};
 
 const extractFromJSONList = (jsonMod) => jsonMod.default ?? [];
 
@@ -81,162 +93,118 @@ async function tryImport(url, { type = 'mjs' } = {}) {
 }
 
 /**
- * Loads design token keys by attempting multiple sources in order.
+ * Attempts to load data from a list of candidate sources in order.
  *
- * The function tries to import from two `.mjs` modules (usually containing
- * `storybookTables`) and finally falls back to a backup JSON file that contains
- * a direct list of keys. The first candidate that succeeds is used.
- *
- * This is designed to support backfilling data across Firefox revisions, where
- * newer revisions have Storybook table modules and older ones only have a
- * cached JSON snapshot.
+ * Each source is imported and, if successful, passed to its `pick` function.
+ * The first successful source is used.
  *
  * @async
- * @function loadDesignTokenKeys
- * @returns {Promise<string[]>} An array of design token key names.
+ * @param {object} options
+ * @param {Array<{
+ *   label: string,
+ *   url: string,
+ *   type: 'mjs' | 'json',
+ *   pick: (mod: unknown, key?: string) => string[],
+ *   key?: string
+ * }>} options.sources
+ * @param {string} options.successLabel
+ * @param {string} options.errorMessage
+ * @returns {Promise<string[]>}
  * @throws {Error} If none of the sources could be loaded successfully.
- *
  */
-export async function loadDesignTokenKeys() {
-  const sources = [
-    {
-      label: 'dist/tokens-table.mjs',
-      url: tokensTableDistPath,
-      type: 'mjs',
-      pick: extractFromTokenTables,
-      key: 'tokensTable',
-    },
-    {
-      label: 'tokens-table.mjs',
-      url: tokensTablePath,
-      type: 'mjs',
-      pick: extractFromTokenTables,
-      key: 'tokensTable',
-    },
-    {
-      label: 'tokens-storybook.mjs',
-      url: tokensStorybookPath,
-      type: 'mjs',
-      pick: extractFromTokenTables,
-      key: 'storybookTables',
-    },
-    {
-      label: 'tokensBackup.json',
-      url: tokensFallbackPath,
-      type: 'json',
-      pick: extractFromJSONList,
-    },
-  ];
-
-  let designTokenKeys;
-  let chosen;
-
+async function loadFromSources({ sources, successLabel, errorMessage }) {
   for (const src of sources) {
     const res = await tryImport(src.url, { type: src.type });
+
     if (res.ok) {
-      designTokenKeys = src.pick(res.mod, src.key);
-      chosen = src.label;
-      break;
+      const values = src.pick(res.mod, src.key);
+      console.log(`Using '${src.label}' as ${successLabel}`);
+      return values;
     }
   }
 
-  if (chosen) {
-    console.log(`Using '${chosen}' as token source`);
-    return designTokenKeys;
-  }
-
-  // If none of the candidates were usable
-  throw new Error('Could not load design token keys from any source!');
+  throw new Error(errorMessage);
 }
 
+/**
+ * Loads design token keys by attempting multiple sources in order.
+ *
+ * @async
+ * @returns {Promise<string[]>} An array of design token key names.
+ * @throws {Error} If none of the sources could be loaded successfully.
+ */
+export async function loadDesignTokenKeys() {
+  return loadFromSources({
+    sources: [
+      {
+        label: 'dist/tokens-table.mjs',
+        url: tokensTableDistPath,
+        type: 'mjs',
+        pick: extractFromTokenTables,
+        key: 'tokensTable',
+      },
+      {
+        label: 'tokens-table.mjs',
+        url: tokensTablePath,
+        type: 'mjs',
+        pick: extractFromTokenTables,
+        key: 'tokensTable',
+      },
+      {
+        label: 'tokens-storybook.mjs',
+        url: tokensStorybookPath,
+        type: 'mjs',
+        pick: extractFromTokenTables,
+        key: 'storybookTables',
+      },
+      {
+        label: 'tokensBackup.json',
+        url: tokensFallbackPath,
+        type: 'json',
+        pick: extractFromJSONList,
+      },
+    ],
+    successLabel: 'token source',
+    errorMessage: 'Could not load design token keys from any source!',
+  });
+}
+
+/**
+ * Loads design token props by attempting multiple sources in order.
+ *
+ * @async
+ * @returns {Promise<string[]>} An array of design token property names.
+ * @throws {Error} If none of the sources could be loaded successfully.
+ */
+export async function loadDesignTokenProps() {
+  return loadFromSources({
+    sources: [
+      {
+        label: 'stylelint-plugin-mozilla/config.mjs',
+        url: stylelintPluginConfigPath,
+        type: 'mjs',
+        pick: extractPropsConfig,
+        key: 'propertyConfig',
+      },
+      {
+        label: 'propsBackup.json',
+        url: tokenPropsFallbackPath,
+        type: 'json',
+        pick: extractFromJSONList,
+      },
+    ],
+    successLabel: 'prop source',
+    errorMessage: 'Could not load design token props from any source!',
+  });
+}
+
+const designTokenProperties = await loadDesignTokenProps();
 const designTokenKeys = await loadDesignTokenKeys();
 
 export default {
   repoPath,
   // These are the properties we look for, and expect to utilize design tokens.
-  designTokenProperties: [
-    'background',
-    'background-color',
-    'border',
-    'border-block-end',
-    'border-block-end-color',
-    'border-block-end-width',
-    'border-block-start',
-    'border-block-start-color',
-    'border-block-start-width',
-    'border-top',
-    'border-top-color',
-    'border-right',
-    'border-right-color',
-    'border-bottom',
-    'border-bottom-color',
-    'border-left',
-    'border-left-color',
-    'border-color',
-    'border-width',
-    'border-radius',
-    'border-top-left-radius',
-    'border-top-right-radius',
-    'border-bottom-left-radius',
-    'border-bottom-right-radius',
-    'border-inline',
-    'border-inline-color',
-    'border-inline-end',
-    'border-inline-end-color',
-    'border-inline-end-width',
-    'border-inline-start',
-    'border-inline-start-color',
-    'border-inline-start-width',
-    'border-inline-width',
-    'border-start-end-radius',
-    'border-start-start-radius',
-    'border-end-start-radius',
-    'border-end-end-radius',
-    'box-shadow',
-    'color',
-    'fill',
-    'font-size',
-    'font-weight',
-    'inset',
-    'inset-block',
-    'inset-block-end',
-    'inset-block-start',
-    'inset-inline',
-    'inset-inline-end',
-    'inset-inline-start',
-    'gap',
-    'grid-gap', // Deprecated in favour of gap but still used.
-    'row-gap',
-    'column-gap',
-    'margin',
-    'margin-block',
-    'margin-block-end',
-    'margin-block-start',
-    'margin-inline',
-    'margin-inline-end',
-    'margin-inline-start',
-    'margin-top',
-    'margin-right',
-    'margin-bottom',
-    'margin-left',
-    'opacity',
-    'outline',
-    'outline-color',
-    'outline-offset',
-    'outline-width',
-    'outline-style',
-    'padding',
-    'padding-block',
-    'padding-block-end',
-    'padding-block-start',
-    'padding-inline',
-    'padding-inline-end',
-    'padding-inline-start',
-    'padding-top',
-    'padding-right',
-    'padding-bottom',
-    'padding-left',
-  ],
+  designTokenProperties,
   designTokenKeys,
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [

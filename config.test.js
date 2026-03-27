@@ -5,6 +5,8 @@ import {
   tokensStorybookPath,
   tokensTablePath,
   tokensTableDistPath,
+  tokenPropsFallbackPath,
+  stylelintPluginConfigPath,
 } from 'config';
 
 const CONFIG_PATH = new URL('./config.js', import.meta.url).href;
@@ -17,24 +19,89 @@ async function importConfigFresh() {
   return { config, consoleSpy };
 }
 
-function mockTokensFile(tokensFilePath) {
-  vi.doMock('node:fs/promises', () => ({
-    default: {
-      constants: { R_OK: 4 },
-      access: async (url) => {
-        if (url == String(tokensFilePath)) {
-          return;
-        } else {
-          const err = new Error('not found');
-          err.code = 'ENOENT';
-          throw err;
-        }
-      },
-    },
-  }));
+let mockedFiles;
+
+function mockFile(filePath) {
+  mockedFiles.add(String(filePath));
 }
 
-describe('loadDesignTokenKeys fallback', () => {
+vi.doMock('node:fs/promises', () => ({
+  default: {
+    constants: { R_OK: 4 },
+    access: async (url) => {
+      if (mockedFiles.has(String(url))) {
+        return;
+      } else {
+        const err = new Error('not found');
+        err.code = 'ENOENT';
+        throw err;
+      }
+    },
+  },
+}));
+
+describe('loadDesignTokenProps fallbacks', () => {
+  beforeEach(() => {
+    mockedFiles = new Set();
+    vi.doMock(String(tokensTableDistPath), () => ({
+      tokensTable: {
+        colors: [{ name: '--color-accent-dist' }],
+        spacing: [{ name: '--space-xsmall-dist' }],
+      },
+    }));
+    mockFile(tokensTableDistPath);
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+  });
+
+  test('uses stylelint-plugin-mozilla/config.mjs when present', async () => {
+    vi.doMock(String(stylelintPluginConfigPath), () => ({
+      propertyConfig: {
+        background: {},
+        'background-position': {},
+      },
+    }));
+    mockFile(stylelintPluginConfigPath);
+
+    const { config, consoleSpy } = await importConfigFresh();
+    const keys = await config.loadDesignTokenProps();
+
+    expect(keys).toEqual(['background', 'background-position']);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Using 'stylelint-plugin-mozilla/config.mjs' as prop source",
+    );
+  });
+
+  test('uses fallback props JSON when other files are missing', async () => {
+    vi.doMock(String(tokenPropsFallbackPath), () => ({
+      default: ['whatever'],
+    }));
+    mockFile(tokenPropsFallbackPath);
+
+    const { config, consoleSpy } = await importConfigFresh();
+    const keys = await config.loadDesignTokenProps();
+    expect(keys).toEqual(['whatever']);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Using 'propsBackup.json' as prop source",
+    );
+  });
+});
+
+describe('loadDesignTokenKeys fallbacks', () => {
+  beforeEach(() => {
+    mockedFiles = new Set();
+    vi.doMock(String(stylelintPluginConfigPath), () => ({
+      propertyConfig: {
+        background: {},
+        'background-position': {},
+      },
+    }));
+    mockFile(stylelintPluginConfigPath);
+  });
+
   afterEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
@@ -48,7 +115,7 @@ describe('loadDesignTokenKeys fallback', () => {
       },
     }));
 
-    mockTokensFile(tokensTableDistPath);
+    mockFile(tokensTableDistPath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
@@ -67,7 +134,7 @@ describe('loadDesignTokenKeys fallback', () => {
       },
     }));
 
-    mockTokensFile(tokensTablePath);
+    mockFile(tokensTablePath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
@@ -86,7 +153,7 @@ describe('loadDesignTokenKeys fallback', () => {
       },
     }));
 
-    mockTokensFile(tokensStorybookPath);
+    mockFile(tokensStorybookPath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
@@ -101,7 +168,7 @@ describe('loadDesignTokenKeys fallback', () => {
       default: ['--color-accent3', '--space-xsmall3'],
     }));
 
-    mockTokensFile(tokensFallbackPath);
+    mockFile(tokensFallbackPath);
 
     const { config, consoleSpy } = await importConfigFresh();
     const keys = await config.loadDesignTokenKeys();
