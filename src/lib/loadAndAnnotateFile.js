@@ -27,11 +27,15 @@ function dedupeTrace(trace = []) {
  * @returns {'good' | 'warn' | 'bad'} - The resolution status.
  */
 function getStatus(prop) {
-  return prop.containsValidDesignToken
+  let status = prop.containsValidDesignToken
     ? 'good'
     : prop.isValidPropertyValue
       ? 'warn'
       : 'bad';
+  if (prop.isExcludedByStylelint) {
+    status = 'excludedByStylelint';
+  }
+  return status;
 }
 
 /**

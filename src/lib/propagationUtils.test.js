@@ -94,6 +94,56 @@ describe('getPropagationData', () => {
     );
   });
 
+  test('excludes non-token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
+    const css = `
+      .btn {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
+        background-color: #fff;
+        color: var(--color-accent-primary);
+        /* stylelint-disable-next-line */
+        border-color: #000;
+      }
+    `;
+
+    fs.readFile.mockResolvedValueOnce(css);
+    const result = await getPropagationData(
+      '/project/src/components/button.css',
+    );
+
+    const props = result.foundPropValues;
+
+    expect(result).toHaveProperty('foundPropValues');
+    expect(result).toHaveProperty('foundVariables');
+    // 1 design token found out of 2 that can be tokenized = 50%
+    // and the stylelint disable line scoped to use-design-tokens is ignored.
+    expect(result.percentage).toBe(50);
+    expect(result.designTokenCount).toBe(1);
+    expect(fs.writeFile).toHaveBeenCalled();
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          prop: 'background-color',
+          isValidPropertyValue: false,
+          isExcludedByStylelint: true,
+          containsValidDesignToken: false,
+        }),
+        expect.objectContaining({
+          prop: 'color',
+          isValidPropertyValue: true,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: true,
+        }),
+        expect.objectContaining({
+          prop: 'border-color',
+          isValidPropertyValue: false,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: false,
+        }),
+      ]),
+    );
+  });
+
   test('extracts token usage from a single CSS file', async () => {
     const css = `
       :root {
