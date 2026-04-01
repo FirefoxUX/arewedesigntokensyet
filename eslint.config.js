@@ -10,7 +10,7 @@ const globalRules = {
 };
 
 export default defineConfig([
-  globalIgnores(['**/*.min.js', 'build/**/*']),
+  globalIgnores(['**/*.min.js', 'build/**/*', 'src/vendor/**/*']),
   {
     files: ['**/*.test.js'],
     languageOptions: {
