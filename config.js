@@ -1,11 +1,15 @@
 import { tokensTable } from './src/vendor/firefox/toolkit/themes/shared/design-system/dist/tokens-table.mjs';
+import { propertyConfig } from './src/vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/config.mjs';
 
 const allTokens = Object.values(tokensTable).flatMap((list) =>
   list.map((item) => item.name),
 );
 
+const tokenProperties = Object.keys(propertyConfig).sort();
+
 export default {
   allTokens,
+  tokenProperties,
   repoPath: process.env.FIREFOX_ROOT || '../mozilla-unified',
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [
