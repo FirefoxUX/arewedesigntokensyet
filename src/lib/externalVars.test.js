@@ -8,7 +8,7 @@ const originalConfig = { ...config };
 
 describe('getVarData', () => {
   beforeAll(() => {
-    config.designTokenKeys = ['--color-accent-primary'];
+    config.allTokens = ['--color-accent-primary'];
     config.repoPath = '/project';
   });
 

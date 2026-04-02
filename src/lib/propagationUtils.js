@@ -21,7 +21,7 @@ import {
   getResolvedVarOrigins,
 } from './resolutionUtils.js';
 
-import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
+import { getLocalCustomProperties } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/helpers.mjs';
 
 /**
  * Convert an absolute file path to a repo-relative path for output.
@@ -62,40 +62,36 @@ export function normalizePathForOutput(absolutePath) {
  * }>} - Summary object including token count, percentage, and annotated data.
  */
 export async function getPropagationData(filePath) {
-  try {
-    const foundVariables = await collectExternalVars(filePath);
-    const root = await parseCSS(filePath);
+  // try {
+  const foundVariables = await collectExternalVars(filePath);
+  const root = await parseCSS(filePath);
 
-    const foundPropValues = collectDeclarations(root, foundVariables, filePath);
+  const foundPropValues = collectDeclarations(root, foundVariables, filePath);
 
-    await resolveDeclarationReferences(
-      foundPropValues,
-      foundVariables,
-      filePath,
-    );
+  await resolveDeclarationReferences(foundPropValues, foundVariables, filePath);
 
-    const { designTokenCount, ignoredValueCount } =
-      computeDesignTokenSummary(foundPropValues);
+  const { designTokenCount, ignoredValueCount } =
+    computeDesignTokenSummary(foundPropValues);
 
-    const foundLessIgnored = foundPropValues.length - ignoredValueCount;
+  const foundLessIgnored = foundPropValues.length - ignoredValueCount;
 
-    let percentage = -1;
-    if (foundPropValues.length && foundLessIgnored !== 0) {
-      const ratio = designTokenCount / foundLessIgnored;
-      percentage = +(ratio * 100).toFixed(2);
-    }
+  let percentage = -1;
+  if (foundPropValues.length && foundLessIgnored !== 0) {
+    const ratio = designTokenCount / foundLessIgnored;
+    percentage = +(ratio * 100).toFixed(2);
+  }
 
-    return {
-      designTokenCount,
-      foundProps: foundPropValues.length,
-      percentage,
-      foundPropValues,
-      foundVariables,
-    };
-  } catch (err) {
+  return {
+    designTokenCount,
+    foundProps: foundPropValues.length,
+    percentage,
+    foundPropValues,
+    foundVariables,
+  };
+  /*} catch (err) {
     console.error(`Unable to read or parse ${filePath} ${err.message}`);
     throw new Error(err);
-  }
+  }*/
 }
 
 /**
@@ -178,17 +174,25 @@ function ruleConsumesVar(node) {
 function collectDeclarations(root, foundVariables, filePath) {
   const declarations = [];
 
+  // This is what stylelint uses to gather props and is needed for
+  // to be able to use the stylelint rule's valid property lookup.
+  // This might be able to be consolidated with foundVariables later.
+  const localCustomProperties = getLocalCustomProperties(root);
+
   root.walk((node) => {
     if (!node.prop || !node.value) {
       return;
     }
 
+    // We're only gathering decls for properties that have tokens
+    // according to the stylelint config.
     if (isTokenizableProperty(node.prop)) {
       declarations.push({
         prop: node.prop,
         value: node.value,
         start: node.source.start,
         end: node.source.end,
+        localCustomProperties,
       });
     } else if (
       isVariableDefinition(node.prop) &&
@@ -208,12 +212,11 @@ function collectDeclarations(root, foundVariables, filePath) {
 }
 
 // Track unresolved variables and token usage globally within this run.
-const tracker = new UnresolvedVarTracker();
 
 /** @type {Array<{ path: string, property: string, value: string, containsToken: boolean, isIgnored: boolean, tokens?: string[] }>} */
 const usageFindingsBuffer = [];
-const TOKEN_KEY_SET = new Set(
-  Array.isArray(config.designTokenKeys) ? config.designTokenKeys : [],
+const CANONICAL_TOKEN_KEY_SET = new Set(
+  Array.isArray(config.allTokens) ? config.allTokens : [],
 );
 
 /**
@@ -234,15 +237,15 @@ async function resolveDeclarationReferences(
 ) {
   for (const decl of declarations) {
     const trace = buildResolutionTrace(decl.value, foundVariables);
-    const analysis = analyzeTrace(trace, decl.prop);
+    const analysis = analyzeTrace(trace, decl);
 
     decl.resolutionTrace = trace;
-    decl.containsDesignToken = analysis.containsDesignToken;
-    decl.isExcluded = analysis.containsExcludedDeclaration;
+    decl.containsValidDesignToken = analysis.containsValidDesignToken;
+    decl.isValidPropertyValue = analysis.isValidPropertyValue;
 
     const isIgnoredValue =
-      Boolean(analysis.containsExcludedDeclaration) &&
-      !analysis.containsDesignToken;
+      Boolean(analysis.isValidPropertyValue) &&
+      !analysis.containsValidDesignToken;
 
     decl.isExternalVar = trace.some((val) =>
       Object.values(foundVariables).some(
@@ -257,11 +260,10 @@ async function resolveDeclarationReferences(
     );
 
     decl.unresolvedVariables = getUnresolvedVariablesFromTrace(
+      decl.prop,
       trace,
       foundVariables,
     );
-
-    tracker.addFromDeclaration(decl, filePath);
 
     decl.resolutionType = classifyResolutionFromTrace(
       trace,
@@ -272,7 +274,10 @@ async function resolveDeclarationReferences(
     decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
 
     // Capture all tokens, preserving duplicates for accurate frequency counting.
-    const tokenIds = extractDesignTokenIdsFromDecl(decl, TOKEN_KEY_SET);
+    const tokenIds = extractDesignTokenIdsFromDecl(
+      decl,
+      CANONICAL_TOKEN_KEY_SET,
+    );
     if (tokenIds.length > 0) {
       decl.tokens = tokenIds;
     }
@@ -281,13 +286,12 @@ async function resolveDeclarationReferences(
       path: filePath,
       property: decl.prop,
       value: decl.value,
-      containsToken: Boolean(decl.containsDesignToken),
+      containsToken: Boolean(decl.containsValidDesignToken),
       isIgnored: isIgnoredValue,
       ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
     });
   }
 
-  const unresolvedReport = tracker.toReport();
   const { tokenUsage, propertyValues } =
     buildUsageAggregates(usageFindingsBuffer);
 
@@ -295,10 +299,6 @@ async function resolveDeclarationReferences(
   await fs.mkdir('./build/data', { recursive: true });
 
   await Promise.all([
-    fs.writeFile(
-      path.join('./src/data', 'unresolvedVars.json'),
-      JSON.stringify(unresolvedReport, null, 2),
-    ),
     fs.writeFile(
       path.join('./src/data', 'tokenUsage.json'),
       JSON.stringify(tokenUsage, null, 2),
@@ -314,16 +314,17 @@ async function resolveDeclarationReferences(
 /**
  * Computes summary statistics from the resolved declarations:
  * - Number of declarations using design tokens
- * - Number of ignored values (excluded tokens without design tokens)
+ * - Number of ignored values (valid property values that dont't contain design tokens)
  *
  * @param {object[]} declarations - List of annotated declarations.
  * @returns {{ designTokenCount: number, ignoredValueCount: number }}
  */
 function computeDesignTokenSummary(declarations) {
   return {
-    designTokenCount: declarations.filter((d) => d.containsDesignToken).length,
+    designTokenCount: declarations.filter((d) => d.containsValidDesignToken)
+      .length,
     ignoredValueCount: declarations.filter(
-      (d) => d.isExcluded && !d.containsDesignToken,
+      (d) => d.isValidPropertyValue && !d.containsValidDesignToken,
     ).length,
   };
 }

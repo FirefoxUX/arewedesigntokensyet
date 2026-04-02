@@ -1,4 +1,9 @@
 import config from '../../config.js';
+import { propertyConfig } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/config.mjs';
+import { PropertyValidator } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/property-validator.mjs';
+import { tokensTable } from '../vendor/firefox/toolkit/themes/shared/design-system/dist/semantic-categories.mjs';
+
+import valueParser from 'postcss-value-parser';
 
 /**
  * Returns true if the property is a CSS custom property (e.g. starts with `--`).
@@ -11,103 +16,102 @@ export function isVariableDefinition(prop) {
 }
 
 /**
- * Returns true if the value contains any configured design token key.
+ * Determines whether a CSS variable name matches any known design token prefix.
  *
- * @param {string} value - The CSS value to inspect.
- * @returns {boolean} - true if a design token key is found in the value.
+ * @param {string} tokenName - The name of the variable (e.g. "--color-text").
+ * @returns {boolean} - true if the name contains a design token key.
  */
-export function containsDesignTokenValue(value) {
-  return config.designTokenKeys.some((token) => value?.includes(token));
+export function isDesignToken(tokenName) {
+  return config.allTokens.includes(tokenName);
 }
 
 /**
- * Determine whether a CSS declaration should be excluded based on a set of rules.
+ * Returns true if the value contains a valid canonical design token for the property.
  *
- * Each rule describes one or more property–value pairs that should be ignored.
- * Matching proceeds as follows:
- * - The rule applies if its `property` matches the declaration’s property name,
- *   or if `property` is the wildcard `"*"`, which matches any property.
- * - The rule’s `values` array is then tested against the declaration’s value:
- *   - String patterns are compared case-insensitively.
- *   - Strings prefixed with `!` represent negation, meaning that if the value matches,
- *     the declaration is explicitly **not excluded**, and later rules are ignored.
- *   - RegExp patterns are tested as-is.
- * - The first matching rule determines the result:
- *   - A normal (non-negated) match returns `true` (excluded).
- *   - A negated match (`!value`) returns `false` (not excluded), overriding later matches.
- *
- * Throws an error if:
- * - `decl` is not a PostCSS Declaration or an object with `prop` and `value` strings.
- * - `rules` is not a non-empty array.
- * - Any rule object is malformed.
- *
- * @param {import('postcss').Declaration | { prop: string, value: string }} decl
- *   The CSS declaration to test. Must include string `prop` and `value` keys.
- * @param {Array<{ property: string, values: Array<string|RegExp> }>} rules
- *   List of exclusion rules. Each rule defines a `property` and matching `values`.
- * @returns {boolean}
- *   Returns `true` if the declaration matches any exclusion rule, or `false` if none apply
- *   or if a negated match explicitly cancels exclusion.
- * @throws {Error}
- *   If input arguments or rule shapes are invalid.
+ * @param {string} prop - The CSS property to inspect.
+ * @param {string} value - The CSS value to inspect.
+ * @returns {boolean} - true if a design token key is found in the value.
  */
-export function isExcludedDeclaration(
-  decl,
-  rules = config.excludedDeclarations,
-) {
-  if (
-    !decl ||
-    typeof decl.prop !== 'string' ||
-    typeof decl.value !== 'string'
-  ) {
-    throw new Error(
-      'Invalid declaration: expected a PostCSS Declaration or { prop: string, value: string }.',
-    );
+export function containsValidDesignToken(prop, value) {
+  const propConfig = propertyConfig[prop];
+  if (!propConfig) {
+    return false;
   }
 
-  if (!Array.isArray(rules) || rules.length === 0) {
-    throw new Error('rules not provided');
-  }
+  // This is the canonical set of tokens for the prop, which is needed
+  // as the stylelint rules add some overrides to the list of validTokenNames
+  // but we want to stick to canonical tokens for this check.
+  const validCanonicalTokenNames = new Set(
+    propConfig.validTypes.flatMap((propType) => [
+      ...(propType.tokenTypes || []).flatMap((tokenType) =>
+        tokensTable[tokenType].map((token) => token.name),
+      ),
+      ...(propType.aliasTokenTypes || []).flatMap((tokenType) =>
+        tokensTable[tokenType].map((token) => token.name),
+      ),
+    ]),
+  );
 
-  const prop = decl.prop.trim();
-  const value = decl.value.trim();
+  const parsedValue = valueParser(value);
+  let found = false;
 
-  for (const rule of rules) {
-    if (
-      !rule ||
-      !Array.isArray(rule.values) ||
-      typeof rule.property !== 'string'
-    ) {
-      throw new Error(`invalid exclusion rule ${rule}`);
+  parsedValue.walk((node) => {
+    if (found) {
+      return false;
     }
 
-    // Property match: '*' wildcard or exact property provided.
-    const propertyMatches =
-      rule.property === '*' ? true : rule.property === prop;
+    if (node.type === 'function' && node.value === 'var') {
+      const [varNameNode] = node.nodes;
+      const varName = varNameNode.value;
 
-    if (!propertyMatches) {
-      continue;
-    }
-
-    // Value match: case-insensitive string check or RegExp.test
-    for (const pattern of rule.values) {
-      if (typeof pattern === 'string') {
-        let patternLower = pattern.toLowerCase();
-        let valueLower = value.toLowerCase();
-        if (valueLower === patternLower) {
-          return true;
-          // Support simple negation.
-        } else if (`!${valueLower}` === patternLower) {
-          return false;
-        }
-      } else if (pattern instanceof RegExp) {
-        if (pattern.test(value)) {
-          return true;
-        }
+      if (validCanonicalTokenNames.has(varName)) {
+        found = true;
+        return false;
       }
     }
+
+    return undefined;
+  });
+
+  return found;
+}
+
+/**
+ * Determine whether a CSS property value is valid according to the configured
+ * design token rules for a given property.
+ *
+ * This validates the value by parsing it with `postcss-value-parser` and
+ * delegating each node to the property's `PropertyValidator`. Validation
+ * includes support for:
+ * - canonical design tokens
+ * - alias tokens (when allowed by the validator)
+ * - locally defined custom properties (via `localCustomProperties`)
+ *
+ * @param {string} prop - The CSS property name (e.g. "background-color").
+ * @param {string} value - The raw CSS value to validate.
+ * @param {object} localCustomProperties - A map of locally defined CSS (defaults to an empty object)
+ * custom properties (e.g. `{ '--foo': 'var(--bar)' }`) used for resolving
+ * `var()` references during validation.
+ * @returns {boolean} `true` if every parsed node in the value is considered
+ * valid for the given property, otherwise `false`.
+ */
+export function isValidPropertyValue(prop, value, localCustomProperties = {}) {
+  const propConfig = propertyConfig[prop];
+  if (!propConfig) {
+    return false;
   }
-  return false;
+
+  if (!propConfig.validator) {
+    propConfig.validator = new PropertyValidator(propConfig);
+  }
+
+  // This could use propConfig.validator.isValidPropertyValue but it doesn't
+  // currently support the alias flag - if it was updated we could use that directly.
+  propConfig.validator.localVars = localCustomProperties;
+  const parsedValue = valueParser(value);
+  return parsedValue.nodes.every((node) =>
+    propConfig.validator.isValidNode(node, true),
+  );
 }
 
 /**
@@ -118,7 +122,7 @@ export function isExcludedDeclaration(
  * @returns {boolean} - true if the property should be token-analyzed.
  */
 export function isTokenizableProperty(prop) {
-  return config.designTokenProperties.includes(prop);
+  return !!propertyConfig?.[prop];
 }
 
 /**
@@ -184,6 +188,7 @@ export function isWithinValidParentSelector(node) {
  */
 export function extractDesignTokenIdsFromDecl(decl, tokenKeySet) {
   /** @type {string[]} */
+
   const out = [];
   if (!decl || !tokenKeySet || tokenKeySet.size === 0) {
     return out;

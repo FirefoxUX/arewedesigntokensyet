@@ -1,15 +1,12 @@
 import {
   isVariableDefinition,
-  containsDesignTokenValue,
-  isExcludedDeclaration,
+  containsValidDesignToken,
+  isValidPropertyValue,
   isTokenizableProperty,
   getCSSVariables,
   isWithinValidParentSelector,
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
-
-import config from '../../config.js';
-const originalConfig = { ...config };
 
 describe('isVariableDefinition', () => {
   test('should return true for a CSS var', () => {
@@ -33,115 +30,97 @@ describe('isVariableDefinition', () => {
   });
 });
 
-describe('containsDesignTokenValue', () => {
-  test(`should be true for '--space-xsmall'`, () => {
-    expect(containsDesignTokenValue('var(--space-xsmall)')).toBe(true);
+describe('containsValidDesignToken', () => {
+  test(`should be true for '--size-item-xsmall'`, () => {
+    expect(containsValidDesignToken('height', 'var(--size-item-xsmall)')).toBe(
+      true,
+    );
   });
 
   test(`should be true for a mixed value`, () => {
-    expect(containsDesignTokenValue('4px var(--space-xsmall)')).toBe(true);
+    expect(containsValidDesignToken('margin', '4px var(--space-xsmall)')).toBe(
+      true,
+    );
   });
 
   test(`should not be true for a value that has no tokens present`, () => {
-    expect(containsDesignTokenValue('4px 4px')).toBe(false);
+    expect(containsValidDesignToken('margin', '4px 4px')).toBe(false);
   });
 
   test(`should not be true for an ignored value`, () => {
-    expect(containsDesignTokenValue('unset')).toBe(false);
+    expect(containsValidDesignToken('margin', '0 auto')).toBe(false);
   });
 });
 
-describe('isExcludedDeclaration', () => {
-  beforeAll(() => {
-    Object.assign(config, {
-      excludedDeclarations: [
-        { property: 'font-weight', values: ['normal', '!inherit'] },
-        {
-          property: '*',
-          values: [
-            '0',
-            '0px',
-            '1',
-            'inherit',
-            'unset',
-            /calc(.*?)/,
-            /max(.*?)/,
-          ],
-        },
-      ],
-    });
+describe('isValidPropertyValue', () => {
+  test('should allow font-weight: normal', () => {
+    expect(isValidPropertyValue('font-weight', 'normal')).toBe(true);
   });
 
-  afterAll(() => {
-    Object.assign(config, originalConfig);
+  test('should allow font-weight: NoRmAl due to case insensitivity', () => {
+    expect(isValidPropertyValue('font-weight', 'NoRmAl')).toBe(true);
   });
 
-  test('should ignore font-weight: normal', () => {
-    expect(
-      isExcludedDeclaration({ prop: 'font-weight', value: 'normal' }),
-    ).toBe(true);
+  test(`should allow font-weight: inherit`, () => {
+    expect(isValidPropertyValue('font-weight', 'inherit')).toBe(true);
   });
 
-  test('should ignore font-weight: NoRmAl due to case insensitive match', () => {
-    expect(
-      isExcludedDeclaration({ prop: 'font-weight', value: 'NoRmAl' }),
-    ).toBe(true);
+  test(`should allow font-weight: INHERIT`, () => {
+    expect(isValidPropertyValue('font-weight', 'INHERIT')).toBe(true);
   });
 
-  test(`should not ignore font-weight: inherit as inherit is negated and it's higher in the list`, () => {
-    expect(
-      isExcludedDeclaration({ prop: 'font-weight', value: 'inherit' }),
-    ).toBe(false);
-  });
-
-  test(`should not ignore font-weight: INHERIT due to case insensitive negation`, () => {
-    expect(
-      isExcludedDeclaration({ prop: 'font-weight', value: 'INHERIT' }),
-    ).toBe(false);
-  });
-
-  test(`should ignore font-weight: unset as it's covered by the wildcard`, () => {
-    expect(isExcludedDeclaration({ prop: 'font-weight', value: 'unset' })).toBe(
-      true,
-    );
-  });
-
-  test('should ignore unset', () => {
-    expect(isExcludedDeclaration({ prop: 'any-prop', value: 'unset' })).toBe(
-      true,
-    );
+  test(`should allow font-weight: unset`, () => {
+    expect(isValidPropertyValue('font-weight', 'unset')).toBe(true);
   });
 
   test('should ignore 0', () => {
-    expect(isExcludedDeclaration({ prop: 'any-prop', value: '0' })).toBe(true);
+    expect(isValidPropertyValue('margin', '0')).toBe(true);
   });
 
-  test('should ignore unitless 1', () => {
-    expect(isExcludedDeclaration({ prop: 'any-prop', value: '1' })).toBe(true);
+  test('should allow unitless 1 for flex', () => {
+    expect(isValidPropertyValue('flex', '1')).toBe(true);
   });
 
-  test('should not ignore 1px', () => {
-    expect(isExcludedDeclaration({ prop: 'any-prop', value: '1px' })).toBe(
-      false,
-    );
+  test('should allow 1px', () => {
+    expect(isValidPropertyValue('width', '1px')).toBe(true);
   });
 
-  test('should ignore an a pattern match for calc()', () => {
+  test('should allow calc() with vh and 1px (allowed value)', () => {
+    expect(isValidPropertyValue('width', 'calc(100vh - 1px)')).toBe(true);
+  });
+
+  test('should not allow a hard-coded value', () => {
+    expect(isValidPropertyValue('width', '400px')).toBe(false);
+  });
+
+  test('should allow a local var that matches an allowed value', () => {
     expect(
-      isExcludedDeclaration({ prop: 'any-prop', value: 'calc(100vh - 100px)' }),
+      isValidPropertyValue('width', 'var(--local-var)', { '--local-var': '0' }),
     ).toBe(true);
   });
 
-  test('should ignore a pattern match for max()', () => {
+  test('should not allow a local var pointing to a hard-coded value', () => {
     expect(
-      isExcludedDeclaration({ prop: 'any-prop', value: 'max(20vw, 400px)' }),
+      isValidPropertyValue('width', 'var(--local-var)', {
+        '--local-var': '400px',
+      }),
+    ).toBe(false);
+  });
+
+  test('should allow a local var pointing to a valid token', () => {
+    expect(
+      isValidPropertyValue('width', 'var(--local-var)', {
+        '--local-var': 'var(--size-item-xsmall)',
+      }),
     ).toBe(true);
   });
 
-  test('should not ignore a hard-coded value', () => {
-    expect(isExcludedDeclaration({ prop: 'any-prop', value: '400px' })).toBe(
-      false,
-    );
+  test('should not allow a local var pointing to an unresolved var', () => {
+    expect(
+      isValidPropertyValue('width', 'var(--local-var)', {
+        '--local-var': 'var(--whatever)',
+      }),
+    ).toBe(false);
   });
 });
 
@@ -150,8 +129,8 @@ describe('isTokenizableProperty', () => {
     expect(isTokenizableProperty('gap')).toBe(true);
   });
 
-  test(`should not identify 'width' as a  tokenizable property`, () => {
-    expect(isTokenizableProperty('width')).toBe(false);
+  test(`should not identify 'non-existent' as a  tokenizable property`, () => {
+    expect(isTokenizableProperty('non-existent')).toBe(false);
   });
 });
 
