@@ -330,6 +330,10 @@ export const tokensTable = {
       },
       name: "--toggle-dot-background-color-on-pressed",
     },
+    {
+      value: "color-mix(in srgb, currentColor 11%, transparent)",
+      name: "--tab-hover-background-color",
+    },
   ],
   "border-color": [
     {
@@ -530,9 +534,12 @@ export const tokensTable = {
     },
     {
       value: {
-        default: "color-mix(in srgb, currentColor 10%, transparent)",
+        light: "color-mix(in srgb, currentColor 10%, transparent)",
+        dark: "color-mix(in srgb, currentColor 6%, transparent)",
         prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
         forcedColors: "CanvasText",
+        default:
+          "light-dark(color-mix(in srgb, currentColor 10%, transparent), color-mix(in srgb, currentColor 6%, transparent))",
       },
       name: "--card-border-color",
     },
@@ -569,10 +576,17 @@ export const tokensTable = {
     { value: "8px", name: "--border-radius-medium" },
     { value: "16px", name: "--border-radius-large" },
     { value: "var(--border-radius-medium)", name: "--button-border-radius" },
+    { value: "var(--border-radius-large)", name: "--card-border-radius" },
+    { value: "var(--border-radius-small)", name: "--badge-border-radius" },
     { value: "var(--border-radius-circle)", name: "--toggle-border-radius" },
+    {
+      value: "var(--toolbarbutton-border-radius)",
+      name: "--tab-border-radius",
+    },
   ],
   "border-width": [
     { value: "1px", name: "--border-width" },
+    { value: "1px", name: "--badge-border-width" },
     { value: "var(--border-width)", name: "--toggle-border-width" },
   ],
   "box-shadow": [
@@ -614,17 +628,17 @@ export const tokensTable = {
     },
     {
       value: {
-        light: "rgba(0, 0, 0, 0.05)",
-        dark: "rgba(0, 0, 0, 0.2)",
-        default: "light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2))",
+        light: "rgba(0, 0, 0, 0.03)",
+        dark: "rgba(0, 0, 0, 0.15)",
+        default: "light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.15))",
       },
       name: "--box-shadow-color-lighter-layer-1",
     },
     {
       value: {
-        light: "rgba(0, 0, 0, 0.1)",
-        dark: "rgba(0, 0, 0, 0.4)",
-        default: "light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4))",
+        light: "rgba(0, 0, 0, 0.05)",
+        dark: "rgba(0, 0, 0, 0.2)",
+        default: "light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2))",
       },
       name: "--box-shadow-color-lighter-layer-2",
     },
@@ -898,6 +912,20 @@ export const tokensTable = {
     { value: "2px", name: "--focus-outline-offset" },
     { value: "2px", name: "--focus-outline-width" },
     { value: "1px", name: "--link-focus-outline-offset" },
+    {
+      value: { default: "transparent", prefersContrast: "currentColor" },
+      name: "--tab-hover-outline-color",
+    },
+    {
+      value: "var(--border-width) solid var(--tab-outline-color)",
+      name: "--tab-outline",
+    },
+    { value: "transparent", name: "--tab-outline-color" },
+    { value: "calc(-1 * var(--border-width))", name: "--tab-outline-offset" },
+    {
+      value: { default: "transparent", prefersContrast: "currentColor" },
+      name: "--tab-selected-outline-color",
+    },
   ],
   "font-size": [
     {
@@ -1008,6 +1036,11 @@ export const tokensTable = {
         "calc(var(--toggle-width) - 2 * var(--toggle-dot-margin) - 2px - var(--toggle-dot-width))",
       name: "--toggle-dot-transform-x",
     },
+    { value: 1.7, name: "--tab-label-line-height" },
+    {
+      value: "var(--dimension-40)",
+      name: "--tab-pinned-expanded-background-width",
+    },
   ],
   space: [
     { value: "var(--dimension-relative-0125)", name: "--space-xxsmall" },
@@ -1025,6 +1058,22 @@ export const tokensTable = {
     { value: "var(--space-small)", name: "--checkbox-margin-inline" },
     { value: "1px", name: "--toggle-dot-margin" },
     { value: "calc(-1 * var(--dimension-2))", name: "--toggle-inset" },
+    { value: "var(--dimension-4)", name: "--tab-block-margin" },
+    { value: "6px", name: "--tab-close-button-padding" },
+    { value: "5.5px", name: "--tab-icon-end-margin" },
+    { value: "var(--dimension-8)", name: "--tab-inline-padding" },
+    { value: "var(--space-medium)", name: "--tab-inner-inline-margin" },
+    { value: "var(--dimension-2)", name: "--tab-overflow-clip-margin" },
+    {
+      value: "var(--space-small)",
+      name: "--tab-pinned-container-margin-inline-expanded",
+    },
+    {
+      value: "var(--space-xsmall)",
+      name: "--tab-pinned-margin-inline-expanded",
+    },
+    { value: "var(--dimension-2)", name: "--tab-vertical-block-margin" },
+    { value: "var(--space-medium)", name: "--tab-vertical-inline-padding" },
   ],
   "text-color": [
     {
@@ -1279,7 +1328,10 @@ export const tokensTable = {
       name: "--link-color-visited",
     },
     {
-      value: { default: "var(--text-color)", forcedColors: "CanvasText" },
+      value: {
+        default: "var(--text-color-deemphasized)",
+        forcedColors: "CanvasText",
+      },
       name: "--badge-text-color",
     },
     {
@@ -1346,6 +1398,7 @@ export const tokensTable = {
       },
       name: "--icon-color-critical",
     },
+    { value: "var(--color-blue-50)", name: "--tab-loading-fill" },
   ],
   opacity: [
     {
@@ -1401,6 +1454,10 @@ export const tokensTable = {
       },
       name: "--table-header-text-color",
     },
+  ],
+  uncategorized: [
+    { value: "var(--toolbar-bgcolor)", name: "--tab-selected-bgcolor" },
+    { value: "var(--toolbar-color)", name: "--tab-selected-textcolor" },
   ],
 };
 
@@ -1544,14 +1601,14 @@ export const variableLookupTable = {
     default: "light-dark(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4))",
   },
   "box-shadow-color-lighter-layer-1": {
+    light: "rgba(0, 0, 0, 0.03)",
+    dark: "rgba(0, 0, 0, 0.15)",
+    default: "light-dark(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.15))",
+  },
+  "box-shadow-color-lighter-layer-2": {
     light: "rgba(0, 0, 0, 0.05)",
     dark: "rgba(0, 0, 0, 0.2)",
     default: "light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2))",
-  },
-  "box-shadow-color-lighter-layer-2": {
-    light: "rgba(0, 0, 0, 0.1)",
-    dark: "rgba(0, 0, 0, 0.4)",
-    default: "light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4))",
   },
   "color-gray-20": "#f0f0f4",
   "color-gray-30": "#bac2ca",
@@ -2132,10 +2189,14 @@ export const variableLookupTable = {
   "button-text-color-selected": "var(--button-text-color-active)",
   "button-attention-dot-color": "var(--color-accent-attention)",
   "card-border-color": {
-    default: "color-mix(in srgb, currentColor 10%, transparent)",
+    light: "color-mix(in srgb, currentColor 10%, transparent)",
+    dark: "color-mix(in srgb, currentColor 6%, transparent)",
     prefersContrast: "color-mix(in srgb, currentColor 41%, transparent)",
     forcedColors: "CanvasText",
+    default:
+      "light-dark(color-mix(in srgb, currentColor 10%, transparent), color-mix(in srgb, currentColor 6%, transparent))",
   },
+  "card-border-radius": "var(--border-radius-large)",
   "card-box-shadow": "var(--box-shadow-level-2)",
   "card-box-shadow-hover": "var(--box-shadow-level-4)",
   "checkbox-margin-inline": "var(--space-small)",
@@ -2200,8 +2261,6 @@ export const variableLookupTable = {
   "link-focus-outline-offset": "1px",
   "page-main-content-width": { brand: { default: "664px" } },
   "popup-box-shadow": "var(--box-shadow-level-3)",
-  "tab-box-shadow": "var(--box-shadow-level-1)",
-  "tab-attention-dot-color": "var(--color-accent-attention)",
   "table-background-color": {
     light: "#f8f8fa",
     dark: "rgb(35, 34, 43)",
@@ -2240,7 +2299,7 @@ export const variableLookupTable = {
     },
   },
   "badge-text-color": {
-    default: "var(--text-color)",
+    default: "var(--text-color-deemphasized)",
     forcedColors: "CanvasText",
   },
   "badge-text-color-filled": {
@@ -2263,6 +2322,8 @@ export const variableLookupTable = {
     forcedColors: "CanvasText",
     default: "light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4))",
   },
+  "badge-border-radius": "var(--border-radius-small)",
+  "badge-border-width": "1px",
   "toggle-background-color": "var(--button-background-color)",
   "toggle-background-color-hover": "var(--button-background-color-hover)",
   "toggle-background-color-active": "var(--button-background-color-active)",
@@ -2306,4 +2367,35 @@ export const variableLookupTable = {
   "toggle-dot-transform-x":
     "calc(var(--toggle-width) - 2 * var(--toggle-dot-margin) - 2px - var(--toggle-dot-width))",
   "toggle-inset": "calc(-1 * var(--dimension-2))",
+  "tab-block-margin": "var(--dimension-4)",
+  "tab-border-radius": "var(--toolbarbutton-border-radius)",
+  "tab-box-shadow": "var(--box-shadow-level-1)",
+  "tab-attention-dot-color": "var(--color-accent-attention)",
+  "tab-close-button-padding": "6px",
+  "tab-hover-background-color":
+    "color-mix(in srgb, currentColor 11%, transparent)",
+  "tab-hover-outline-color": {
+    default: "transparent",
+    prefersContrast: "currentColor",
+  },
+  "tab-icon-end-margin": "5.5px",
+  "tab-inline-padding": "var(--dimension-8)",
+  "tab-inner-inline-margin": "var(--space-medium)",
+  "tab-label-line-height": 1.7,
+  "tab-loading-fill": "var(--color-blue-50)",
+  "tab-outline": "var(--border-width) solid var(--tab-outline-color)",
+  "tab-outline-color": "transparent",
+  "tab-outline-offset": "calc(-1 * var(--border-width))",
+  "tab-overflow-clip-margin": "var(--dimension-2)",
+  "tab-pinned-container-margin-inline-expanded": "var(--space-small)",
+  "tab-pinned-expanded-background-width": "var(--dimension-40)",
+  "tab-pinned-margin-inline-expanded": "var(--space-xsmall)",
+  "tab-selected-bgcolor": "var(--toolbar-bgcolor)",
+  "tab-selected-outline-color": {
+    default: "transparent",
+    prefersContrast: "currentColor",
+  },
+  "tab-selected-textcolor": "var(--toolbar-color)",
+  "tab-vertical-block-margin": "var(--dimension-2)",
+  "tab-vertical-inline-padding": "var(--space-medium)",
 };
