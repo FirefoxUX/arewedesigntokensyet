@@ -192,7 +192,6 @@ function getRepoInfo(repoPath) {
     originRevision,
   };
 
-  console.log(data);
   return data;
 }
 
