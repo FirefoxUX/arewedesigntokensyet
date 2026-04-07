@@ -54,6 +54,7 @@ const EXPECTED_BRANCH = 'main';
  */
 const ALLOWED_REMOTE_URLS = [
   'https://github.com/mozilla-firefox/firefox.git',
+  'https://github.com/mozilla-firefox/firefox',
   'git@github.com:mozilla-firefox/firefox.git',
 ];
 
@@ -136,6 +137,9 @@ function copyRecursive(src, dest) {
   }
 
   if (stat.isDirectory()) {
+    if (path.basename(src) === 'node_modules') {
+      return;
+    }
     ensureDir(dest);
     for (const entry of fs.readdirSync(src)) {
       copyRecursive(path.join(src, entry), path.join(dest, entry));
