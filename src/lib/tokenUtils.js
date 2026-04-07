@@ -77,6 +77,89 @@ export function containsValidDesignToken(prop, value) {
 }
 
 /**
+ * Returns the referenced custom property name if the value is a simple
+ * `var(--foo)` expression, otherwise returns null.
+ *
+ * This is used to detect direct alias relationships between custom properties,
+ * ignoring more complex expressions like `calc(...)` or multiple values.
+ *
+ * @param {string} value
+ * @returns {string|null}
+ */
+function getSingleVarReference(value) {
+  const nodes = valueParser(value).nodes.filter((n) => n.type !== 'space');
+
+  if (nodes.length !== 1) {
+    return null;
+  }
+
+  const node = nodes[0];
+  if (node.type !== 'function' || node.value !== 'var') {
+    return null;
+  }
+
+  const [varNameNode] = node.nodes;
+  return varNameNode?.value?.startsWith('--') ? varNameNode.value : null;
+}
+
+/**
+ * Removes custom properties that participate in cyclic alias relationships.
+ *
+ * A cyclic alias is a chain of custom properties that ultimately reference
+ * each other, for example:
+ *
+ *   --a: var(--b);
+ *   --b: var(--a);
+ *
+ * These cycles can cause infinite recursion when resolving values. This
+ * function detects such cycles (including longer chains) and excludes all
+ * properties involved in them from the returned object.
+ *
+ * Only simple alias relationships of the form `var(--foo)` are considered.
+ * More complex expressions are ignored.
+ *
+ * @param {object} localCustomProperties
+ * @returns {object}
+ */
+function removeCyclicVarAliases(localCustomProperties) {
+  const aliases = new Map();
+
+  for (const [name, value] of Object.entries(localCustomProperties)) {
+    const ref = getSingleVarReference(value);
+    if (ref && Object.hasOwn(localCustomProperties, ref)) {
+      aliases.set(name, ref);
+    }
+  }
+
+  const cyclic = new Set();
+
+  for (const start of aliases.keys()) {
+    const path = [];
+    const seen = new Map();
+    let current = start;
+
+    while (aliases.has(current)) {
+      if (seen.has(current)) {
+        const cycleStart = seen.get(current);
+        for (const name of path.slice(cycleStart)) {
+          cyclic.add(name);
+        }
+        cyclic.add(current);
+        break;
+      }
+
+      seen.set(current, path.length);
+      path.push(current);
+      current = aliases.get(current);
+    }
+  }
+
+  return Object.fromEntries(
+    Object.entries(localCustomProperties).filter(([name]) => !cyclic.has(name)),
+  );
+}
+
+/**
  * Determine whether a CSS property value is valid according to the configured
  * design token rules for a given property.
  *
@@ -107,7 +190,9 @@ export function isValidPropertyValue(prop, value, localCustomProperties = {}) {
 
   // This could use propConfig.validator.isValidPropertyValue but it doesn't
   // currently support the alias flag - if it was updated we could use that directly.
-  propConfig.validator.localVars = localCustomProperties;
+  propConfig.validator.localVars = removeCyclicVarAliases(
+    localCustomProperties,
+  );
   const parsedValue = valueParser(value);
   return parsedValue.nodes.every((node) =>
     propConfig.validator.isValidNode(node, true),
@@ -197,25 +282,8 @@ export function extractDesignTokenIdsFromDecl(decl, tokenKeySet) {
   const authoredValue = typeof decl.value === 'string' ? decl.value : '';
   const authoredTrim = authoredValue.trim();
 
-  /**
-   * Extract all CSS custom property identifiers (e.g. `--color-accent-primary`)
-   * referenced within a CSS value string. This uses `getCSSVariables` to return
-   * every `var(--foo)` occurrence in order, preserving duplicates.
-   *
-   * @param {string} text - The raw CSS value string to scan for variable references.
-   * @returns {string[]} An array of CSS variable identifiers (e.g. `['--foo', '--bar']`);
-   * returns an empty array if no variables are found or if input is not a string.
-   */
-  function varsFromCSSValue(text) {
-    if (typeof text !== 'string' || text.length === 0) {
-      return [];
-    }
-    const vars = getCSSVariables(text);
-    return Array.isArray(vars) ? vars.slice() : [];
-  }
-
   // 1) Authored value: collect all vars and build an occurrence map.
-  const authoredVars = varsFromCSSValue(authoredValue);
+  const authoredVars = getCSSVariables(authoredValue);
   /** @type {Record<string, number>} */
   const authoredCounts = {};
   for (const v of authoredVars) {
@@ -239,7 +307,7 @@ export function extractDesignTokenIdsFromDecl(decl, tokenKeySet) {
         continue;
       }
 
-      const traceVars = varsFromCSSValue(s);
+      const traceVars = getCSSVariables(s);
       if (traceVars.length === 0) {
         continue;
       }
