@@ -51,7 +51,7 @@ file a bug. See also the known limitations and the bugs filed against them.
 
 By default the site assumes a checkout of mozilla-central is in
 `../mozilla-unified` (above the source directory) but you can override that by
-setting the `MOZILLA_CENTRAL_REPO_PATH` env var as needed.
+setting the `FIREFOX_ROOT` env var as needed.
 
 - `npm ci`
 - `npm start`
