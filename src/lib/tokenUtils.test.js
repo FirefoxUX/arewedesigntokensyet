@@ -53,6 +53,10 @@ describe('containsValidDesignToken', () => {
 });
 
 describe('isValidPropertyValue', () => {
+  test('should not see border: 1px solid LinkText as valid', () => {
+    expect(isValidPropertyValue('border', '1px solid LinkText')).toBe(false);
+  });
+
   test('should allow font-weight: normal', () => {
     expect(isValidPropertyValue('font-weight', 'normal')).toBe(true);
   });

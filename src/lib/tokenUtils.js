@@ -1,5 +1,7 @@
 import config from '../../config.js';
+import { memoize } from './memoize.js';
 import { propertyConfig } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/config.mjs';
+import { isSystemColor } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/helpers.mjs';
 import { PropertyValidator } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/property-validator.mjs';
 import { tokensTable } from '../vendor/firefox/toolkit/themes/shared/design-system/dist/semantic-categories.mjs';
 
@@ -32,7 +34,7 @@ export function isDesignToken(tokenName) {
  * @param {string} value - The CSS value to inspect.
  * @returns {boolean} - true if a design token key is found in the value.
  */
-export function containsValidDesignToken(prop, value) {
+function __containsValidDesignToken(prop, value) {
   const propConfig = propertyConfig[prop];
   if (!propConfig) {
     return false;
@@ -75,6 +77,8 @@ export function containsValidDesignToken(prop, value) {
 
   return found;
 }
+
+export const containsValidDesignToken = memoize(__containsValidDesignToken);
 
 /**
  * Returns the referenced custom property name if the value is a simple
@@ -179,6 +183,11 @@ function removeCyclicVarAliases(localCustomProperties) {
  * valid for the given property, otherwise `false`.
  */
 export function isValidPropertyValue(prop, value, localCustomProperties = {}) {
+  const isToken = containsValidDesignToken(prop, value);
+  if (isToken) {
+    return true;
+  }
+
   const propConfig = propertyConfig[prop];
   if (!propConfig) {
     return false;
@@ -188,15 +197,17 @@ export function isValidPropertyValue(prop, value, localCustomProperties = {}) {
     propConfig.validator = new PropertyValidator(propConfig);
   }
 
-  // This could use propConfig.validator.isValidPropertyValue but it doesn't
-  // currently support the alias flag - if it was updated we could use that directly.
-  propConfig.validator.localVars = removeCyclicVarAliases(
-    localCustomProperties,
-  );
   const parsedValue = valueParser(value);
-  return parsedValue.nodes.every((node) =>
-    propConfig.validator.isValidNode(node, true),
+  const isValid = propConfig.validator.isValidPropertyValue(
+    parsedValue,
+    removeCyclicVarAliases(localCustomProperties),
   );
+
+  if (!isValid) {
+    return propConfig.validator.warnSystemColors && isSystemColor(value);
+  }
+
+  return isValid;
 }
 
 /**
