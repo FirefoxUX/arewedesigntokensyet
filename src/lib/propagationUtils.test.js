@@ -61,7 +61,7 @@ describe('getPropagationData', () => {
     );
   });
 
-  test('does not detect vars referenced outside :host and :root or the same rule', async () => {
+  test('does detect vars referenced outside :host and :root to match use-design-tokens all local vars approach', async () => {
     const css = `
       :host {
         --visual-picker-item-border-radius: var(--border-radius-medium);
@@ -87,7 +87,7 @@ describe('getPropagationData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'border-radius',
-          containsValidDesignToken: false,
+          containsValidDesignToken: true,
           resolutionType: 'local',
         }),
       ]),

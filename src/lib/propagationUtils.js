@@ -7,7 +7,6 @@ import { parseCSS } from './cssParser.js';
 import {
   isVariableDefinition,
   isTokenizableProperty,
-  isWithinValidParentSelector,
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
@@ -140,30 +139,6 @@ async function collectExternalVars(filePath) {
 }
 
 /**
- * Checks whether a CSS rule (the parent of a declaration node) actually uses
- * the custom property that the node defines.
- *
- * This function only applies to nodes of type `"decl"` whose `prop`
- * represents a variable definition (as determined by `isVariableDefinition`).
- * It converts the parent rule to a string and looks for the literal
- * `var(<prop>)` usage.
- *
- * @param {object} node - A PostCSS AST node.
- * @param {'decl'} node.type - The node type (should be "decl").
- * @param {string} node.prop - The property name (e.g. "--my-var").
- * @param {object} node.parent - The parent rule node.
- * @returns {boolean|undefined} `true` if the parent rule string includes
- *   `var(<prop>)`, `false` if not, or `undefined` if the node is not a
- *   variable declaration.
- */
-function ruleConsumesVar(node) {
-  if (node.type === 'decl' && isVariableDefinition(node.prop)) {
-    const ruleString = node.parent.toString();
-    return ruleString.includes(`var(${node.prop})`);
-  }
-}
-
-/**
  * Checks whether a comment node is a Stylelint disable-next-line directive
  * specifically targeting the `stylelint-plugin-mozilla/use-design-tokens` rule.
  *
@@ -245,10 +220,7 @@ function collectDeclarations(root, foundVariables, filePath) {
         end: node.source.end,
         localCustomProperties,
       });
-    } else if (
-      isVariableDefinition(node.prop) &&
-      (isWithinValidParentSelector(node) || ruleConsumesVar(node))
-    ) {
+    } else if (isVariableDefinition(node.prop)) {
       if (foundVariables[node.prop]) {
         console.log(
           `${path.relative(config.repoPath, filePath)}:${node.source.start.line} "${node.prop}" already exists, skipping...`,
