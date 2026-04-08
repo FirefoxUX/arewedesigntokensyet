@@ -50,6 +50,7 @@ function getStatus(prop) {
  *   tokens: string[],
  *   source: string[],
  *   unresolved: string[]
+ *   resolutionType: string,
  * }}
  */
 function extractTooltipData(prop) {
@@ -74,8 +75,9 @@ function extractTooltipData(prop) {
     status,
     trace,
     tokens: [...tokensUsed],
-    source: !prop.isValidPropertyValue ? prop.resolutionSources || [] : [],
+    source: prop.resolutionSources || [],
     unresolved,
+    resolutionType: prop.resolutionType,
   };
 }
 
@@ -114,6 +116,7 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
         'data-tokens': JSON.stringify(tooltipData.tokens),
         'data-source': JSON.stringify(tooltipData.source),
         'data-unresolved': JSON.stringify(tooltipData.unresolved),
+        'data-resolutionType': resolutionType,
         tabindex: '0',
         role: 'button',
         'aria-describedby': 'token-tooltip',

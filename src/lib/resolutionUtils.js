@@ -81,12 +81,13 @@ export function analyzeTrace(trace, decl) {
  */
 export function getResolutionSources(trace, foundVariables, currentFile) {
   const externalSources = Object.values(foundVariables)
-    .filter(
-      (varData) =>
+    .filter((varData) => {
+      return (
         varData.src &&
         varData.src !== currentFile &&
-        trace.includes(varData.value),
-    )
+        trace.some((item) => item.includes(varData.value))
+      );
+    })
     .map((varData) => path.relative(config.repoPath, varData.src));
 
   return [...new Set(externalSources)];
@@ -163,32 +164,4 @@ export function classifyResolutionFromTrace(
     return 'external';
   }
   return 'local';
-}
-
-/**
- * Builds a map of each variable name in the trace to the file it came from.
- * @param {string[]} trace - Resolution trace for a declaration.
- * @param {object} foundVariables - Known variable metadata.
- * @returns {object} - Map: varName → relative source path
- */
-export function getResolvedVarOrigins(trace, foundVariables) {
-  const result = {};
-
-  for (const value of trace) {
-    const vars = getCSSVariables(value);
-
-    for (const name of vars) {
-      const varData = foundVariables[name];
-      if (!varData?.src) {
-        continue;
-      }
-
-      // Skip if value isn't the one used in this trace step
-      if (value.includes(`var(${name})`)) {
-        result[name] = path.relative(config.repoPath, varData.src);
-      }
-    }
-  }
-
-  return result;
 }

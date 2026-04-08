@@ -4,7 +4,6 @@ import {
   buildResolutionTrace,
   analyzeTrace,
   classifyResolutionFromTrace,
-  getResolvedVarOrigins,
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
 } from './resolutionUtils.js';
@@ -164,31 +163,6 @@ describe('classifyResolutionFromTrace', () => {
   });
 });
 
-describe('getResolvedVarOrigins', () => {
-  beforeAll(() => {
-    config.repoPath = '/project';
-  });
-
-  afterAll(() => {
-    Object.assign(config, originalConfig);
-  });
-
-  test('returns map of var names to source paths', () => {
-    const foundVars = {
-      '--a': { value: '12px', src: '/project/tokens/spacing.css' },
-      '--b': { value: '4px', src: '/project/tokens/spacing.css' },
-    };
-    const trace = ['var(--a)', 'var(--b)', '4px'];
-    const currentFile = '/src/components/button.css';
-
-    const result = getResolvedVarOrigins(trace, foundVars, currentFile);
-    expect(result).toEqual({
-      '--a': 'tokens/spacing.css',
-      '--b': 'tokens/spacing.css',
-    });
-  });
-});
-
 describe('getUnresolvedVariablesFromTrace', () => {
   test('returns only unresolved, non-token vars', () => {
     const trace = ['var(--unknown)', 'var(--color-accent-primary)'];
@@ -229,6 +203,26 @@ describe('getResolutionSources', () => {
     const result = getResolutionSources(trace, foundVars, currentFile);
 
     expect(result).toEqual(['tokens/spacing.css']);
+  });
+
+  test('returns source files for matched var values inside trace entries', () => {
+    const foundVars = {
+      '--a': {
+        value: '--color-accent-primary',
+        src: '/project/tokens/colors.css',
+      },
+      '--b': { value: 'var(--a)', src: currentFile },
+    };
+
+    const trace = [
+      '1px solid var(--b)',
+      '1px solid var(--a)',
+      '1px solid var(--color-accent-primary)',
+    ];
+
+    const result = getResolutionSources(trace, foundVars, currentFile);
+
+    expect(result).toEqual(['tokens/colors.css']);
   });
 
   test('deduplicates source files', () => {

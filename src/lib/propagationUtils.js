@@ -17,7 +17,6 @@ import {
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
   classifyResolutionFromTrace,
-  getResolvedVarOrigins,
 } from './resolutionUtils.js';
 
 import { getLocalCustomProperties } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/helpers.mjs';
@@ -246,8 +245,6 @@ const CANONICAL_TOKEN_KEY_SET = new Set(
  * Resolves variable references for each declaration, attaches trace data,
  * and annotates with token usage, source origins, and unresolved variable info.
  *
- * Writes an unresolved variable report to `src/data/unresolvedVars.json`.
- *
  * @param {object[]} declarations - Declarations to resolve and annotate.
  * @param {object} foundVariables - Known variables available for resolution.
  * @param {string} filePath - Path of the file being analyzed.
@@ -270,12 +267,6 @@ async function resolveDeclarationReferences(
       (decl.isExcludedByStylelint || analysis.isValidPropertyValue) &&
       !analysis.containsValidDesignToken;
 
-    decl.isExternalVar = trace.some((val) =>
-      Object.values(foundVariables).some(
-        (ref) => ref.isExternal && ref.value === val,
-      ),
-    );
-
     decl.resolutionSources = getResolutionSources(
       trace,
       foundVariables,
@@ -293,8 +284,6 @@ async function resolveDeclarationReferences(
       foundVariables,
       filePath,
     );
-
-    decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
 
     // Capture all tokens, preserving duplicates for accurate frequency counting.
     const tokenIds = extractDesignTokenIdsFromDecl(
