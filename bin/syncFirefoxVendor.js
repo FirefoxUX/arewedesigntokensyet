@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
  * Environment variable pointing at the Firefox checkout to vendor from.
  * @type {string | undefined}
  */
-const FIREFOX_ROOT = process.env.FIREFOX_ROOT;
+const FIREFOX_ROOT = process.env.FIREFOX_ROOT || '../firefox';
 
 if (!FIREFOX_ROOT) {
   throw new Error('FIREFOX_ROOT is required');

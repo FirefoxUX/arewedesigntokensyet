@@ -10,7 +10,7 @@ const tokenProperties = Object.keys(propertyConfig).sort();
 export default {
   allTokens,
   tokenProperties,
-  repoPath: process.env.FIREFOX_ROOT || '../mozilla-unified',
+  repoPath: process.env.FIREFOX_ROOT || '../firefox',
   // Globs to find CSS to get design token propagation data for.
   includePatterns: [
     'browser/components/**/*.css',
