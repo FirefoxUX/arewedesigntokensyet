@@ -12,14 +12,14 @@
   },
   {
     "date": "2026-03-01",
-    "percentage": 81.82,
-    "delta": 31.82,
+    "percentage": 84.62,
+    "delta": 34.62,
     "gitRevision": "45bf222c56da5257156206bc795b94dcce003b0c"
   },
   {
     "date": "2026-04-01",
-    "percentage": 85.71,
-    "delta": 3.89,
+    "percentage": 87.5,
+    "delta": 2.88,
     "gitRevision": "65f89c383b216d3b4f210657c9af12a32048fb67"
   }
 ]
