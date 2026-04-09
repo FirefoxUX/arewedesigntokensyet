@@ -2,11 +2,15 @@
 
 import { LitElement, html, css } from 'lit';
 
-const statusMsg = {
+const messages = {
   good: '🏆 Nice use of Design Tokens!',
-  'good-external': 'ℹ️ External Design Token Reference',
+  'good-external': 'ℹ️ External Design Token Reference.',
   warn: `☑️  This value doesn't need to use a Design Token.`,
-  excludedByStylelint: `🤔 This value is excluded by /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */`,
+  excludedByStylelint: html`This line is excluded by
+    <code
+      >/* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+      */</code
+    >.`,
   bad: '❌ Not currently using a design token.',
 };
 
@@ -38,6 +42,7 @@ export class TokenTooltip extends LitElement {
     tokens: { type: Array },
     // resolutionType: 'local' or 'external'
     resolutionType: { type: String },
+    isExcludedByStylelint: { type: Boolean },
   };
 
   constructor() {
@@ -47,7 +52,6 @@ export class TokenTooltip extends LitElement {
     this.tokens = [];
     this.source = [];
     this.unresolved = [];
-    this.resolutionType = null;
   }
 
   static styles = css`
@@ -130,9 +134,9 @@ export class TokenTooltip extends LitElement {
    */
   getStatus(status, resolutionType) {
     if (status === 'good' && resolutionType === 'external') {
-      return statusMsg['good-external'];
+      return messages['good-external'];
     }
-    return statusMsg[status] || statusMsg.bad;
+    return messages[status] || messages.bad;
   }
 
   /**
@@ -145,7 +149,25 @@ export class TokenTooltip extends LitElement {
         <div class="status" data-status=${this.status}>
           ${this.getStatus(this.status, this.resolutionType)}
         </div>
-        ${this.resolutionType === 'external' && this.status === 'good'
+        ${this.isExcludedByStylelint
+          ? html`
+              <div class="note">
+                <p>${messages.excludedByStylelint}</p>
+                ${this.resolutionType === 'external' && this.status === 'good'
+                  ? html`<p>
+                      This is likely to have been excluded since the stylelint
+                      rules only process local vars.
+                    </p>`
+                  : ''}
+                ${this.status === 'good'
+                  ? html`<p>This line is still counted as a token.</p>`
+                  : ''}
+              </div>
+            `
+          : ''}
+        ${this.resolutionType === 'external' &&
+        this.status === 'good' &&
+        !this.isExcludedByStylelint
           ? html`<div class="note">
               <p>
                 Note: Since var resolution points to an external file, the
@@ -156,7 +178,8 @@ export class TokenTooltip extends LitElement {
                   >/* stylelint-disable-next-line
                   stylelint-plugin-mozilla/use-design-tokens -- [Reason]
                   */</code
-                >
+                ></p>
+                <p>This line is still counted as a valid token.</p>
               </p>
             </div>`
           : ''}

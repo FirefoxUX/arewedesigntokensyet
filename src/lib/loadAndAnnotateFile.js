@@ -32,9 +32,6 @@ function getStatus(prop) {
     : prop.isValidPropertyValue
       ? 'warn'
       : 'bad';
-  if (prop.isExcludedByStylelint) {
-    status = 'excludedByStylelint';
-  }
   return status;
 }
 
@@ -78,6 +75,7 @@ function extractTooltipData(prop) {
     source: prop.resolutionSources || [],
     unresolved,
     resolutionType: prop.resolutionType,
+    isExcludedByStylelint: prop.isExcludedByStylelint,
   };
 }
 
@@ -116,6 +114,7 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
         'data-tokens': JSON.stringify(tooltipData.tokens),
         'data-source': JSON.stringify(tooltipData.source),
         'data-unresolved': JSON.stringify(tooltipData.unresolved),
+        'data-isExcludedByStylelint': tooltipData.isExcludedByStylelint,
         'data-resolutionType': resolutionType,
         tabindex: '0',
         role: 'button',
