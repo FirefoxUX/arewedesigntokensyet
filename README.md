@@ -17,15 +17,21 @@ are then counted and expressed as percentage.
 These percentages are then averaged at the directory level, and overall to
 provide a guide of where we are versus design tokens having fully propagated.
 
+As of April '26 the rules for valid design tokens and exclusions are provided by
+the config that is used in-tree for the stylelint-plugin-mozilla stylelint
+rules. This change extended the properties and granularity of exclusions. This
+should mean that AWDTY's representation of design token propagation should now
+be much closer to what would show up from running stylelint use-design-tokens.
+
 ## Goals
 
 The tool was built with the idea that this could provide a guideline for where
 we are in terms of design token propagation.
 
-It's not designed to have perfect understanding of the code it's looking at, so
-there will be corner cases and areas that it doesn't process correctly. If you
-find files that have examples of cases that aren't correctly identified please
-file a bug. See also the known limitations and the bugs filed against them.
+It's cannot have a perfect understanding of the code it's looking at, so there
+will be corner cases and areas that it doesn't process correctly. If you find
+files that have examples of cases that aren't correctly identified please file a
+bug. See also the known limitations and the bugs filed against them.
 
 ### Expected use-cases
 
@@ -37,21 +43,16 @@ file a bug. See also the known limitations and the bugs filed against them.
 - This tool doesn't have any knowledge of the DOM related to the CSS it's
   processing.
 - Var resolution is limited to the current file by default, but can be extended
-  to look at other files based on configuration. Only vars in :root or :host are
-  considered.
+  to look at other files based on configuration.
 - The list of design token properties may be subject to change and affect the
   calculation propagation percentages as a result.
-- Values that take multiple arguments are currently glossed over, the presence
-  of at least one Design Token var would be considered a pass. The rationale is
-  that if one of the values resolves to a design token then the author is
-  considering token use.
 - Files that have no relevant properties are excluded from calculations.
 
 ## Development
 
-By default the site assumes a checkout of mozilla-central is in
-`../mozilla-unified` (above the source directory) but you can override that by
-setting the `MOZILLA_CENTRAL_REPO_PATH` env var as needed.
+By default the site assumes a checkout of firefox is in `../firefox` (above the
+source directory) but you can override that by setting the `FIREFOX_ROOT` env
+var as needed.
 
 - `npm ci`
 - `npm start`

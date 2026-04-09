@@ -51,6 +51,9 @@ export class TooltipController {
     this.tooltip.tokens = safeParseJSON(triggerEl.dataset.tokens);
     this.tooltip.source = safeParseJSON(triggerEl.dataset.source);
     this.tooltip.unresolved = safeParseJSON(triggerEl.dataset.unresolved);
+    this.tooltip.resolutionType = triggerEl.dataset.resolutiontype;
+    this.tooltip.isExcludedByStylelint =
+      triggerEl.dataset.isexcludedbystylelint === '';
 
     this.tooltip.style.top = `${rect.bottom + scrollY + 6}px`;
     this.tooltip.style.left = `${rect.left + scrollX}px`;

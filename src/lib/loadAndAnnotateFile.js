@@ -1,16 +1,6 @@
 import fs from 'node:fs/promises';
-import config from '../../config.js';
 import { codeToHtml } from 'shiki';
-
-/**
- * Determines whether a CSS variable name matches any known design token prefix.
- *
- * @param {string} name - The name of the variable (e.g. "--color-text").
- * @returns {boolean} - true if the name contains a design token key.
- */
-function isDesignToken(name) {
-  return config.designTokenKeys.some((token) => name.includes(token));
-}
+import { isDesignToken } from './tokenUtils.js';
 
 /**
  * Removes consecutive duplicate values from a resolution trace.
@@ -32,12 +22,17 @@ function dedupeTrace(trace = []) {
  * Returns a string representing the design token resolution status.
  *
  * @param {object} prop - A resolved property with token metadata.
- * @param {boolean} prop.containsDesignToken - Whether the value includes a known token.
- * @param {boolean} prop.isExcluded whether this property/value combination is excluded.
+ * @param {boolean} prop.containsValidDesignToken - Whether the value includes a known token.
+ * @param {boolean} prop.isValidPropertyValue whether this property/value combination is valid.
  * @returns {'good' | 'warn' | 'bad'} - The resolution status.
  */
 function getStatus(prop) {
-  return prop.containsDesignToken ? 'good' : prop.isExcluded ? 'warn' : 'bad';
+  let status = prop.containsValidDesignToken
+    ? 'good'
+    : prop.isValidPropertyValue
+      ? 'warn'
+      : 'bad';
+  return status;
 }
 
 /**
@@ -52,6 +47,7 @@ function getStatus(prop) {
  *   tokens: string[],
  *   source: string[],
  *   unresolved: string[]
+ *   resolutionType: string,
  * }}
  */
 function extractTooltipData(prop) {
@@ -76,8 +72,10 @@ function extractTooltipData(prop) {
     status,
     trace,
     tokens: [...tokensUsed],
-    source: !prop.isExcluded ? prop.resolutionSources || [] : [],
+    source: prop.resolutionSources || [],
     unresolved,
+    resolutionType: prop.resolutionType,
+    isExcludedByStylelint: prop.isExcludedByStylelint,
   };
 }
 
@@ -116,6 +114,8 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
         'data-tokens': JSON.stringify(tooltipData.tokens),
         'data-source': JSON.stringify(tooltipData.source),
         'data-unresolved': JSON.stringify(tooltipData.unresolved),
+        'data-isExcludedByStylelint': tooltipData.isExcludedByStylelint,
+        'data-resolutionType': resolutionType,
         tabindex: '0',
         role: 'button',
         'aria-describedby': 'token-tooltip',

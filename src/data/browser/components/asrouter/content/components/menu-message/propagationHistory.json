@@ -1,24 +1,24 @@
 [
   {
     "date": "2026-01-01",
-    "percentage": 84.21,
+    "percentage": 64,
     "gitRevision": "f0ea03d24401de4aada28c6f50e5669e949255dd"
   },
   {
     "date": "2026-02-01",
-    "percentage": 84.21,
+    "percentage": 64,
     "delta": 0,
     "gitRevision": "e11224bc34678000338c265c9053253cf7edf9cc"
   },
   {
     "date": "2026-03-01",
-    "percentage": 84.21,
+    "percentage": 64,
     "delta": 0,
     "gitRevision": "45bf222c56da5257156206bc795b94dcce003b0c"
   },
   {
     "date": "2026-04-01",
-    "percentage": 84.21,
+    "percentage": 64,
     "delta": 0,
     "gitRevision": "65f89c383b216d3b4f210657c9af12a32048fb67"
   }
