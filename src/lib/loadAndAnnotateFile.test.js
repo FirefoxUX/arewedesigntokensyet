@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import loadAndAnnotateFile from './loadAndAnnotateFile.js';
+import { getStatus } from './loadAndAnnotateFile.js';
 
 /**
  *
@@ -15,6 +16,87 @@ function getOffsetRange(lineText, snippet) {
   const endColumn = startColumn + snippet.length;
   return { startColumn, endColumn };
 }
+
+describe('getStatus', () => {
+  test(`it returns 'good-external' when external ref and has a design token`, () => {
+    expect(
+      getStatus({
+        resolutionType: 'external',
+        containsValidDesignToken: true,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('good-external');
+  });
+
+  test(`it returns 'warn' when external ref and does not have a design token but is a valid prop`, () => {
+    expect(
+      getStatus({
+        resolutionType: 'external',
+        containsValidDesignToken: false,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('warn');
+  });
+
+  test(`it returns 'bar' when external ref and does not have a design token or valid prop`, () => {
+    expect(
+      getStatus({
+        resolutionType: 'external',
+        containsValidDesignToken: false,
+        isValidPropertyValue: false,
+      }),
+    ).toBe('bad');
+  });
+
+  test(`it returns 'warn' when external ref and does not have a design token but is a valid prop`, () => {
+    expect(
+      getStatus({
+        resolutionType: 'external',
+        containsValidDesignToken: false,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('warn');
+  });
+
+  test(`it returns 'good-excludedByStylelint' when a valid token and valid prop value`, () => {
+    expect(
+      getStatus({
+        isExcludedByStylelint: true,
+        containsValidDesignToken: true,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('good-excludedByStylelint');
+  });
+
+  test(`it returns 'warn-excludedByStylelint' when not a valid token but is a valid prop value`, () => {
+    expect(
+      getStatus({
+        isExcludedByStylelint: true,
+        containsValidDesignToken: false,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('warn-excludedByStylelint');
+  });
+
+  test(`it returns 'bad-excludedByStylelint' when not a valid token or prop value`, () => {
+    expect(
+      getStatus({
+        isExcludedByStylelint: true,
+        containsValidDesignToken: false,
+        isValidPropertyValue: false,
+      }),
+    ).toBe('bad-excludedByStylelint');
+  });
+
+  test(`it returns 'good' when is both a valid token and prop value`, () => {
+    expect(
+      getStatus({
+        containsValidDesignToken: true,
+        isValidPropertyValue: true,
+      }),
+    ).toBe('good');
+  });
+});
 
 describe('loadAndAnnotateFile', () => {
   beforeEach(() => {
@@ -56,7 +138,7 @@ describe('loadAndAnnotateFile', () => {
         resolutionSources: ['tokens/colors.css'],
         unresolvedVariables: [],
         containsValidDesignToken: true,
-        containsExcludedDeclaration: false,
+        isValidPropertyValue: true,
       },
     ];
 

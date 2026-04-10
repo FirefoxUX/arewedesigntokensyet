@@ -39,10 +39,130 @@ describe('<token-tooltip>', () => {
 
     await tooltip.updateComplete;
 
+    expect(tooltip.shadowRoot.textContent).toContain('Uses Design Tokens');
     expect(tooltip.shadowRoot.textContent).toContain('Design Tokens Used');
     expect(tooltip.shadowRoot.textContent).toContain('--a');
     expect(tooltip.shadowRoot.textContent).toContain('Trace');
     expect(tooltip.shadowRoot.textContent).toContain('1rem');
+  });
+
+  test('renders ignored content as warning', async () => {
+    tooltip = setupTooltip({
+      status: 'warn',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain('This value is ignored');
+    expect(tooltip.shadowRoot.textContent).not.toContain('Trace');
+    expect(tooltip.shadowRoot.textContent).not.toContain('1rem');
+  });
+
+  test('renders bad content correctly', async () => {
+    tooltip = setupTooltip({
+      status: 'bad',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Not currently using a valid design token for this property',
+    );
+  });
+
+  test('renders stylelint-disabled content when bad', async () => {
+    tooltip = setupTooltip({
+      isExcludedByStylelint: true,
+      status: 'bad-excludedByStylelint',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Stylelint-disabled: but has no valid token for this property',
+    );
+  });
+
+  test('renders stylelint-disabled content when a warning', async () => {
+    tooltip = setupTooltip({
+      isExcludedByStylelint: true,
+      status: 'warn-excludedByStylelint',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Stylelint-disabled: but looks to be an ignored value.',
+    );
+  });
+
+  test('renders stylelint-disabled content when good', async () => {
+    tooltip = setupTooltip({
+      isExcludedByStylelint: true,
+      status: 'good-excludedByStylelint',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Stylelint-disabled: but may actually be valid',
+    );
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'This line is still counted as a valid token.',
+    );
+  });
+
+  test('renders stylelint-disabled content when an external design token ref', async () => {
+    tooltip = setupTooltip({
+      isExcludedByStylelint: true,
+      resolutionType: 'external',
+      status: 'good-external',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Design Token Reference from an external file',
+    );
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'This line is still counted as a valid token.',
+    );
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'This is likely to have been excluded',
+    );
+  });
+
+  test('renders an external design token ref', async () => {
+    tooltip = setupTooltip({
+      resolutionType: 'external',
+      status: 'good-external',
+      trace: ['1rem'],
+      tokens: [],
+    });
+
+    await tooltip.updateComplete;
+
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'Design Token Reference from an external file',
+    );
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'This line is still counted as a valid token.',
+    );
+    expect(tooltip.shadowRoot.textContent).toContain(
+      'consider adding a comment to disable the specific line',
+    );
   });
 
   test('does not render trace if only one step', async () => {
