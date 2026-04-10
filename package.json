@@ -19,7 +19,7 @@
     "jsdom": "29.0.2",
     "lint-staged": "15.5.0",
     "lit": "3.3.0",
-    "luxon": "3.6.1",
+    "luxon": "3.7.2",
     "minimatch": "10.2.5",
     "postcss": "8.5.3",
     "postcss-value-parser": "4.2.0",
