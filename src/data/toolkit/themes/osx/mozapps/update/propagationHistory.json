@@ -179,12 +179,6 @@
     "gitRevision": "e02959386f6f89c1476edba10b3902f4e4f3ed4c"
   },
   {
-    "date": "2025-10-01",
-    "percentage": 0,
-    "delta": 0,
-    "gitRevision": "d285a4fb14adbc5d170680a8dfb1a4afb2ae2f10"
-  },
-  {
     "date": "2025-11-01",
     "percentage": 0,
     "delta": 0,
@@ -192,31 +186,31 @@
   },
   {
     "date": "2025-12-01",
-    "percentage": 26.32,
-    "delta": 26.32,
+    "percentage": 29.41,
+    "delta": 29.41,
     "gitRevision": "7032b912c282da6b9b8219e779b2a441a27aaec9"
   },
   {
     "date": "2026-01-01",
-    "percentage": 26.32,
+    "percentage": 29.41,
     "delta": 0,
     "gitRevision": "f0ea03d24401de4aada28c6f50e5669e949255dd"
   },
   {
     "date": "2026-02-01",
-    "percentage": 26.32,
+    "percentage": 29.41,
     "delta": 0,
     "gitRevision": "e11224bc34678000338c265c9053253cf7edf9cc"
   },
   {
     "date": "2026-03-01",
-    "percentage": 26.32,
+    "percentage": 29.41,
     "delta": 0,
     "gitRevision": "45bf222c56da5257156206bc795b94dcce003b0c"
   },
   {
     "date": "2026-04-01",
-    "percentage": 26.32,
+    "percentage": 29.41,
     "delta": 0,
     "gitRevision": "65f89c383b216d3b4f210657c9af12a32048fb67"
   }

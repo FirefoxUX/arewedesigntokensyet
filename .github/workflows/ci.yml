@@ -34,7 +34,7 @@ jobs:
         with:
           persist-credentials: false
           repository: mozilla-firefox/firefox
-          path: ./firefox
+          path: ./mozilla-unified
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0

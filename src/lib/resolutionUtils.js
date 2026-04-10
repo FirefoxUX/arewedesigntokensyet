@@ -2,8 +2,8 @@ import path from 'path';
 import config from '../../config.js';
 import {
   getCSSVariables,
-  containsValidDesignToken,
-  isValidPropertyValue,
+  containsDesignTokenValue,
+  isExcludedDeclaration,
 } from './tokenUtils.js';
 
 /**
@@ -52,22 +52,20 @@ export function buildResolutionTrace(initialValue, foundVariables) {
 }
 
 /**
- * Analyzes a trace to determine if it includes design tokens and/or valid property values.
+ * Analyzes a trace to determine if it includes design tokens or excluded values.
  * @param {string[]} trace - A resolution trace of CSS values.
- * @param {object} decl - The css declaration object.
- * @returns {{ containsValidDesignToken: boolean, isValidPropertyValue: boolean }}
+ * @param {string} originalProperty - The original CSS property used to determine exclusions based on the value and property combination.
+ * @returns {{ containsDesignToken: boolean, containsExcludedDeclaration: boolean }}
  */
-export function analyzeTrace(trace, decl) {
+export function analyzeTrace(trace, originalProperty) {
   return {
-    containsValidDesignToken: trace.some((traceValue) => {
-      return containsValidDesignToken(decl.prop, traceValue);
-    }),
-    isValidPropertyValue: trace.some((traceValue) => {
-      return isValidPropertyValue(
-        decl.prop,
-        traceValue,
-        decl.localCustomProperties,
-      );
+    containsDesignToken: trace.some(containsDesignTokenValue),
+    containsExcludedDeclaration: trace.some((traceValue) => {
+      const result = isExcludedDeclaration({
+        prop: originalProperty,
+        value: traceValue,
+      });
+      return result;
     }),
   };
 }
@@ -81,13 +79,12 @@ export function analyzeTrace(trace, decl) {
  */
 export function getResolutionSources(trace, foundVariables, currentFile) {
   const externalSources = Object.values(foundVariables)
-    .filter((varData) => {
-      return (
+    .filter(
+      (varData) =>
         varData.src &&
         varData.src !== currentFile &&
-        trace.some((item) => item.includes(varData.value))
-      );
-    })
+        trace.includes(varData.value),
+    )
     .map((varData) => path.relative(config.repoPath, varData.src));
 
   return [...new Set(externalSources)];
@@ -95,12 +92,11 @@ export function getResolutionSources(trace, foundVariables, currentFile) {
 
 /**
  * Returns unresolved variable names from across the full resolution trace.
- * @param {string} prop - css property name
- * @param {string[]} trace - Resolution trace (e.g. ['var(--a)', 'var(--b)'])
+ * @param {string[]} trace - Resolution trace (e.g. ['var(--a)', 'var(--b)', 'MISSING'])
  * @param {object} foundVariables - Known var definitions
  * @returns {string[]} - Unresolved var names (excluding known tokens)
  */
-export function getUnresolvedVariablesFromTrace(prop, trace, foundVariables) {
+export function getUnresolvedVariablesFromTrace(trace, foundVariables) {
   const seen = new Set();
 
   for (const val of trace) {
@@ -115,8 +111,10 @@ export function getUnresolvedVariablesFromTrace(prop, trace, foundVariables) {
 
   return [...seen].filter((name) => {
     const isMissing = !foundVariables[name];
-    const isValidDesignToken = containsValidDesignToken(prop, name);
-    return isMissing && !isValidDesignToken;
+    const isDesignToken = config.designTokenKeys.some((token) =>
+      name.includes(token),
+    );
+    return isMissing && !isDesignToken;
   });
 }
 
@@ -164,4 +162,32 @@ export function classifyResolutionFromTrace(
     return 'external';
   }
   return 'local';
+}
+
+/**
+ * Builds a map of each variable name in the trace to the file it came from.
+ * @param {string[]} trace - Resolution trace for a declaration.
+ * @param {object} foundVariables - Known variable metadata.
+ * @returns {object} - Map: varName → relative source path
+ */
+export function getResolvedVarOrigins(trace, foundVariables) {
+  const result = {};
+
+  for (const value of trace) {
+    const vars = getCSSVariables(value);
+
+    for (const name of vars) {
+      const varData = foundVariables[name];
+      if (!varData?.src) {
+        continue;
+      }
+
+      // Skip if value isn't the one used in this trace step
+      if (value.includes(`var(${name})`)) {
+        result[name] = path.relative(config.repoPath, varData.src);
+      }
+    }
+  }
+
+  return result;
 }

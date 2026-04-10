@@ -2,7 +2,6 @@
 *.*
 # exclude these directories
 /build/
-/src/vendor/
 # safe-list files we want to process
 !*.js
 !*.mjs

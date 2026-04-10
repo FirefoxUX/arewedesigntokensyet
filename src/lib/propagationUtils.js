@@ -7,6 +7,7 @@ import { parseCSS } from './cssParser.js';
 import {
   isVariableDefinition,
   isTokenizableProperty,
+  isWithinValidParentSelector,
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
@@ -17,9 +18,10 @@ import {
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
   classifyResolutionFromTrace,
+  getResolvedVarOrigins,
 } from './resolutionUtils.js';
 
-import { getLocalCustomProperties } from '../vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/helpers.mjs';
+import { UnresolvedVarTracker } from './trackUnresolvedVars.js';
 
 /**
  * Convert an absolute file path to a repo-relative path for output.
@@ -138,39 +140,27 @@ async function collectExternalVars(filePath) {
 }
 
 /**
- * Checks whether a comment node is a Stylelint disable-next-line directive
- * specifically targeting the `stylelint-plugin-mozilla/use-design-tokens` rule.
+ * Checks whether a CSS rule (the parent of a declaration node) actually uses
+ * the custom property that the node defines.
  *
- * This is used to detect intentional rule suppression comments like:
- * "stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens"
+ * This function only applies to nodes of type `"decl"` whose `prop`
+ * represents a variable definition (as determined by `isVariableDefinition`).
+ * It converts the parent rule to a string and looks for the literal
+ * `var(<prop>)` usage.
  *
- * @param {object} comment - The AST comment node to evaluate.
- * @param {string} comment.type - The node type (expected to be "comment").
- * @param {string} comment.text - The raw text content of the comment.
- * @returns {boolean} True if the comment disables the specified Stylelint rule on the next line; otherwise false.
+ * @param {object} node - A PostCSS AST node.
+ * @param {'decl'} node.type - The node type (should be "decl").
+ * @param {string} node.prop - The property name (e.g. "--my-var").
+ * @param {object} node.parent - The parent rule node.
+ * @returns {boolean|undefined} `true` if the parent rule string includes
+ *   `var(<prop>)`, `false` if not, or `undefined` if the node is not a
+ *   variable declaration.
  */
-function isStylelintDisableNextLine(comment) {
-  return (
-    comment.type === 'comment' &&
-    /^stylelint-disable-next-line\s+stylelint-plugin-mozilla\/use-design-tokens/.test(
-      comment.text.trim(),
-    )
-  );
-}
-
-/**
- * Determines whether a given comment appears immediately before a node,
- * i.e., on the exact previous line in the source file.
- *
- * This relies on source location metadata.
- *
- * @param {object} node - The AST node to check against.
- * @param {object} comment - The AST comment node.
- *
- * @returns {boolean} True if the comment is exactly one line above the node; otherwise false.
- */
-function isExactPreviousLine(node, comment) {
-  return node.source?.start?.line === comment.source?.end?.line + 1;
+function ruleConsumesVar(node) {
+  if (node.type === 'decl' && isVariableDefinition(node.prop)) {
+    const ruleString = node.parent.toString();
+    return ruleString.includes(`var(${node.prop})`);
+  }
 }
 
 /**
@@ -188,38 +178,22 @@ function isExactPreviousLine(node, comment) {
 function collectDeclarations(root, foundVariables, filePath) {
   const declarations = [];
 
-  // This is what stylelint uses to gather props and is needed for
-  // to be able to use the stylelint rule's valid property lookup.
-  // This might be able to be consolidated with foundVariables later.
-  const localCustomProperties = getLocalCustomProperties(root);
-
   root.walk((node) => {
     if (!node.prop || !node.value) {
       return;
     }
 
-    // We're only gathering decls for properties that have tokens
-    // according to the stylelint config.
     if (isTokenizableProperty(node.prop)) {
-      let isExcludedByStylelint = false;
-      const prevNode = node.prev();
-      if (
-        prevNode &&
-        isStylelintDisableNextLine(prevNode) &&
-        isExactPreviousLine(node, prevNode)
-      ) {
-        isExcludedByStylelint = true;
-      }
-
       declarations.push({
-        isExcludedByStylelint,
         prop: node.prop,
         value: node.value,
         start: node.source.start,
         end: node.source.end,
-        localCustomProperties,
       });
-    } else if (isVariableDefinition(node.prop)) {
+    } else if (
+      isVariableDefinition(node.prop) &&
+      (isWithinValidParentSelector(node) || ruleConsumesVar(node))
+    ) {
       if (foundVariables[node.prop]) {
         console.log(
           `${path.relative(config.repoPath, filePath)}:${node.source.start.line} "${node.prop}" already exists, skipping...`,
@@ -234,16 +208,19 @@ function collectDeclarations(root, foundVariables, filePath) {
 }
 
 // Track unresolved variables and token usage globally within this run.
+const tracker = new UnresolvedVarTracker();
 
 /** @type {Array<{ path: string, property: string, value: string, containsToken: boolean, isIgnored: boolean, tokens?: string[] }>} */
 const usageFindingsBuffer = [];
-const CANONICAL_TOKEN_KEY_SET = new Set(
-  Array.isArray(config.allTokens) ? config.allTokens : [],
+const TOKEN_KEY_SET = new Set(
+  Array.isArray(config.designTokenKeys) ? config.designTokenKeys : [],
 );
 
 /**
  * Resolves variable references for each declaration, attaches trace data,
  * and annotates with token usage, source origins, and unresolved variable info.
+ *
+ * Writes an unresolved variable report to `src/data/unresolvedVars.json`.
  *
  * @param {object[]} declarations - Declarations to resolve and annotate.
  * @param {object} foundVariables - Known variables available for resolution.
@@ -257,15 +234,21 @@ async function resolveDeclarationReferences(
 ) {
   for (const decl of declarations) {
     const trace = buildResolutionTrace(decl.value, foundVariables);
-    const analysis = analyzeTrace(trace, decl);
+    const analysis = analyzeTrace(trace, decl.prop);
 
     decl.resolutionTrace = trace;
-    decl.containsValidDesignToken = analysis.containsValidDesignToken;
-    decl.isValidPropertyValue = analysis.isValidPropertyValue;
+    decl.containsDesignToken = analysis.containsDesignToken;
+    decl.isExcluded = analysis.containsExcludedDeclaration;
 
     const isIgnoredValue =
-      (decl.isExcludedByStylelint || analysis.isValidPropertyValue) &&
-      !analysis.containsValidDesignToken;
+      Boolean(analysis.containsExcludedDeclaration) &&
+      !analysis.containsDesignToken;
+
+    decl.isExternalVar = trace.some((val) =>
+      Object.values(foundVariables).some(
+        (ref) => ref.isExternal && ref.value === val,
+      ),
+    );
 
     decl.resolutionSources = getResolutionSources(
       trace,
@@ -274,10 +257,11 @@ async function resolveDeclarationReferences(
     );
 
     decl.unresolvedVariables = getUnresolvedVariablesFromTrace(
-      decl.prop,
       trace,
       foundVariables,
     );
+
+    tracker.addFromDeclaration(decl, filePath);
 
     decl.resolutionType = classifyResolutionFromTrace(
       trace,
@@ -285,11 +269,10 @@ async function resolveDeclarationReferences(
       filePath,
     );
 
+    decl.resolvedFrom = getResolvedVarOrigins(trace, foundVariables, filePath);
+
     // Capture all tokens, preserving duplicates for accurate frequency counting.
-    const tokenIds = extractDesignTokenIdsFromDecl(
-      decl,
-      CANONICAL_TOKEN_KEY_SET,
-    );
+    const tokenIds = extractDesignTokenIdsFromDecl(decl, TOKEN_KEY_SET);
     if (tokenIds.length > 0) {
       decl.tokens = tokenIds;
     }
@@ -298,12 +281,13 @@ async function resolveDeclarationReferences(
       path: filePath,
       property: decl.prop,
       value: decl.value,
-      containsToken: Boolean(decl.containsValidDesignToken),
+      containsToken: Boolean(decl.containsDesignToken),
       isIgnored: isIgnoredValue,
       ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
     });
   }
 
+  const unresolvedReport = tracker.toReport();
   const { tokenUsage, propertyValues } =
     buildUsageAggregates(usageFindingsBuffer);
 
@@ -311,6 +295,10 @@ async function resolveDeclarationReferences(
   await fs.mkdir('./build/data', { recursive: true });
 
   await Promise.all([
+    fs.writeFile(
+      path.join('./src/data', 'unresolvedVars.json'),
+      JSON.stringify(unresolvedReport, null, 2),
+    ),
     fs.writeFile(
       path.join('./src/data', 'tokenUsage.json'),
       JSON.stringify(tokenUsage, null, 2),
@@ -326,19 +314,16 @@ async function resolveDeclarationReferences(
 /**
  * Computes summary statistics from the resolved declarations:
  * - Number of declarations using design tokens
- * - Number of ignored values (valid property values that dont't contain design tokens)
+ * - Number of ignored values (excluded tokens without design tokens)
  *
  * @param {object[]} declarations - List of annotated declarations.
  * @returns {{ designTokenCount: number, ignoredValueCount: number }}
  */
 function computeDesignTokenSummary(declarations) {
   return {
-    designTokenCount: declarations.filter((d) => d.containsValidDesignToken)
-      .length,
+    designTokenCount: declarations.filter((d) => d.containsDesignToken).length,
     ignoredValueCount: declarations.filter(
-      (d) =>
-        (d.isExcludedByStylelint || d.isValidPropertyValue) &&
-        !d.containsValidDesignToken,
+      (d) => d.isExcluded && !d.containsDesignToken,
     ).length,
   };
 }

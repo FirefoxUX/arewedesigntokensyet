@@ -8,7 +8,7 @@ const originalConfig = { ...config };
 
 describe('getVarData', () => {
   beforeAll(() => {
-    config.allTokens = ['--color-accent-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
     config.repoPath = '/project';
   });
 
@@ -64,7 +64,7 @@ describe('getExternalVars', () => {
     vi.resetAllMocks();
   });
 
-  test('extracts all external vars to match stylelint', async () => {
+  test('extracts external vars defined in :root', async () => {
     const css = `
       :root {
         --color-accent-primary: #f00;
@@ -82,7 +82,7 @@ describe('getExternalVars', () => {
 
     expect(result).toHaveProperty('--color-accent-primary');
     expect(result).toHaveProperty('--space-small');
-    expect(result).toHaveProperty('--local-color');
+    expect(result).not.toHaveProperty('--local-color');
 
     expect(result['--color-accent-primary'].isExternal).toBe(true);
     expect(result['--color-accent-primary'].src).toBe('/fake/path/tokens.css');

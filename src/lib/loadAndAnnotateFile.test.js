@@ -55,7 +55,7 @@ describe('loadAndAnnotateFile', () => {
         resolutionTrace: ['var(--color-accent-primary)', '#f00'],
         resolutionSources: ['tokens/colors.css'],
         unresolvedVariables: [],
-        containsValidDesignToken: true,
+        containsDesignToken: true,
         containsExcludedDeclaration: false,
       },
     ];

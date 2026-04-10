@@ -9,7 +9,6 @@ export default defineConfig({
         '**/node_modules/**',
         'build/**',
         'src/data/**',
-        'src/vendor/**',
         'testing/**',
         '**/{esbuild,eslint,eleventy,vitest}.config.*',
         'jest**',

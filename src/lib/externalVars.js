@@ -1,6 +1,9 @@
 import { memoize } from './memoize.js';
 import { parseCSS } from './cssParser.js';
-import { isVariableDefinition } from './tokenUtils.js';
+import {
+  isVariableDefinition,
+  isWithinValidParentSelector,
+} from './tokenUtils.js';
 
 /**
  * Parses a CSS file and extracts variable definitions, marking each with metadata.
@@ -19,7 +22,7 @@ async function __getExternalVars(filePath) {
   const cssVars = {};
 
   root.walk((node) => {
-    if (isVariableDefinition(node.prop)) {
+    if (isVariableDefinition(node.prop) && isWithinValidParentSelector(node)) {
       cssVars[node.prop] = getVarData(node, {
         isExternal: true,
         filePath,

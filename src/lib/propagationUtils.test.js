@@ -12,6 +12,19 @@ const originalConfig = { ...config };
 describe('getPropagationData', () => {
   beforeAll(() => {
     Object.assign(config, {
+      designTokenKeys: [
+        '--color-accent-primary',
+        '--border-radius-medium',
+        '--border-width',
+      ],
+      designTokenProperties: [
+        'color',
+        'background-color',
+        'border',
+        'border-radius',
+      ],
+      excludedDeclarations: [{ property: '*', values: ['inherit'] }],
+      externalVarMapping: {},
       repoPath: '/project',
     });
   });
@@ -54,14 +67,14 @@ describe('getPropagationData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'border-radius',
-          containsValidDesignToken: true,
+          containsDesignToken: true,
           resolutionType: 'local',
         }),
       ]),
     );
   });
 
-  test('does detect vars referenced outside :host and :root to match use-design-tokens all local vars approach', async () => {
+  test('does not detect vars referenced outside :host and :root or the same rule', async () => {
     const css = `
       :host {
         --visual-picker-item-border-radius: var(--border-radius-medium);
@@ -87,106 +100,8 @@ describe('getPropagationData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'border-radius',
-          containsValidDesignToken: true,
+          containsDesignToken: false,
           resolutionType: 'local',
-        }),
-      ]),
-    );
-  });
-
-  test('still includes token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
-    const css = `
-      .btn {
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
-        background-color: var(--color-accent-primary);
-        color: var(--color-accent-primary);
-        border-color: #000;
-      }
-    `;
-
-    fs.readFile.mockResolvedValueOnce(css);
-    const result = await getPropagationData(
-      '/project/src/components/button.css',
-    );
-
-    const props = result.foundPropValues;
-
-    expect(result).toHaveProperty('foundPropValues');
-    expect(result).toHaveProperty('foundVariables');
-    // 2 design token found out of 3 that can be tokenized = 50%
-    expect(result.percentage).toBe(66.67);
-    expect(result.designTokenCount).toBe(2);
-    expect(fs.writeFile).toHaveBeenCalled();
-
-    expect(props).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          prop: 'background-color',
-          isValidPropertyValue: true,
-          isExcludedByStylelint: true,
-          containsValidDesignToken: true,
-        }),
-        expect.objectContaining({
-          prop: 'color',
-          isValidPropertyValue: true,
-          isExcludedByStylelint: false,
-          containsValidDesignToken: true,
-        }),
-        expect.objectContaining({
-          prop: 'border-color',
-          isValidPropertyValue: false,
-          isExcludedByStylelint: false,
-          containsValidDesignToken: false,
-        }),
-      ]),
-    );
-  });
-
-  test('excludes non-token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
-    const css = `
-      .btn {
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
-        background-color: #fff;
-        color: var(--color-accent-primary);
-        /* stylelint-disable-next-line */
-        border-color: #000;
-      }
-    `;
-
-    fs.readFile.mockResolvedValueOnce(css);
-    const result = await getPropagationData(
-      '/project/src/components/button.css',
-    );
-
-    const props = result.foundPropValues;
-
-    expect(result).toHaveProperty('foundPropValues');
-    expect(result).toHaveProperty('foundVariables');
-    // 1 design token found out of 2 that can be tokenized = 50%
-    // and the stylelint disable line scoped to use-design-tokens is ignored.
-    expect(result.percentage).toBe(50);
-    expect(result.designTokenCount).toBe(1);
-    expect(fs.writeFile).toHaveBeenCalled();
-
-    expect(props).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          prop: 'background-color',
-          isValidPropertyValue: false,
-          isExcludedByStylelint: true,
-          containsValidDesignToken: false,
-        }),
-        expect.objectContaining({
-          prop: 'color',
-          isValidPropertyValue: true,
-          isExcludedByStylelint: false,
-          containsValidDesignToken: true,
-        }),
-        expect.objectContaining({
-          prop: 'border-color',
-          isValidPropertyValue: false,
-          isExcludedByStylelint: false,
-          containsValidDesignToken: false,
         }),
       ]),
     );
@@ -195,12 +110,13 @@ describe('getPropagationData', () => {
   test('extracts token usage from a single CSS file', async () => {
     const css = `
       :root {
-        --bcolor: red;
+        --color-accent-primary: #ff0000;
+        --spacing: 12px;
       }
 
       .btn {
         color: var(--color-accent-primary);
-        border: 1px solid var(--bcolor);
+        border: 1px solid var(--spacing);
         background-color: inherit;
       }
     `;
@@ -210,32 +126,29 @@ describe('getPropagationData', () => {
       '/project/src/components/button.css',
     );
 
-    const props = result.foundPropValues;
-
     expect(result).toHaveProperty('foundPropValues');
     expect(result).toHaveProperty('foundVariables');
     expect(result.percentage).toBe(50);
     expect(result.designTokenCount).toBe(1);
     expect(fs.writeFile).toHaveBeenCalled();
 
+    const props = result.foundPropValues;
+
     expect(props).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'color',
-          containsValidDesignToken: true,
-          isValidPropertyValue: true,
+          containsDesignToken: true,
           resolutionType: 'local',
         }),
         expect.objectContaining({
           prop: 'border',
           resolutionType: 'local',
-          containsValidDesignToken: false,
-          isValidPropertyValue: false,
+          containsDesignToken: false,
         }),
         expect.objectContaining({
           prop: 'background-color',
-          containsValidDesignToken: false,
-          isValidPropertyValue: true,
+          isExcluded: true,
         }),
       ]),
     );
@@ -272,17 +185,17 @@ describe('getPropagationData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'color',
-          containsValidDesignToken: false,
+          containsDesignToken: false,
           resolutionType: 'local',
         }),
         expect.objectContaining({
           prop: 'border',
           resolutionType: 'local',
-          containsValidDesignToken: false,
+          containsDesignToken: false,
         }),
         expect.objectContaining({
           prop: 'background-color',
-          isValidPropertyValue: true,
+          isExcluded: true,
         }),
       ]),
     );
@@ -296,7 +209,8 @@ describe('getPropagationData', () => {
       }
 
       .btn {
-        outline-offset: 15px;
+        width: var(--not-a-token);
+        height: 1px solid var(--spacing);
         background-color: inherit;
       }
     `;
@@ -317,7 +231,7 @@ describe('getPropagationData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           prop: 'background-color',
-          isValidPropertyValue: true,
+          isExcluded: true,
         }),
       ]),
     );
@@ -346,8 +260,8 @@ describe('usage aggregation', () => {
         path: filePath,
         property: d.prop,
         value: d.value,
-        containsValidDesignToken: Boolean(d.containsValidDesignToken),
-        isIgnored: Boolean(d.isValidPropertyValue),
+        containsToken: Boolean(d.containsDesignToken),
+        isIgnored: Boolean(d.isExcluded),
       };
       if (Array.isArray(d.tokens) && d.tokens.length > 0) {
         base.tokens = d.tokens;
@@ -446,7 +360,7 @@ describe('usage aggregation', () => {
       :root {
         --accent: var(--color-accent-primary);
       }
-      .alpha { background-color: var(--accent); padding: 4px; }
+      .alpha { color: var(--accent); padding: 4px; }
       .beta  { padding: 4px; }
     `);
 
@@ -466,7 +380,7 @@ describe('usage aggregation', () => {
     const colorToken = aggregates.tokenUsage.byToken['--color-accent-primary'];
     expect(colorToken).toEqual({
       total: 1,
-      properties: { 'background-color': 1 },
+      properties: { color: 1 },
       files: { [filePath]: 1 },
     });
   });

@@ -77,8 +77,6 @@
 
   --status-good-background: rgba(0, 200, 0, 0.2);
   --status-good-border: 3px solid green;
-  --status-good-external-background: rgba(0, 88, 255, 0.2);
-  --status-good-external-border: rgb(0, 88, 255);
   --status-warn-background: rgba(255, 200, 0, 0.25);
   --status-warn-border: 3px solid orange;
   --status-bad-background: rgba(255, 0, 0, 0.15);
@@ -219,18 +217,7 @@ code {
     margin-inline-start: 0.2em;
   }
 }
-.awdty--external[data-status='good'] {
-  background-color: var(--status-good-external-background);
-  border-left: var(--status-good-external-border);
 
-  :last-of-type::after {
-    content: ' ℹ️';
-    font-size: 0.9em;
-    margin-inline-start: 0.2em;
-  }
-}
-
-[data-status='excludedByStylelint'],
 [data-status='warn'] {
   background-color: var(--status-warn-background);
   border-left: var(--status-warn-border);

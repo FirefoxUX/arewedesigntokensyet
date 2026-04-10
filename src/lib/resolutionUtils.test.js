@@ -4,6 +4,7 @@ import {
   buildResolutionTrace,
   analyzeTrace,
   classifyResolutionFromTrace,
+  getResolvedVarOrigins,
   getResolutionSources,
   getUnresolvedVariablesFromTrace,
 } from './resolutionUtils.js';
@@ -52,59 +53,54 @@ describe('buildResolutionTrace', () => {
 
 describe('analyzeTrace', () => {
   beforeAll(() => {
-    config.allTokens = ['--color-accent-primary'];
+    config.designTokenKeys = ['--color-accent-primary'];
+    config.excludedDeclarations = [
+      {
+        property: 'font-weight',
+        values: ['normal'],
+      },
+      {
+        property: '*',
+        values: ['inherit'],
+      },
+    ];
   });
 
   afterAll(() => {
     Object.assign(config, originalConfig);
   });
 
-  test('detects design token and is allowed prop', () => {
-    const trace = ['var(--color-accent-primary)'];
-    const result = analyzeTrace(trace, {
-      prop: 'background-color',
-      value: 'var(--color-accent-primary)',
-    });
-    expect(result.containsValidDesignToken).toBe(true);
-    expect(result.isValidPropertyValue).toBe(true);
+  test('detects design token and excluded values', () => {
+    const trace = ['var(--color-accent-primary)', 'inherit'];
+    const result = analyzeTrace(trace, 'any-prop');
+    expect(result.containsDesignToken).toBe(true);
+    expect(result.containsExcludedDeclaration).toBe(true);
   });
 
   test('detects font-weight: normal specific exclusion', () => {
     const trace = ['var(--some-var)', 'normal'];
     // Check with random property first.
-    const result = analyzeTrace(trace, {
-      prop: 'whatever',
-      value: 'var(--some-var)',
-    });
-    expect(result.containsValidDesignToken).toBe(false);
-    expect(result.isValidPropertyValue).toBe(false);
+    const result = analyzeTrace(trace, 'any-prop');
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedDeclaration).toBe(false);
     // This should be excluded.
-    const result2 = analyzeTrace(trace, {
-      prop: 'font-weight',
-      value: 'var(--some-var)',
-    });
-    expect(result2.containsValidDesignToken).toBe(false);
-    expect(result2.isValidPropertyValue).toBe(true);
+    const result2 = analyzeTrace(trace, 'font-weight');
+    expect(result2.containsDesignToken).toBe(false);
+    expect(result2.containsExcludedDeclaration).toBe(true);
   });
 
-  test('correctly identifies non-design token use', () => {
+  test('correctly indentifies non-design token use', () => {
     const trace = ['var(--not-token)', 'inherit'];
-    const result = analyzeTrace(trace, {
-      prop: 'margin',
-      value: 'var(--not-token)',
-    });
-    expect(result.containsValidDesignToken).toBe(false);
-    expect(result.isValidPropertyValue).toBe(true);
+    const result = analyzeTrace(trace, 'any-prop');
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedDeclaration).toBe(true);
   });
 
-  test('correctly identifies non-design token and non excluded value use', () => {
+  test('correctly indentifies non-design token and non excluded value use', () => {
     const trace = ['var(--not-token)', 'whatever'];
-    const result = analyzeTrace(trace, {
-      prop: 'margin',
-      value: 'var(--not-token)',
-    });
-    expect(result.containsValidDesignToken).toBe(false);
-    expect(result.isValidPropertyValue).toBe(false);
+    const result = analyzeTrace(trace, 'any-prop');
+    expect(result.containsDesignToken).toBe(false);
+    expect(result.containsExcludedDeclaration).toBe(false);
   });
 });
 
@@ -163,6 +159,31 @@ describe('classifyResolutionFromTrace', () => {
   });
 });
 
+describe('getResolvedVarOrigins', () => {
+  beforeAll(() => {
+    config.repoPath = '/project';
+  });
+
+  afterAll(() => {
+    Object.assign(config, originalConfig);
+  });
+
+  test('returns map of var names to source paths', () => {
+    const foundVars = {
+      '--a': { value: '12px', src: '/project/tokens/spacing.css' },
+      '--b': { value: '4px', src: '/project/tokens/spacing.css' },
+    };
+    const trace = ['var(--a)', 'var(--b)', '4px'];
+    const currentFile = '/src/components/button.css';
+
+    const result = getResolvedVarOrigins(trace, foundVars, currentFile);
+    expect(result).toEqual({
+      '--a': 'tokens/spacing.css',
+      '--b': 'tokens/spacing.css',
+    });
+  });
+});
+
 describe('getUnresolvedVariablesFromTrace', () => {
   test('returns only unresolved, non-token vars', () => {
     const trace = ['var(--unknown)', 'var(--color-accent-primary)'];
@@ -170,11 +191,7 @@ describe('getUnresolvedVariablesFromTrace', () => {
       '--color-accent-primary': { value: '#000' }, // token defined
     };
 
-    const result = getUnresolvedVariablesFromTrace(
-      'background-color',
-      trace,
-      foundVars,
-    );
+    const result = getUnresolvedVariablesFromTrace(trace, foundVars);
     expect(result).toEqual(['--unknown']);
   });
 });
@@ -203,26 +220,6 @@ describe('getResolutionSources', () => {
     const result = getResolutionSources(trace, foundVars, currentFile);
 
     expect(result).toEqual(['tokens/spacing.css']);
-  });
-
-  test('returns source files for matched var values inside trace entries', () => {
-    const foundVars = {
-      '--a': {
-        value: '--color-accent-primary',
-        src: '/project/tokens/colors.css',
-      },
-      '--b': { value: 'var(--a)', src: currentFile },
-    };
-
-    const trace = [
-      '1px solid var(--b)',
-      '1px solid var(--a)',
-      '1px solid var(--color-accent-primary)',
-    ];
-
-    const result = getResolutionSources(trace, foundVars, currentFile);
-
-    expect(result).toEqual(['tokens/colors.css']);
   });
 
   test('deduplicates source files', () => {

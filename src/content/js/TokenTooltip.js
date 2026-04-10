@@ -2,18 +2,6 @@
 
 import { LitElement, html, css } from 'lit';
 
-const messages = {
-  good: '🏆 Nice use of Design Tokens!',
-  'good-external': 'ℹ️ External Design Token Reference.',
-  warn: `☑️  This value doesn't need to use a Design Token.`,
-  excludedByStylelint: html`This line is excluded by
-    <code
-      >/* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
-      */</code
-    >.`,
-  bad: '❌ Not currently using a design token.',
-};
-
 /**
  * `<token-tooltip>` is a custom element for displaying contextual information
  * about CSS design token usage.
@@ -40,9 +28,6 @@ export class TokenTooltip extends LitElement {
     unresolved: { type: Array },
     // List of design tokens identified in the value.
     tokens: { type: Array },
-    // resolutionType: 'local' or 'external'
-    resolutionType: { type: String },
-    isExcludedByStylelint: { type: Boolean },
   };
 
   constructor() {
@@ -66,7 +51,6 @@ export class TokenTooltip extends LitElement {
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
       white-space: nowrap;
       overflow-x: auto;
-      width: min-content;
       max-width: 90vw;
     }
 
@@ -80,25 +64,6 @@ export class TokenTooltip extends LitElement {
     li {
       margin: 0.25em 0 0.25em 1em;
       padding: 0;
-    }
-
-    .note {
-      margin-top: 0.5em;
-      padding: 0.25em 1em;
-      border-radius: 0.75em;
-      border: 1px solid gold;
-      background: var(--status-warn-background);
-      font-size: 0.75rem;
-      font-style: italic;
-
-      p {
-        text-wrap: wrap;
-      }
-
-      code {
-        color: green;
-        font-size: 0.7rem;
-      }
     }
 
     .status {
@@ -121,68 +86,22 @@ export class TokenTooltip extends LitElement {
   `;
 
   /**
-   * Returns a status message based on status and resolution type.
-   *
-   * If the status is "good" and the resolution type is "external",
-   * a specialised message is returned. Otherwise, the message is
-   * resolved from the status map, defaulting to "bad" if the status
-   * is unknown.
-   *
-   * @param {string} status The status key, e.g. "good", "bad"
-   * @param {string} resolutionType The resolution type, e.g. "external"
-   * @returns {string} The corresponding status message
-   */
-  getStatus(status, resolutionType) {
-    if (status === 'good' && resolutionType === 'external') {
-      return messages['good-external'];
-    }
-    return messages[status] || messages.bad;
-  }
-
-  /**
    * Renders the tooltip content dynamically based on the component's properties.
    * @returns {import('lit').TemplateResult} The rendered HTML content.
    */
   render() {
+    const statusMsg = {
+      good: '🏆 Nice use of Design Tokens!',
+      warn: `☑️  This value doesn't need to use a Design Token.`,
+      bad: '❌ Not currently using a design token.',
+    };
+
     return html`
       <div aria-live="polite">
         <div class="status" data-status=${this.status}>
-          ${this.getStatus(this.status, this.resolutionType)}
+          ${statusMsg[this.status] || statusMsg.bad}
         </div>
-        ${this.isExcludedByStylelint
-          ? html`
-              <div class="note">
-                <p>${messages.excludedByStylelint}</p>
-                ${this.resolutionType === 'external' && this.status === 'good'
-                  ? html`<p>
-                      This is likely to have been excluded since the stylelint
-                      rules only process local vars.
-                    </p>`
-                  : ''}
-                ${this.status === 'good'
-                  ? html`<p>This line is still counted as a token.</p>`
-                  : ''}
-              </div>
-            `
-          : ''}
-        ${this.resolutionType === 'external' &&
-        this.status === 'good' &&
-        !this.isExcludedByStylelint
-          ? html`<div class="note">
-              <p>
-                Note: Since var resolution points to an external file, the
-                <code>use-design-tokens</code> rule may report an error because
-                it is only aware of local variables. A suggestion would be to
-                consider adding a comment to disable the specific line with:
-                <br /><code
-                  >/* stylelint-disable-next-line
-                  stylelint-plugin-mozilla/use-design-tokens -- [Reason]
-                  */</code
-                ></p>
-                <p>This line is still counted as a valid token.</p>
-              </p>
-            </div>`
-          : ''}
+
         ${this.tokens.length
           ? html`
               <div class="label">🎨 Design Tokens Used:</div>
