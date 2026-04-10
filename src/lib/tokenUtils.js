@@ -28,22 +28,28 @@ export function isDesignToken(tokenName) {
 }
 
 /**
- * Returns true if the value contains a valid canonical design token for the property.
+ * Returns the canonical set of valid design tokens for a given CSS property.
  *
- * @param {string} prop - The CSS property to inspect.
- * @param {string} value - The CSS value to inspect.
- * @returns {boolean} - true if a design token key is found in the value.
+ * Builds a Set of token names derived from the property's configured token
+ * types and alias token types. This intentionally excludes any additional
+ * tokens introduced by stylelint rules, ensuring the result reflects only
+ * the canonical token definitions.
+ *
+ * If the property is not defined in the configuration, an empty Set is returned.
+ *
+ * @param {string} prop The CSS property name.
+ * @returns {Set<string>} A Set of valid canonical token names for the property.
  */
-function __containsValidDesignToken(prop, value) {
+function __getValidTokensForProp(prop) {
   const propConfig = propertyConfig[prop];
   if (!propConfig) {
-    return false;
+    return new Set();
   }
 
   // This is the canonical set of tokens for the prop, which is needed
   // as the stylelint rules add some overrides to the list of validTokenNames
   // but we want to stick to canonical tokens for this check.
-  const validCanonicalTokenNames = new Set(
+  return new Set(
     propConfig.validTypes.flatMap((propType) => [
       ...(propType.tokenTypes || []).flatMap((tokenType) =>
         tokensTable[tokenType].map((token) => token.name),
@@ -53,6 +59,59 @@ function __containsValidDesignToken(prop, value) {
       ),
     ]),
   );
+}
+
+export const getValidTokensForProp = memoize(__getValidTokensForProp);
+
+/**
+ * Extracts valid design tokens referenced in a CSS value for a given property.
+ *
+ * Parses the provided value, looks for CSS `var()` functions, and returns a Set
+ * of token names that are both:
+ * - referenced in the value, and
+ * - valid for the given property.
+ *
+ * If the value does not contain any valid design tokens for the property,
+ * an empty Set is returned.
+ *
+ * @param {string} prop The CSS property name being evaluated.
+ * @param {string} value The CSS value to parse.
+ * @returns {Set<string>} A Set of valid design token names found in the value.
+ */
+export function extractValidTokensForProp(prop, value) {
+  let collection = new Set();
+  if (containsValidDesignToken(prop, value)) {
+    const validCanonicalTokensForProp = getValidTokensForProp(prop);
+    const parsedValue = valueParser(value);
+
+    parsedValue.walk((node) => {
+      if (node.type === 'function' && node.value === 'var') {
+        const [varNameNode] = node.nodes;
+        const varName = varNameNode.value;
+
+        if (validCanonicalTokensForProp.has(varName)) {
+          collection.add(varName);
+        }
+      }
+      return undefined;
+    });
+  }
+
+  return collection;
+}
+
+/**
+ * Returns true if the value contains a valid canonical design token for the property.
+ *
+ * @param {string} prop - The CSS property to inspect.
+ * @param {string} value - The CSS value to inspect.
+ * @returns {boolean} - true if a design token key is found in the value.
+ */
+function __containsValidDesignToken(prop, value) {
+  const validCanonicalTokensForProp = getValidTokensForProp(prop);
+  if (!validCanonicalTokensForProp) {
+    return false;
+  }
 
   const parsedValue = valueParser(value);
   let found = false;
@@ -66,7 +125,7 @@ function __containsValidDesignToken(prop, value) {
       const [varNameNode] = node.nodes;
       const varName = varNameNode.value;
 
-      if (validCanonicalTokenNames.has(varName)) {
+      if (validCanonicalTokensForProp.has(varName)) {
         found = true;
         return false;
       }

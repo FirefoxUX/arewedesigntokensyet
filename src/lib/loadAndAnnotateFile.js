@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { codeToHtml } from 'shiki';
-import { isDesignToken } from './tokenUtils.js';
+import { isDesignToken, extractValidTokensForProp } from './tokenUtils.js';
 
 /**
  * Removes consecutive duplicate values from a resolution trace.
@@ -26,13 +26,32 @@ function dedupeTrace(trace = []) {
  * @param {boolean} prop.isValidPropertyValue whether this property/value combination is valid.
  * @returns {'good' | 'warn' | 'bad'} - The resolution status.
  */
-function getStatus(prop) {
-  let status = prop.containsValidDesignToken
-    ? 'good'
-    : prop.isValidPropertyValue
-      ? 'warn'
-      : 'bad';
-  return status;
+export function getStatus(prop) {
+  if (prop.resolutionType === 'external' && prop.containsValidDesignToken) {
+    return 'good-external';
+  }
+
+  if (prop.isExcludedByStylelint && prop.containsValidDesignToken) {
+    return 'good-excludedByStylelint';
+  }
+
+  if (prop.isExcludedByStylelint && !prop.isValidPropertyValue) {
+    return 'bad-excludedByStylelint';
+  }
+
+  if (prop.isExcludedByStylelint && prop.isValidPropertyValue) {
+    return 'warn-excludedByStylelint';
+  }
+
+  if (prop.containsValidDesignToken) {
+    return 'good';
+  }
+
+  if (prop.isValidPropertyValue) {
+    return 'warn';
+  }
+
+  return 'bad';
 }
 
 /**
@@ -40,7 +59,7 @@ function getStatus(prop) {
  *
  * Extracts trace, tokens used, resolution sources, and unresolved variables.
  *
- * @param {object} prop - A resolved property with metadata from analysis.
+ * @param {object} decl - A resolved declaration with metadata from analysis.
  * @returns {{
  *   status: string,
  *   trace: string[],
@@ -50,32 +69,31 @@ function getStatus(prop) {
  *   resolutionType: string,
  * }}
  */
-function extractTooltipData(prop) {
-  const status = getStatus(prop);
-  const trace = dedupeTrace(prop.resolutionTrace || []);
+function extractTooltipData(decl) {
+  const status = getStatus(decl);
+  const trace = dedupeTrace(decl.resolutionTrace || []);
 
-  const unresolved = (prop.unresolvedVariables || []).filter(
+  // We only care about non-canonical tokens that aren't resolved.
+  const unresolved = (decl.unresolvedVariables || []).filter(
     (v) => !isDesignToken(v),
   );
 
-  const tokensUsed = new Set();
+  const validTokensUsed = new Set();
   for (const step of trace) {
-    const matches = step.match(/--[\w-]+/g) || [];
-    for (const token of matches) {
-      if (isDesignToken(token)) {
-        tokensUsed.add(token);
-      }
+    const extractedTokens = extractValidTokensForProp(decl.prop, step);
+    for (const token of extractedTokens) {
+      validTokensUsed.add(token);
     }
   }
 
   return {
     status,
     trace,
-    tokens: [...tokensUsed],
-    source: prop.resolutionSources || [],
+    tokens: [...validTokensUsed],
+    source: decl.resolutionSources || [],
     unresolved,
-    resolutionType: prop.resolutionType,
-    isExcludedByStylelint: prop.isExcludedByStylelint,
+    resolutionType: decl.resolutionType,
+    isExcludedByStylelint: decl.isExcludedByStylelint,
   };
 }
 
@@ -93,10 +111,10 @@ export default async function loadAndAnnotateFile(filePath, foundPropValues) {
   const content = await fs.readFile(filePath, 'utf8');
   const decorations = [];
 
-  for (const prop of foundPropValues) {
-    const { start, end, resolutionType } = prop;
+  for (const decl of foundPropValues) {
+    const { start, end, resolutionType } = decl;
 
-    const tooltipData = extractTooltipData(prop);
+    const tooltipData = extractTooltipData(decl);
 
     decorations.push({
       start: {

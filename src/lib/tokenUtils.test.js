@@ -1,10 +1,12 @@
 import {
   isVariableDefinition,
   containsValidDesignToken,
+  getValidTokensForProp,
   isValidPropertyValue,
   isTokenizableProperty,
   getCSSVariables,
   isWithinValidParentSelector,
+  extractValidTokensForProp,
   extractDesignTokenIdsFromDecl,
 } from './tokenUtils.js';
 
@@ -27,6 +29,32 @@ describe('isVariableDefinition', () => {
 
   test('should return false for []', () => {
     expect(isVariableDefinition([])).toBe(false);
+  });
+});
+
+describe('getValidTokensForProp', () => {
+  test(`should return valid tokens for 'border'`, () => {
+    const validTokens = getValidTokensForProp('border');
+    expect(validTokens).toContain('--border-color');
+  });
+});
+
+describe('extractValidTokensForProp', () => {
+  test(`should return valid tokens for 'border'`, () => {
+    const extractedTokens = extractValidTokensForProp(
+      'border',
+      '1px solid var(--focus-outline)',
+    );
+    expect(extractedTokens).not.toContain('1px');
+    expect(extractedTokens).toContain('--focus-outline');
+  });
+
+  test(`should return valid tokens for 'border'`, () => {
+    const extractedTokens = extractValidTokensForProp(
+      'padding-inline-end',
+      'var(--space-xsmall)',
+    );
+    expect(extractedTokens).toContain('--space-xsmall');
   });
 });
 
