@@ -39,6 +39,7 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
+          package-manager-cache: false
           node-version: ${{ matrix.node-version }}
 
       - name: Install packages and build
