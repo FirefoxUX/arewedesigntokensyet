@@ -44,6 +44,7 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
+        node-version: 24
         package-manager-cache: false
 
     - name: Install packages and build
@@ -59,10 +60,10 @@ jobs:
       run: |
         if [[ -n "$(git diff --exit-code src/data/propagationHistory.json)" ]]; then
           echo "History Changes detected."
-          echo "::set-output name=has_changes::true"
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
         else
           echo "No history changes detected."
-          echo "::set-output name=has_changes::false"
+          echo "has_changes=false" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Conditionally update history data
