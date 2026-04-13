@@ -71,6 +71,12 @@ describe('containsValidDesignToken', () => {
     );
   });
 
+  test(`should be true for a base token`, () => {
+    expect(
+      containsValidDesignToken('color', 'var(--color-accent-primary)'),
+    ).toBe(true);
+  });
+
   test(`should not be true for a value that has no tokens present`, () => {
     expect(containsValidDesignToken('margin', '4px 4px')).toBe(false);
   });
@@ -81,6 +87,21 @@ describe('containsValidDesignToken', () => {
 });
 
 describe('isValidPropertyValue', () => {
+  test(`should be true for a base token`, () => {
+    // This should be aliased to be allowed.
+    expect(isValidPropertyValue('color', 'var(--color-accent-primary)')).toBe(
+      false,
+    );
+  });
+
+  test('should allow an aliased base token', () => {
+    expect(
+      isValidPropertyValue('color', 'var(--local-var)', {
+        '--local-var': 'var(--color-accent-primary)',
+      }),
+    ).toBe(true);
+  });
+
   test('should not see border: 1px solid LinkText as valid', () => {
     expect(isValidPropertyValue('border', '1px solid LinkText')).toBe(false);
   });

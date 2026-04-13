@@ -60,13 +60,33 @@ describe('analyzeTrace', () => {
   });
 
   test('detects design token and is allowed prop', () => {
-    const trace = ['var(--color-accent-primary)'];
+    const trace = ['var(--background-color-canvas)'];
     const result = analyzeTrace(trace, {
       prop: 'background-color',
-      value: 'var(--color-accent-primary)',
+      value: 'var(--background-color-canvas)',
     });
     expect(result.containsValidDesignToken).toBe(true);
     expect(result.isValidPropertyValue).toBe(true);
+  });
+
+  test('detects aliased design token and is allowed prop', () => {
+    const trace = ['var(--my-alias)', 'var(--background-color-canvas)'];
+    const result = analyzeTrace(trace, {
+      prop: 'background-color',
+      value: 'var(--my-alias)',
+    });
+    expect(result.containsValidDesignToken).toBe(true);
+    expect(result.isValidPropertyValue).toBe(true);
+  });
+
+  test('unaliased based color token will not pass isValidPropertyValue check', () => {
+    const trace = ['var(--color-accent-primary)'];
+    const result = analyzeTrace(trace, {
+      prop: 'color',
+      value: 'var(--color-accent-primary)',
+    });
+    expect(result.containsValidDesignToken).toBe(true);
+    expect(result.isValidPropertyValue).toBe(false);
   });
 
   test('detects font-weight: normal specific exclusion', () => {

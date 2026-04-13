@@ -333,8 +333,9 @@ async function resolveDeclarationReferences(
  */
 function computeDesignTokenSummary(declarations) {
   return {
-    designTokenCount: declarations.filter((d) => d.containsValidDesignToken)
-      .length,
+    designTokenCount: declarations.filter(
+      (d) => d.containsValidDesignToken && d.isValidPropertyValue,
+    ).length,
     ignoredValueCount: declarations.filter(
       (d) =>
         (d.isExcludedByStylelint || d.isValidPropertyValue) &&

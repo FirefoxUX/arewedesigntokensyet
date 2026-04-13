@@ -31,9 +31,7 @@ export function isDesignToken(tokenName) {
  * Returns the canonical set of valid design tokens for a given CSS property.
  *
  * Builds a Set of token names derived from the property's configured token
- * types and alias token types. This intentionally excludes any additional
- * tokens introduced by stylelint rules, ensuring the result reflects only
- * the canonical token definitions.
+ * types and aliased token types.
  *
  * If the property is not defined in the configuration, an empty Set is returned.
  *
@@ -102,6 +100,8 @@ export function extractValidTokensForProp(prop, value) {
 
 /**
  * Returns true if the value contains a valid canonical design token for the property.
+ *
+ * Note that this should be combined with isValidPropertyValue to know the usage is correct.
  *
  * @param {string} prop - The CSS property to inspect.
  * @param {string} value - The CSS value to inspect.
@@ -242,11 +242,6 @@ function removeCyclicVarAliases(localCustomProperties) {
  * valid for the given property, otherwise `false`.
  */
 export function isValidPropertyValue(prop, value, localCustomProperties = {}) {
-  const isToken = containsValidDesignToken(prop, value);
-  if (isToken) {
-    return true;
-  }
-
   const propConfig = propertyConfig[prop];
   if (!propConfig) {
     return false;

@@ -183,7 +183,7 @@ export class TokenTooltip extends LitElement {
               </p>
             </div>`
           : ''}
-        ${this.tokens.length
+        ${this.status.startsWith('good') && this.tokens.length
           ? html`
               <div class="label">
                 🎨 Valid Design Tokens Used for this prop:
