@@ -55,6 +55,7 @@ describe('getPropagationData', () => {
         expect.objectContaining({
           prop: 'border-radius',
           containsValidDesignToken: true,
+          isValidPropertyValue: true,
           resolutionType: 'local',
         }),
       ]),
@@ -88,6 +89,7 @@ describe('getPropagationData', () => {
         expect.objectContaining({
           prop: 'border-radius',
           containsValidDesignToken: true,
+          isValidPropertyValue: true,
           resolutionType: 'local',
         }),
       ]),
@@ -98,8 +100,8 @@ describe('getPropagationData', () => {
     const css = `
       .btn {
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
-        background-color: var(--color-accent-primary);
-        color: var(--color-accent-primary);
+        background-color: var(--background-color-canvas);
+        color: var(--button-text-color-primary);
         border-color: #000;
       }
     `;
@@ -142,12 +144,62 @@ describe('getPropagationData', () => {
     );
   });
 
+  test('excludes non-aliased base token usage', async () => {
+    const css = `
+      .btn {
+        background-color: #fff;
+        /* This is not allowed because it's using a base token directly */
+        color: var(--color-accent-primary);
+        border-color: #000;
+      }
+    `;
+
+    fs.readFile.mockResolvedValueOnce(css);
+    const result = await getPropagationData(
+      '/project/src/components/button.css',
+    );
+
+    const props = result.foundPropValues;
+
+    expect(result).toHaveProperty('foundPropValues');
+    expect(result).toHaveProperty('foundVariables');
+    // 0 design token found out of 3 that can be tokenized = 0
+    expect(result.percentage).toBe(0);
+    expect(result.designTokenCount).toBe(0);
+    expect(fs.writeFile).toHaveBeenCalled();
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          prop: 'background-color',
+          isValidPropertyValue: false,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: false,
+        }),
+        expect.objectContaining({
+          prop: 'color',
+          isValidPropertyValue: false,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: true,
+        }),
+        expect.objectContaining({
+          prop: 'border-color',
+          isValidPropertyValue: false,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: false,
+        }),
+      ]),
+    );
+  });
+
   test('excludes non-token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
     const css = `
       .btn {
+        --my-alias: var(--color-accent-primary);
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
         background-color: #fff;
-        color: var(--color-accent-primary);
+        /* This is allowed because it's aliasing --color-accent-primary */
+        color: var(--my-alias);
         /* stylelint-disable-next-line */
         border-color: #000;
       }
@@ -199,7 +251,7 @@ describe('getPropagationData', () => {
       }
 
       .btn {
-        color: var(--color-accent-primary);
+        color: var(--button-text-color-primary);
         border: 1px solid var(--bcolor);
         background-color: inherit;
       }

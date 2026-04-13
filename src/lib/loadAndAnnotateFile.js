@@ -24,34 +24,36 @@ function dedupeTrace(trace = []) {
  * @param {object} prop - A resolved property with token metadata.
  * @param {boolean} prop.containsValidDesignToken - Whether the value includes a known token.
  * @param {boolean} prop.isValidPropertyValue whether this property/value combination is valid.
- * @returns {'good' | 'warn' | 'bad'} - The resolution status.
+ * @param {boolean} prop.isExcludedByStylelint whether this prop/value is excluded by stylelint.
+ * @returns {string} The resolution status.
+ *
  */
 export function getStatus(prop) {
-  if (prop.resolutionType === 'external' && prop.containsValidDesignToken) {
+  const {
+    resolutionType,
+    isExcludedByStylelint,
+    containsValidDesignToken,
+    isValidPropertyValue,
+  } = prop;
+
+  let base;
+  if (isValidPropertyValue && containsValidDesignToken) {
+    base = 'good';
+  } else if (isValidPropertyValue) {
+    base = 'warn';
+  } else {
+    base = 'bad';
+  }
+
+  if (resolutionType === 'external' && base === 'good') {
     return 'good-external';
   }
 
-  if (prop.isExcludedByStylelint && prop.containsValidDesignToken) {
-    return 'good-excludedByStylelint';
+  if (isExcludedByStylelint) {
+    return `${base}-excludedByStylelint`;
   }
 
-  if (prop.isExcludedByStylelint && !prop.isValidPropertyValue) {
-    return 'bad-excludedByStylelint';
-  }
-
-  if (prop.isExcludedByStylelint && prop.isValidPropertyValue) {
-    return 'warn-excludedByStylelint';
-  }
-
-  if (prop.containsValidDesignToken) {
-    return 'good';
-  }
-
-  if (prop.isValidPropertyValue) {
-    return 'warn';
-  }
-
-  return 'bad';
+  return base;
 }
 
 /**
