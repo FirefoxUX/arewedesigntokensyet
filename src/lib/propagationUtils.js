@@ -268,9 +268,7 @@ async function resolveDeclarationReferences(
     decl.containsValidDesignToken = analysis.containsValidDesignToken;
     decl.isValidPropertyValue = analysis.isValidPropertyValue;
 
-    const isIgnoredValue =
-      (decl.isExcludedByStylelint || analysis.isValidPropertyValue) &&
-      !analysis.containsValidDesignToken;
+    const isIgnored = isIgnoredValue(decl);
 
     decl.resolutionSources = getResolutionSources(
       trace,
@@ -295,6 +293,7 @@ async function resolveDeclarationReferences(
       decl,
       CANONICAL_TOKEN_KEY_SET,
     );
+
     if (tokenIds.length > 0) {
       decl.tokens = tokenIds;
     }
@@ -303,8 +302,8 @@ async function resolveDeclarationReferences(
       path: filePath,
       property: decl.prop,
       value: decl.value,
+      isIgnored,
       containsToken: Boolean(decl.containsValidDesignToken),
-      isIgnored: isIgnoredValue,
       ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
     });
   }
@@ -329,6 +328,30 @@ async function resolveDeclarationReferences(
 }
 
 /**
+ * Determines whether a declaration value should be ignored when calculating
+ * design token propagation metrics.
+ *
+ * A value is ignored if:
+ * - It is excluded by stylelint and is not a valid property value
+ * - It is a valid property value but does not contain a valid design token
+ *
+ * Please note: Valid property values that contain tokens excluded by stylelint are still
+ * included in propagation metrics.
+ *
+ * @param {object} decl Declaration metadata
+ * @param {boolean} decl.isExcludedByStylelint Whether the value is excluded by stylelint rules
+ * @param {boolean} decl.isValidPropertyValue Whether the value is a valid CSS property value
+ * @param {boolean} decl.containsValidDesignToken Whether the value contains a valid design token
+ * @returns {boolean} Whether the value should be ignored
+ */
+export function isIgnoredValue(decl) {
+  return (
+    (decl.isExcludedByStylelint && !decl.isValidPropertyValue) ||
+    (decl.isValidPropertyValue && !decl.containsValidDesignToken)
+  );
+}
+
+/**
  * Computes summary statistics from the resolved declarations:
  * - Number of declarations using design tokens
  * - Number of ignored values (valid property values that dont't contain design tokens)
@@ -342,15 +365,7 @@ function computeDesignTokenSummary(declarations) {
       // To be counted as a token needs to be a valid prop *and* contain a token.
       (d) => d.containsValidDesignToken && d.isValidPropertyValue,
     ).length,
-    ignoredValueCount: declarations.filter(
-      (d) =>
-        // Ignore bad values excluded by stylelint.
-        // Note: Values that are valid props and contain tokens excluded by stylelint are
-        // still counted in propagation metrics.
-        (d.isExcludedByStylelint && !d.isValidPropertyValue) ||
-        // Ignore values that are valid props but don't contain tokens.
-        (d.isValidPropertyValue && !d.containsValidDesignToken),
-    ).length,
+    ignoredValueCount: declarations.filter(isIgnoredValue).length,
   };
 }
 
