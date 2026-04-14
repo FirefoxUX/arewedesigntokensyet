@@ -30,6 +30,89 @@ describe('getPropagationData', () => {
     vi.resetAllMocks();
   });
 
+  test('still detects tokens referenced via external files', async () => {
+    const css = `
+      .btn {
+        border: 1px solid var(--fxview-border);
+      }
+    `;
+    const filePath = '/project/test.css';
+    fs.readFile.mockResolvedValue(css);
+
+    const fakeExtVars = {
+      '--fxview-border': {
+        value: 'var(--border-color-transparent)',
+        isExternal: true,
+        start: { column: 3, line: 24, offset: 1308 },
+        end: { column: 51, line: 24, offset: 1357 },
+        src: 'firefoxview.css',
+      },
+    };
+
+    const fakeCollectExternalVars = vi.fn();
+    fakeCollectExternalVars.mockResolvedValueOnce(fakeExtVars);
+
+    const result = await getPropagationData(filePath, fakeCollectExternalVars);
+    expect(result.percentage).toBe(100);
+    expect(result.designTokenCount).toBe(1);
+
+    const props = result.foundPropValues;
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          prop: 'border',
+          containsValidDesignToken: true,
+          isValidPropertyValue: true,
+          resolutionType: 'external',
+          isExcludedByStylelint: false,
+        }),
+      ]),
+    );
+  });
+
+  test('still counts valid tokens that are stylelint excluded and external refs', async () => {
+    const css = `
+      .btn {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
+        border: 1px solid var(--fxview-border);
+      }
+    `;
+    const filePath = '/project/test.css';
+    fs.readFile.mockResolvedValue(css);
+
+    const fakeExtVars = {
+      '--fxview-border': {
+        value: 'var(--border-color-transparent)',
+        isExternal: true,
+        start: { column: 3, line: 24, offset: 1308 },
+        end: { column: 51, line: 24, offset: 1357 },
+        src: 'firefoxview.css',
+      },
+    };
+
+    const fakeCollectExternalVars = vi.fn();
+    fakeCollectExternalVars.mockResolvedValueOnce(fakeExtVars);
+
+    const result = await getPropagationData(filePath, fakeCollectExternalVars);
+    expect(result.percentage).toBe(100);
+    expect(result.designTokenCount).toBe(1);
+
+    const props = result.foundPropValues;
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          prop: 'border',
+          containsValidDesignToken: true,
+          isValidPropertyValue: true,
+          resolutionType: 'external',
+          isExcludedByStylelint: true,
+        }),
+      ]),
+    );
+  });
+
   test('detects tokens used in vars defined and used in the same rule', async () => {
     const css = `
       :host {
@@ -144,12 +227,12 @@ describe('getPropagationData', () => {
     );
   });
 
-  test('excludes non-aliased base token usage', async () => {
+  test('ignores invalid token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
     const css = `
       .btn {
-        background-color: #fff;
-        /* This is not allowed because it's using a base token directly */
-        color: var(--color-accent-primary);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
+        background-color: var(--color-gray-80);
+        color: var(--button-text-color-primary);
         border-color: #000;
       }
     `;
@@ -163,9 +246,9 @@ describe('getPropagationData', () => {
 
     expect(result).toHaveProperty('foundPropValues');
     expect(result).toHaveProperty('foundVariables');
-    // 0 design token found out of 3 that can be tokenized = 0
-    expect(result.percentage).toBe(0);
-    expect(result.designTokenCount).toBe(0);
+    // 1 design token found out of 2 that can be tokenized = 50%
+    expect(result.percentage).toBe(50);
+    expect(result.designTokenCount).toBe(1);
     expect(fs.writeFile).toHaveBeenCalled();
 
     expect(props).toEqual(
@@ -173,8 +256,58 @@ describe('getPropagationData', () => {
         expect.objectContaining({
           prop: 'background-color',
           isValidPropertyValue: false,
+          isExcludedByStylelint: true,
+          containsValidDesignToken: true,
+        }),
+        expect.objectContaining({
+          prop: 'color',
+          isValidPropertyValue: true,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: true,
+        }),
+        expect.objectContaining({
+          prop: 'border-color',
+          isValidPropertyValue: false,
           isExcludedByStylelint: false,
           containsValidDesignToken: false,
+        }),
+      ]),
+    );
+  });
+
+  test('excludes non-aliased base token usage', async () => {
+    const css = `
+      .btn {
+        /* Some unaliased based tokens are allowed directly - see ...versatileColorTokens
+         * landed in https://bugzilla.mozilla.org/show_bug.cgi?id=2022975 */
+        background-color: var(--color-accent-primary);
+        /* Not allowed unless aliased */
+        color: var(--color-gray-80);
+        border-color: #000;
+      }
+    `;
+
+    fs.readFile.mockResolvedValueOnce(css);
+    const result = await getPropagationData(
+      '/project/src/components/button.css',
+    );
+
+    const props = result.foundPropValues;
+
+    expect(result).toHaveProperty('foundPropValues');
+    expect(result).toHaveProperty('foundVariables');
+    // 1 design token found out of 3 that can be tokenized = 33.33
+    expect(result.percentage).toBe(33.33);
+    expect(result.designTokenCount).toBe(1);
+    expect(fs.writeFile).toHaveBeenCalled();
+
+    expect(props).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          prop: 'background-color',
+          isValidPropertyValue: true,
+          isExcludedByStylelint: false,
+          containsValidDesignToken: true,
         }),
         expect.objectContaining({
           prop: 'color',
@@ -195,10 +328,10 @@ describe('getPropagationData', () => {
   test('excludes non-token usage with preceding (use-design-tokens) stylelint-disable-next-line comment', async () => {
     const css = `
       .btn {
-        --my-alias: var(--color-accent-primary);
+        --my-alias: var(--color-gray-80);
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- some other comment */
         background-color: #fff;
-        /* This is allowed because it's aliasing --color-accent-primary */
+        /* This is allowed because it's aliasing --color-gray-80 */
         color: var(--my-alias);
         /* stylelint-disable-next-line */
         border-color: #000;

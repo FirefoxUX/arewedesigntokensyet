@@ -79,14 +79,25 @@ describe('analyzeTrace', () => {
     expect(result.isValidPropertyValue).toBe(true);
   });
 
-  test('unaliased based color token will not pass isValidPropertyValue check', () => {
+  // See ...versatileColorTokens landed in https://bugzilla.mozilla.org/show_bug.cgi?id=2022975
+  test('some unaliased base color tokens will not pass isValidPropertyValue check', () => {
+    const trace = ['var(--color-gray-80)'];
+    const result = analyzeTrace(trace, {
+      prop: 'color',
+      value: 'var(--color-gray-80)',
+    });
+    expect(result.containsValidDesignToken).toBe(true);
+    expect(result.isValidPropertyValue).toBe(false);
+  });
+
+  test('some specific unaliased base color tokens will pass isValidPropertyValue check', () => {
     const trace = ['var(--color-accent-primary)'];
     const result = analyzeTrace(trace, {
       prop: 'color',
       value: 'var(--color-accent-primary)',
     });
     expect(result.containsValidDesignToken).toBe(true);
-    expect(result.isValidPropertyValue).toBe(false);
+    expect(result.isValidPropertyValue).toBe(true);
   });
 
   test('detects font-weight: normal specific exclusion', () => {

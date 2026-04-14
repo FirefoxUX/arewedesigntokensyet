@@ -51,6 +51,7 @@ export function normalizePathForOutput(absolutePath) {
  * - Calculating a token usage percentage
  *
  * @param {string} filePath - Absolute path to the CSS file.
+ * @param {Function} _collectExternalVars - optional function for dependency injection.
  * @returns {Promise<{
  *   designTokenCount: number,
  *   foundProps: number,
@@ -59,9 +60,13 @@ export function normalizePathForOutput(absolutePath) {
  *   foundVariables: object
  * }>} - Summary object including token count, percentage, and annotated data.
  */
-export async function getPropagationData(filePath) {
+export async function getPropagationData(
+  filePath,
+  _collectExternalVars = collectExternalVars,
+) {
   try {
-    const foundVariables = await collectExternalVars(filePath);
+    const foundVariables = await _collectExternalVars(filePath);
+
     const root = await parseCSS(filePath);
 
     const foundPropValues = collectDeclarations(root, foundVariables, filePath);
@@ -104,7 +109,7 @@ export async function getPropagationData(filePath) {
  * @param {string} filePath - The file path to match against config.externalVarMapping.
  * @returns {Promise<object>} - Map of variable names to external variable metadata.
  */
-async function collectExternalVars(filePath) {
+export async function collectExternalVars(filePath) {
   let foundVariables = {};
 
   for (const pattern in config.externalVarMapping) {
@@ -334,12 +339,17 @@ async function resolveDeclarationReferences(
 function computeDesignTokenSummary(declarations) {
   return {
     designTokenCount: declarations.filter(
+      // To be counted as a token needs to be a valid prop *and* contain a token.
       (d) => d.containsValidDesignToken && d.isValidPropertyValue,
     ).length,
     ignoredValueCount: declarations.filter(
       (d) =>
-        (d.isExcludedByStylelint || d.isValidPropertyValue) &&
-        !d.containsValidDesignToken,
+        // Ignore bad values excluded by stylelint.
+        // Note: Values that are valid props and contain tokens excluded by stylelint are
+        // still counted in propagation metrics.
+        (d.isExcludedByStylelint && !d.isValidPropertyValue) ||
+        // Ignore values that are valid props but don't contain tokens.
+        (d.isValidPropertyValue && !d.containsValidDesignToken),
     ).length,
   };
 }
