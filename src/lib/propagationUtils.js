@@ -51,6 +51,7 @@ export function normalizePathForOutput(absolutePath) {
  * - Calculating a token usage percentage
  *
  * @param {string} filePath - Absolute path to the CSS file.
+ * @param {Function} _collectExternalVars - optional function for dependency injection.
  * @returns {Promise<{
  *   designTokenCount: number,
  *   foundProps: number,
@@ -59,9 +60,13 @@ export function normalizePathForOutput(absolutePath) {
  *   foundVariables: object
  * }>} - Summary object including token count, percentage, and annotated data.
  */
-export async function getPropagationData(filePath) {
+export async function getPropagationData(
+  filePath,
+  _collectExternalVars = collectExternalVars,
+) {
   try {
-    const foundVariables = await collectExternalVars(filePath);
+    const foundVariables = await _collectExternalVars(filePath);
+
     const root = await parseCSS(filePath);
 
     const foundPropValues = collectDeclarations(root, foundVariables, filePath);
@@ -104,7 +109,7 @@ export async function getPropagationData(filePath) {
  * @param {string} filePath - The file path to match against config.externalVarMapping.
  * @returns {Promise<object>} - Map of variable names to external variable metadata.
  */
-async function collectExternalVars(filePath) {
+export async function collectExternalVars(filePath) {
   let foundVariables = {};
 
   for (const pattern in config.externalVarMapping) {
@@ -263,9 +268,7 @@ async function resolveDeclarationReferences(
     decl.containsValidDesignToken = analysis.containsValidDesignToken;
     decl.isValidPropertyValue = analysis.isValidPropertyValue;
 
-    const isIgnoredValue =
-      (decl.isExcludedByStylelint || analysis.isValidPropertyValue) &&
-      !analysis.containsValidDesignToken;
+    const isIgnored = isIgnoredValue(decl);
 
     decl.resolutionSources = getResolutionSources(
       trace,
@@ -290,6 +293,7 @@ async function resolveDeclarationReferences(
       decl,
       CANONICAL_TOKEN_KEY_SET,
     );
+
     if (tokenIds.length > 0) {
       decl.tokens = tokenIds;
     }
@@ -298,8 +302,8 @@ async function resolveDeclarationReferences(
       path: filePath,
       property: decl.prop,
       value: decl.value,
+      isIgnored,
       containsToken: Boolean(decl.containsValidDesignToken),
-      isIgnored: isIgnoredValue,
       ...(tokenIds.length > 0 ? { tokens: tokenIds } : {}),
     });
   }
@@ -324,6 +328,30 @@ async function resolveDeclarationReferences(
 }
 
 /**
+ * Determines whether a declaration value should be ignored when calculating
+ * design token propagation metrics.
+ *
+ * A value is ignored if:
+ * - It is excluded by stylelint and is not a valid property value
+ * - It is a valid property value but does not contain a valid design token
+ *
+ * Please note: Valid property values that contain tokens excluded by stylelint are still
+ * included in propagation metrics.
+ *
+ * @param {object} decl Declaration metadata
+ * @param {boolean} decl.isExcludedByStylelint Whether the value is excluded by stylelint rules
+ * @param {boolean} decl.isValidPropertyValue Whether the value is a valid CSS property value
+ * @param {boolean} decl.containsValidDesignToken Whether the value contains a valid design token
+ * @returns {boolean} Whether the value should be ignored
+ */
+export function isIgnoredValue(decl) {
+  return (
+    (decl.isExcludedByStylelint && !decl.isValidPropertyValue) ||
+    (decl.isValidPropertyValue && !decl.containsValidDesignToken)
+  );
+}
+
+/**
  * Computes summary statistics from the resolved declarations:
  * - Number of declarations using design tokens
  * - Number of ignored values (valid property values that dont't contain design tokens)
@@ -334,13 +362,10 @@ async function resolveDeclarationReferences(
 function computeDesignTokenSummary(declarations) {
   return {
     designTokenCount: declarations.filter(
+      // To be counted as a token needs to be a valid prop *and* contain a token.
       (d) => d.containsValidDesignToken && d.isValidPropertyValue,
     ).length,
-    ignoredValueCount: declarations.filter(
-      (d) =>
-        (d.isExcludedByStylelint || d.isValidPropertyValue) &&
-        !d.containsValidDesignToken,
-    ).length,
+    ignoredValueCount: declarations.filter(isIgnoredValue).length,
   };
 }
 

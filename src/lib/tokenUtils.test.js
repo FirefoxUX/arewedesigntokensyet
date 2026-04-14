@@ -87,17 +87,21 @@ describe('containsValidDesignToken', () => {
 });
 
 describe('isValidPropertyValue', () => {
-  test(`should be true for a base token`, () => {
-    // This should be aliased to be allowed.
+  // See ...versatileColorTokens landed in https://bugzilla.mozilla.org/show_bug.cgi?id=2022975
+  test(`should be true for some specific unaliased base tokens`, () => {
     expect(isValidPropertyValue('color', 'var(--color-accent-primary)')).toBe(
-      false,
+      true,
     );
+  });
+
+  test(`should be false for unaliased base tokens`, () => {
+    expect(isValidPropertyValue('color', 'var(--color-gray-80)')).toBe(false);
   });
 
   test('should allow an aliased base token', () => {
     expect(
       isValidPropertyValue('color', 'var(--local-var)', {
-        '--local-var': 'var(--color-accent-primary)',
+        '--local-var': 'var(--color-gray-80)',
       }),
     ).toBe(true);
   });
