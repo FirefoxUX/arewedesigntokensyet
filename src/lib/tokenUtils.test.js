@@ -94,8 +94,7 @@ describe('isValidPropertyValue', () => {
     );
   });
 
-  test(`should be true for some specific unaliased base tokens`, () => {
-    // This must be aliased to be allowed.
+  test(`should be false for unaliased base tokens`, () => {
     expect(isValidPropertyValue('color', 'var(--color-gray-80)')).toBe(false);
   });
 
