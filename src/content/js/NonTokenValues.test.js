@@ -166,6 +166,27 @@ describe('NonTokenValuesElement URL state helpers', () => {
 
     vi.useRealTimers();
   });
+
+  test('_onPatternInput cancels pending timer when input becomes invalid', () => {
+    vi.useFakeTimers();
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
+    el.pattern = '*';
+    el.excludeIgnored = false;
+
+    const writeSpy = vi.spyOn(el, '_writeStateToURL');
+
+    const makeEvent = (value) => ({ currentTarget: { value } });
+
+    el._onPatternInput(makeEvent('border'));
+    // Now type an invalid pattern — should cancel the pending timer
+    el._onPatternInput(makeEvent('border**'));
+
+    vi.advanceTimersByTime(300);
+
+    expect(writeSpy).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
 });
 
 describe('NonTokenValuesElement data helpers', () => {

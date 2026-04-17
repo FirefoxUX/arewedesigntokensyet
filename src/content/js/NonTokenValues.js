@@ -396,8 +396,8 @@ export class NonTokenValuesElement extends BaseElement {
   _onPatternInput(e) {
     this.pattern = e.currentTarget.value.trim();
     const { ok } = validatePattern(this.pattern);
+    clearTimeout(this._patternTimer);
     if (ok) {
-      clearTimeout(this._patternTimer);
       this._patternTimer = setTimeout(() => {
         this._writeStateToURL({ replace: true });
       }, 300);
