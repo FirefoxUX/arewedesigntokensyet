@@ -118,7 +118,7 @@ describe('NonTokenValuesElement URL state helpers', () => {
     expect(pushSpy).toHaveBeenCalled();
   });
 
-  test('_onToggleDetails adds and removes keys from openDetails', () => {
+  test('_onToggleDetails adds and removes keys from openDetails using replaceState', () => {
     const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
     el.pattern = '*';
     el.excludeIgnored = false;
@@ -133,11 +133,38 @@ describe('NonTokenValuesElement URL state helpers', () => {
     el._onToggleDetails({ target: details });
     expect(el.openDetails).toEqual(['row-1']);
     expect(writeSpy).toHaveBeenCalledTimes(1);
+    expect(writeSpy).toHaveBeenLastCalledWith({ replace: true });
 
     details.open = false;
     el._onToggleDetails({ target: details });
     expect(el.openDetails).toEqual([]);
     expect(writeSpy).toHaveBeenCalledTimes(2);
+    expect(writeSpy).toHaveBeenLastCalledWith({ replace: true });
+  });
+
+  test('_onPatternInput debounces URL writes', () => {
+    vi.useFakeTimers();
+    const el = makeElementAt('/stats/non-token-values/?pattern=*&ex=0');
+    el.pattern = '*';
+    el.excludeIgnored = false;
+
+    const writeSpy = vi.spyOn(el, '_writeStateToURL');
+
+    const makeEvent = (value) => ({ currentTarget: { value } });
+
+    el._onPatternInput(makeEvent('b'));
+    el._onPatternInput(makeEvent('bo'));
+    el._onPatternInput(makeEvent('bor'));
+
+    expect(writeSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(300);
+
+    expect(writeSpy).toHaveBeenCalledTimes(1);
+    expect(writeSpy).toHaveBeenCalledWith({ replace: true });
+    expect(el.pattern).toBe('bor');
+
+    vi.useRealTimers();
   });
 });
 

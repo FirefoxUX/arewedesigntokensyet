@@ -1,4 +1,4 @@
-/* global document, customElements, window, URLSearchParams, fetch, history, setTimeout  */
+/* global document, customElements, window, URLSearchParams, fetch, history, setTimeout, clearTimeout  */
 
 // NonTokenValues.js
 import { LitElement, html } from 'lit';
@@ -194,6 +194,7 @@ export class NonTokenValuesElement extends BaseElement {
     this._data = null;
     this._error = '';
     this._loading = true;
+    this._patternTimer = null;
     this._onPopState = () => {
       const next = this._readControlsFromURL();
       this.pattern = next.pattern;
@@ -381,7 +382,7 @@ export class NonTokenValuesElement extends BaseElement {
     }
     const updatedOpenDetails = Array.from(openSet);
     this.openDetails = updatedOpenDetails;
-    this._writeStateToURL();
+    this._writeStateToURL({ replace: true });
   }
 
   /**
@@ -396,7 +397,10 @@ export class NonTokenValuesElement extends BaseElement {
     this.pattern = e.currentTarget.value.trim();
     const { ok } = validatePattern(this.pattern);
     if (ok) {
-      this._writeStateToURL();
+      clearTimeout(this._patternTimer);
+      this._patternTimer = setTimeout(() => {
+        this._writeStateToURL({ replace: true });
+      }, 300);
     }
   }
 
