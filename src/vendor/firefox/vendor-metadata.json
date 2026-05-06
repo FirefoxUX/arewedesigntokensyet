@@ -1,13 +1,13 @@
 {
   "sourceRepo": "mozilla-firefox/firefox",
   "originUrl": "git@github.com:mozilla-firefox/firefox.git",
-  "revision": "8352bcb6d75d53f3e2190221b71190e47afa0bfc",
-  "revisionDate": "2026-05-05T08:16:36Z",
+  "revision": "c90c4a59e34b5c6142691052bbb15b295ea0c37c",
+  "revisionDate": "2026-05-06T08:58:35Z",
   "branch": "main",
   "paths": [
     "tools/lint/stylelint/stylelint-plugin-mozilla",
     "toolkit/themes/shared/design-system/dist/tokens-table.mjs",
     "toolkit/themes/shared/design-system/dist/semantic-categories.mjs"
   ],
-  "syncedAt": "2026-05-05T09:37:35.944Z"
+  "syncedAt": "2026-05-06T10:20:18.995Z"
 }
