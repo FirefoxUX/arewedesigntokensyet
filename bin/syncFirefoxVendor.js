@@ -278,6 +278,38 @@ function assertValidRepoState(repoInfo) {
 }
 
 /**
+ * Detect whether any vendored file other than the metadata file differs from
+ * what is currently tracked in git.
+ *
+ * Uses `git status --porcelain` so both modified-and-tracked files and
+ * untracked-but-newly-vendored files are surfaced. The metadata file is
+ * excluded because its `syncedAt` timestamp changes on every run, which would
+ * otherwise mask whether the vendored sources actually changed.
+ *
+ * @param {string} vendorRoot - Absolute path to the vendored output directory.
+ * @param {string} metadataPath - Absolute path to the metadata file to ignore.
+ * @returns {boolean}
+ */
+function hasVendorChangesOtherThanMetadata(vendorRoot, metadataPath) {
+  const vendorRelative = path.relative(PROJECT_ROOT, vendorRoot);
+  const metadataRelative = path.relative(PROJECT_ROOT, metadataPath);
+  const output = execFileSync(
+    'git',
+    [
+      'status',
+      '--porcelain',
+      '-z',
+      '--',
+      vendorRelative,
+      `:!${metadataRelative}`,
+    ],
+    { cwd: PROJECT_ROOT, encoding: 'utf8' },
+  );
+
+  return output.length > 0;
+}
+
+/**
  * Validate that each requested source path exists and stays within the repo.
  *
  * @param {string} repoRoot - Canonical repository root.
@@ -319,6 +351,10 @@ function main() {
   assertValidRepoState(repoInfo);
   validateSourcePaths(firefoxRoot, PATHS_TO_COPY);
 
+  const previousMetadataBuffer = pathExists(METADATA_PATH)
+    ? fs.readFileSync(METADATA_PATH)
+    : null;
+
   removeIfExists(VENDOR_ROOT);
   ensureDir(VENDOR_ROOT);
 
@@ -328,25 +364,38 @@ function main() {
     copyRecursive(sourcePath, destinationPath);
   }
 
-  const metadata = {
-    sourceRepo: 'mozilla-firefox/firefox',
-    originUrl: repoInfo.originUrl,
-    revision: repoInfo.revision,
-    revisionDate: repoInfo.revisionDate,
-    branch: repoInfo.branch,
-    paths: PATHS_TO_COPY,
-    syncedAt: new Date().toISOString(),
-  };
+  const vendorFilesChanged =
+    !previousMetadataBuffer ||
+    hasVendorChangesOtherThanMetadata(VENDOR_ROOT, METADATA_PATH);
 
-  fs.writeFileSync(METADATA_PATH, JSON.stringify(metadata, null, 2) + '\n');
+  if (vendorFilesChanged) {
+    const metadata = {
+      sourceRepo: 'mozilla-firefox/firefox',
+      originUrl: repoInfo.originUrl,
+      revision: repoInfo.revision,
+      revisionDate: repoInfo.revisionDate,
+      branch: repoInfo.branch,
+      paths: PATHS_TO_COPY,
+      syncedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(METADATA_PATH, JSON.stringify(metadata, null, 2) + '\n');
+  } else {
+    fs.writeFileSync(METADATA_PATH, previousMetadataBuffer);
+  }
 
   console.log(
     `Vendored Firefox files into ${path.relative(PROJECT_ROOT, VENDOR_ROOT)}`,
   );
-  console.log(
-    `Wrote metadata to ${path.relative(PROJECT_ROOT, METADATA_PATH)}`,
-  );
-  console.log(`Revision: ${metadata.revision}`);
+  if (vendorFilesChanged) {
+    console.log(
+      `Wrote metadata to ${path.relative(PROJECT_ROOT, METADATA_PATH)}`,
+    );
+    console.log(`Revision: ${repoInfo.revision}`);
+  } else {
+    console.log(
+      `Vendored files unchanged; preserved ${path.relative(PROJECT_ROOT, METADATA_PATH)}`,
+    );
+  }
 }
 
 main();
