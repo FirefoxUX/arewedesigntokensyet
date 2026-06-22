@@ -7,6 +7,8 @@ import {
 } from './propagationUtils.js';
 import config from '../../config.js';
 
+vi.mock('node:fs/promises');
+
 const originalConfig = { ...config };
 
 describe('getPropagationData', () => {
@@ -21,7 +23,6 @@ describe('getPropagationData', () => {
   });
 
   beforeEach(() => {
-    vi.mock('node:fs/promises');
     fs.writeFile = vi.fn();
     fs.readFile = vi.fn();
   });

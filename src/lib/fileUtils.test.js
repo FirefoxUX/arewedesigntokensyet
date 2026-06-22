@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'path';
 import { getCssFilesList, convertPathToURI } from './fileUtils.js';
 
+vi.mock('node:fs/promises');
+
 describe('convertPathToURI', () => {
   test('converts windows-style paths to URI-safe format', () => {
     const result = convertPathToURI('src\\styles\\main.css');
@@ -22,7 +24,6 @@ describe('getCssFilesList', () => {
   });
 
   beforeEach(() => {
-    vi.mock('node:fs/promises');
     fs.writeFile = vi.fn();
     fs.readFile = vi.fn();
   });
