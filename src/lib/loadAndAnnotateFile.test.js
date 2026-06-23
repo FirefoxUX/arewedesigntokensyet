@@ -1,4 +1,7 @@
 import fs from 'fs/promises';
+
+vi.mock('node:fs/promises');
+
 import loadAndAnnotateFile from './loadAndAnnotateFile.js';
 import { getStatus } from './loadAndAnnotateFile.js';
 
@@ -100,7 +103,6 @@ describe('getStatus', () => {
 
 describe('loadAndAnnotateFile', () => {
   beforeEach(() => {
-    vi.mock('node:fs/promises');
     fs.readFile = vi.fn();
   });
 

@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 
 import { getVarData } from './externalVars.js';
+
+vi.mock('node:fs/promises');
 import { getExternalVars } from './externalVars.js';
 import config from '../../config.js';
 
@@ -56,7 +58,6 @@ describe('getExternalVars', () => {
   });
 
   beforeEach(() => {
-    vi.mock('node:fs/promises');
     fs.readFile = vi.fn();
   });
 
