@@ -254,7 +254,8 @@ export const tokensTable = {
     {
       value: {
         default: "transparent",
-        brand: { forcedColors: "var(--button-background-color)" },
+        forcedColors: "ButtonFace",
+        brand: { forcedColors: "ButtonFace" },
         nativeTheme: "transparent",
         platform: { default: "transparent", browserTheme: {} },
       },
@@ -1078,6 +1079,26 @@ export const tokensTable = {
       value: "var(--checkbox-background-color-checked-disabled)",
       name: "--checkbox-border-color-checked-disabled",
     },
+    {
+      value: {
+        light: "var(--color-violet-desaturated-20)",
+        dark: "var(--color-gray-60)",
+        nativeTheme: "var(--toolbarseparator-color)",
+        prefersContrast: "CanvasText",
+        platform: {
+          default: "var(--toolbarseparator-color)",
+          browserTheme: {
+            light: "var(--color-violet-desaturated-20)",
+            dark: "var(--color-gray-60)",
+            default:
+              "light-dark(var(--color-violet-desaturated-20), var(--color-gray-60))",
+          },
+        },
+        default:
+          "light-dark(var(--color-violet-desaturated-20), var(--color-gray-60))",
+      },
+      name: "--info-bar-border-color",
+    },
     { value: "var(--border-color-interactive)", name: "--input-border-color" },
     { value: "var(--border-color)", name: "--input-text-border-color" },
     {
@@ -1888,6 +1909,9 @@ export const tokensTable = {
     { value: "var(--card-padding)", name: "--card-gap" },
     { value: "var(--space-small)", name: "--card-gap-article" },
     { value: "var(--space-small)", name: "--checkbox-margin-inline" },
+    { value: "4px", name: "--info-bar-margin-block-start" },
+    { value: "4px", name: "--info-bar-margin-block-end" },
+    { value: "4px", name: "--info-bar-margin-inline" },
     { value: "var(--space-medium)", name: "--input-folder-gap" },
     { value: { brand: { default: "64px" } }, name: "--page-space-block-start" },
     {
@@ -2204,6 +2228,11 @@ export const tokensTable = {
       value: {
         default: "var(--button-text-color-ghost-selected)",
         forcedColors: "var(--button-text-color-primary-selected)",
+        nativeTheme: "currentColor",
+        platform: {
+          default: "currentColor",
+          browserTheme: { default: "var(--button-text-color-ghost-selected)" },
+        },
       },
       name: "--button-text-color-menu-selected",
     },
@@ -3770,7 +3799,8 @@ export const variableLookupTable = {
     "var(--button-background-color-destructive-active)",
   "button-background-color-ghost": {
     default: "transparent",
-    brand: { forcedColors: "var(--button-background-color)" },
+    forcedColors: "ButtonFace",
+    brand: { forcedColors: "ButtonFace" },
     nativeTheme: "transparent",
     platform: { default: "transparent", browserTheme: {} },
   },
@@ -4008,6 +4038,11 @@ export const variableLookupTable = {
   "button-text-color-menu-selected": {
     default: "var(--button-text-color-ghost-selected)",
     forcedColors: "var(--button-text-color-primary-selected)",
+    nativeTheme: "currentColor",
+    platform: {
+      default: "currentColor",
+      browserTheme: { default: "var(--button-text-color-ghost-selected)" },
+    },
   },
   "button-text-color-primary": {
     forcedColors: "ButtonFace",
@@ -4139,6 +4174,26 @@ export const variableLookupTable = {
   "icon-size-medium": "var(--dimension-20)",
   "icon-size-large": "var(--dimension-24)",
   "icon-size-xlarge": "var(--dimension-32)",
+  "info-bar-border-color": {
+    light: "var(--color-violet-desaturated-20)",
+    dark: "var(--color-gray-60)",
+    nativeTheme: "var(--toolbarseparator-color)",
+    prefersContrast: "CanvasText",
+    platform: {
+      default: "var(--toolbarseparator-color)",
+      browserTheme: {
+        light: "var(--color-violet-desaturated-20)",
+        dark: "var(--color-gray-60)",
+        default:
+          "light-dark(var(--color-violet-desaturated-20), var(--color-gray-60))",
+      },
+    },
+    default:
+      "light-dark(var(--color-violet-desaturated-20), var(--color-gray-60))",
+  },
+  "info-bar-margin-block-start": "4px",
+  "info-bar-margin-block-end": "4px",
+  "info-bar-margin-inline": "4px",
   "input-border-color": "var(--border-color-interactive)",
   "input-folder-gap": "var(--space-medium)",
   "input-height": "var(--size-item-small)",
