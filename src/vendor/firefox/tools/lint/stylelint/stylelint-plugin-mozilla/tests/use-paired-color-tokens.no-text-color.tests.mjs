@@ -9,11 +9,11 @@
 // eslint-disable-next-line import/no-unresolved
 import { testRule } from "stylelint-test-rule-node";
 import stylelint from "stylelint";
-import noBackgroundWithoutTextColor from "../rules/no-background-without-text-color.mjs";
+import usePairedColorTokens from "../rules/use-paired-color-tokens.mjs";
 
 let plugin = stylelint.createPlugin(
-  noBackgroundWithoutTextColor.ruleName,
-  noBackgroundWithoutTextColor
+  usePairedColorTokens.ruleName,
+  usePairedColorTokens
 );
 let {
   ruleName,
@@ -225,7 +225,7 @@ testRule({
       description: "A state variant is left alone as well.",
     },
     {
-      code: "/* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */\n.a { background-color: var(--sidebar-background-color); }",
+      code: "/* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */\n.a { background-color: var(--sidebar-background-color); }",
       description: "A disable comment holds off the fix as well as the report.",
     },
   ],
