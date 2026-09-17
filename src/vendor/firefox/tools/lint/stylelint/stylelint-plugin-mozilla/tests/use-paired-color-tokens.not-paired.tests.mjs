@@ -31,11 +31,6 @@ testRule({
       description: "A background token used with its paired text token.",
     },
     {
-      code: ".a { background-color: var(--button-background-color); }",
-      description:
-        "A background token alone leaves the text color to the cascade.",
-    },
-    {
       code: ".a { color: var(--button-text-color); }",
       description:
         "A text token alone leaves the background to another element.",
@@ -219,10 +214,6 @@ testRule({
   config: [true],
   fix: true,
   accept: [
-    {
-      code: ".a { background-color: var(--button-background-color-menu); }",
-      description: "A background color on its own does not gain a text color.",
-    },
     {
       code: ".a { color: var(--panel-text-color); }",
       description: "A text color on its own is left alone as well.",
