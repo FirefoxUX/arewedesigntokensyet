@@ -47,16 +47,84 @@ jobs:
         node-version: 24
         package-manager-cache: false
 
-    - name: Install packages and build
+    - name: Install packages
+      working-directory: ./awdty
+      run: npm ci
+
+    # Re-vendor before building so the site is built and tested against the
+    # current Firefox tree. bin/syncFirefoxVendor.js asserts the source really
+    # is mozilla-firefox/firefox, on main, in sync with origin/main and clean,
+    # so anything it copies is code that landed in the Firefox tree.
+    #
+    # A vendoring failure (e.g. upstream moving or removing one of the vendored
+    # paths) deliberately fails the run and skips the deploy, so it gets noticed
+    # rather than the site quietly going stale.
+    - name: Vendor Firefox files
+      working-directory: ./awdty
+      run: npm run vendor
+
+    # Collects the changed paths once and reuses them for both the "is there
+    # anything to commit" check and the allowlist. Anything appearing outside
+    # the vendored paths means the vendor script or the upstream layout has
+    # changed shape, which will need review rather than an automatic commit.
+    - name: Check for vendor changes
+      working-directory: ./awdty
+      id: check_vendor
+      run: |
+        # Keep in sync with PATHS_TO_COPY in bin/syncFirefoxVendor.js.
+        allowed_prefixes=(
+          "src/vendor/firefox/vendor-metadata.json"
+          "src/vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/"
+          "src/vendor/firefox/toolkit/themes/shared/design-system/dist/"
+        )
+
+        changed=()
+        unexpected=()
+
+        mapfile -d '' entries < <(git status --porcelain -z --untracked-files=all -- src/vendor)
+
+        for entry in "${entries[@]}"; do
+          # Porcelain v1 records are "XY <path>"; -z means paths are never quoted.
+          file="${entry:3}"
+          changed+=("$file")
+
+          allowed=false
+          for prefix in "${allowed_prefixes[@]}"; do
+            if [[ "$file" == "$prefix"* ]]; then
+              allowed=true
+              break
+            fi
+          done
+
+          if [[ "$allowed" == false ]]; then
+            unexpected+=("$file")
+          fi
+        done
+
+        if [[ ${#unexpected[@]} -gt 0 ]]; then
+          echo "::error::Vendor changes outside the expected paths:"
+          printf '  %s\n' "${unexpected[@]}"
+          exit 1
+        fi
+
+        if [[ ${#changed[@]} -eq 0 ]]; then
+          echo "No vendor changes detected."
+          echo "has_changes=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Vendor changes detected:"
+          printf '  %s\n' "${changed[@]}"
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Build and test
       working-directory: ./awdty
       run: |
-        npm ci
         npm run build
         npm run test-ci
 
-    - name: Check for Changes
+    - name: Check for history changes
       working-directory: ./awdty
-      id: check_changes
+      id: check_history
       run: |
         if [[ -n "$(git diff --exit-code src/data/propagationHistory.json)" ]]; then
           echo "History Changes detected."
@@ -66,20 +134,37 @@ jobs:
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Conditionally update history data
+    # Vendored files and history data land as independent commits so they are
+    # revertable on their own.
+    - name: Conditionally commit and push updates
       working-directory: ./awdty
-      if: steps.check_changes.outputs.has_changes == 'true'
+      if: steps.check_vendor.outputs.has_changes == 'true' || steps.check_history.outputs.has_changes == 'true'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GH_HOST: github.com
+        VENDOR_CHANGED: ${{ steps.check_vendor.outputs.has_changes }}
+        HISTORY_CHANGED: ${{ steps.check_history.outputs.has_changes }}
       # Using `persist-credentials: false` in the checkout means we'll need to use
       # gh to configure git to use the Github CLI as a credential helper. This will use the
       # GH_TOKEN in the env without that being persisted.
       run: |
+        firefox_date="$(git -C ../firefox show -s --format=%cs HEAD)"
+
         git config user.name github-actions
         git config user.email github-actions@github.com
-        git add 'src/data/**/propagationHistory.json' 'src/data/propagationHistory.json'
-        git commit -m "Update history data $(git -C ../mozilla-unified show -s --format=%cs)"
+
+        if [[ "$VENDOR_CHANGED" == 'true' ]]; then
+          firefox_revision="$(git -C ../firefox rev-parse HEAD)"
+          git add 'src/vendor'
+          git commit -m "update-vendor-${firefox_date}" \
+                     -m "mozilla-firefox/firefox@${firefox_revision}"
+        fi
+
+        if [[ "$HISTORY_CHANGED" == 'true' ]]; then
+          git add 'src/data/**/propagationHistory.json' 'src/data/propagationHistory.json'
+          git commit -m "Update history data ${firefox_date}"
+        fi
+
         gh auth setup-git
         git push https://github.com/FirefoxUX/arewedesigntokensyet.git main
 
