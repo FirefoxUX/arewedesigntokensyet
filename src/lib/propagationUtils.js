@@ -96,8 +96,8 @@ export async function getPropagationData(
       foundVariables,
     };
   } catch (err) {
-    console.error(`Unable to read or parse ${filePath} ${err.message}`);
-    throw new Error(err);
+    const errMsg = `Unable to read or parse ${filePath} ${err.message}`;
+    throw new Error(errMsg, { cause: err });
   }
 }
 

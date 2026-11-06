@@ -161,7 +161,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       await runPropagationUpdateScript(date);
     }
   } catch (e) {
-    throw new Error(e);
+    throw new Error('Something went wrong', { cause: e });
   } finally {
     if (startingGitBranch) {
       console.log('Restoring original branch');
