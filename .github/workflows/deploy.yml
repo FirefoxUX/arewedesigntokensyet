@@ -72,8 +72,10 @@ jobs:
       id: check_vendor
       run: |
         # Keep in sync with PATHS_TO_COPY in bin/syncFirefoxVendor.js.
-        allowed_prefixes=(
+        allowed_files=(
           "src/vendor/firefox/vendor-metadata.json"
+        )
+        allowed_prefixes=(
           "src/vendor/firefox/tools/lint/stylelint/stylelint-plugin-mozilla/"
           "src/vendor/firefox/toolkit/themes/shared/design-system/dist/"
         )
@@ -89,6 +91,12 @@ jobs:
           changed+=("$file")
 
           allowed=false
+          for allowed_file in "${allowed_files[@]}"; do
+            if [[ "$file" == "$allowed_file" ]]; then
+              allowed=true
+              break
+            fi
+          done
           for prefix in "${allowed_prefixes[@]}"; do
             if [[ "$file" == "$prefix"* ]]; then
               allowed=true
@@ -103,7 +111,7 @@ jobs:
 
         if [[ ${#unexpected[@]} -gt 0 ]]; then
           echo "::error::Vendor changes outside the expected paths:"
-          printf '  %s\n' "${unexpected[@]}"
+          printf '  %q\n' "${unexpected[@]}"
           exit 1
         fi
 
@@ -112,7 +120,7 @@ jobs:
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
         else
           echo "Vendor changes detected:"
-          printf '  %s\n' "${changed[@]}"
+          printf '  %q\n' "${changed[@]}"
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
         fi
 
